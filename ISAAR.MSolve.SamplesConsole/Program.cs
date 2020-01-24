@@ -3,6 +3,7 @@ using ISAAR.MSolve.Analyzers;
 using ISAAR.MSolve.Analyzers.Dynamic;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.FEM.Entities;
+using ISAAR.MSolve.FEM.Readers;
 using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers;
@@ -48,7 +49,7 @@ namespace ISAAR.MSolve.SamplesConsole
             //SolveCantileverWithStochasticMaterial();
 
             //MeshPartitioningExamples.PartitionMeshes();
-
+            CreateModelFromComsolMeshFile();
         }
 
         private static void SolveBuildingInNoSoilSmall()
@@ -127,6 +128,12 @@ namespace ISAAR.MSolve.SamplesConsole
             var evaluator = new StructuralStochasticEvaluator(youngModulus, domainMapper);
             var m = new MonteCarlo(iterations, evaluator, evaluator);
             m.Evaluate();
+        }
+        private static void CreateModelFromComsolMeshFile()
+        {
+            string comsolMeshFile = @"C:\Users\Ody\Documents\MSolve\ISAAR.MSolve.SamplesConsole\ComsolInput\mesh.mphtxt";
+            ComsolMeshReader cr = new ComsolMeshReader(comsolMeshFile);
+            cr.CreateModelFromFile();
         }
     }
 }
