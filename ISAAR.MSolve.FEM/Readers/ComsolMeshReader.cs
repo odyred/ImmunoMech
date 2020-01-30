@@ -16,6 +16,7 @@ namespace ISAAR.MSolve.FEM.Readers
 {
     public class ComsolMeshReader
     {
+        public Model Model { get; private set; }
         enum Attributes
         {
             sdim = 1001,
@@ -34,8 +35,9 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader(string filename)
+        public ComsolMeshReader(Model model, string filename)
         {
+            this.Model = model;
             Filename = filename;
         }
 
@@ -50,8 +52,6 @@ namespace ISAAR.MSolve.FEM.Readers
 
 
         int NumberOfNodes;
-        int NumberOfVtxElements;
-        int NumberOfEdgElements;
         int NumberOfTriElements;
         int NumberOfElements;
 
@@ -61,7 +61,6 @@ namespace ISAAR.MSolve.FEM.Readers
             double k = 1.0;
             double c = 1.0;
             var elementFactory = new ThermalElement3DFactory(new ThermalMaterial(density, c, k));
-            var elements = new ThermalElement3D[4];
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material
@@ -121,9 +120,6 @@ namespace ISAAR.MSolve.FEM.Readers
                         break;
                     case Attributes.Meshpointcoordinates:
                         IList<Node> nodelist = new List<Node> { null };
-                        //IList<Node> boundary1 = new List<Node> { null };
-                        //IList<Node> boundary2 = new List<Node> { null };
-                        //IList<Node> boundary3 = new List<Node> { null };
                         for (int j = 0; j < NumberOfNodes; j++)
                         {
                             i++;
@@ -137,81 +133,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             nodelist.Add(node);
                         }
 
-                        //foreach (Node node in nodelist)
-                        //{
-                        //    if (node.X == 0)
-                        //        model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0});
-                        //    if (node.Y == 0)
-                        //        model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-                        //    if (node.Z == 0)
-                        //        model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-                        //}
                         break;
-                    //case Attributes.vtx:
-                    //    do
-                    //    {
-                    //        i++;
-                    //        line = text[i].Split(delimeters);
-                    //    } while (line[0] == "");
-                    //    i++;
-                    //    line = text[i].Split(delimeters);
-                    //    NumberOfTetElements = Int32.Parse(line[0]);
-                    //    i++;
-                    //    for (int VtxID = 0; VtxID < NumberOfTetElements; VtxID++)
-                    //    {
-                    //        i++;
-                    //        line = text[i].Split(delimeters);
-
-                    //        IReadOnlyList<Node> nodelist = new List<Node>
-                    //        {
-                    //            model.NodesDictionary[Int32.Parse(line[0])],
-                    //        };
-                    //        var factory = new ContinuumElement3DFactory(Material0, DynamicMaterial);
-                    //        var Tet4 = factory.CreateElement(CellType.Tet4, nodelist);
-                    //        var element = new Element();
-                    //        element.ID = VtxID;
-                    //        element.ElementType = Tet4;
-                    //        foreach (Node node in nodelist)
-                    //        {
-                    //            element.AddNode(node);
-                    //        }
-                    //        model.SubdomainsDictionary[0].Elements.Add(element);
-                    //        model.ElementsDictionary.Add(VtxID, element);
-                    //    }
-                    //    break;
-                    //case Attributes.edg:
-                    //    do
-                    //    {
-                    //        i++;
-                    //        line = text[i].Split(delimeters);
-                    //    } while (line[0] == "");
-                    //    i++;
-                    //    line = text[i].Split(delimeters);
-                    //    NumberOfEdgElements = Int32.Parse(line[0]);
-                    //    i++;
-                    //    for (int EdgID = 0; EdgID < NumberOfEdgElements; EdgID++)
-                    //    {
-                    //        i++;
-                    //        line = text[i].Split(delimeters);
-
-                    //        IReadOnlyList<Node> nodesCollection = new List<Node>
-                    //        {
-                    //            model.NodesDictionary[Int32.Parse(line[0])],
-                    //            model.NodesDictionary[Int32.Parse(line[1])]
-                    //        };
-                    //        var factory = new ContinuumElement3DFactory(Material0, DynamicMaterial);
-                    //        var Line = factory.CreateElement(CellType.Line, nodesCollection);
-                    //        var element = new Element();
-                    //        element.ID = NumberOfVtxElements + EdgID;
-                    //        element.ElementType = Line;
-                    //        foreach (Node node in nodesCollection)
-                    //        {
-                    //            element.AddNode(node);
-                    //        }
-                    //        model.SubdomainsDictionary[0].Elements.Add(element);
-                    //        model.ElementsDictionary.Add(EdgID, element);
-                    //    }
-                    //    break;
                     case Attributes.tri:
                         do
                         {
@@ -236,20 +158,12 @@ namespace ISAAR.MSolve.FEM.Readers
 
                             foreach (Node node in nodesCollection)
                             {
-                                if (node.X < 5e-4 | node.Y < 5e-4 | node.Z < 5e-4)
+                                double q = 10;
+                                if (node.X <= 5e-4 && node.Y <= 5e-4 && node.Z <= 5e-4)
                                     model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+                                else
+                                    model.Loads.Add(new Load() {Node = model.NodesDictionary[node.ID],  DOF = ThermalDof.Temperature, Amount = q });
                             }
-                            //var factory = new ContinuumElement3DFactory(Material0, DynamicMaterial);
-                            //var Tri3 = factory.CreateElement(CellType.Tri3, nodesCollection);
-                            //var element = new Element();
-                            //element.ID = NumberOfVtxElements + NumberOfEdgElements + TriID;
-                            //element.ElementType = Tri3;
-                            //foreach (Node node in nodesCollection)
-                            //{
-                            //    element.AddNode(node);
-                            //}
-                            //model.SubdomainsDictionary[0].Elements.Add(element);
-                            //model.ElementsDictionary.Add(TriID, element);
                         }
                         break;
                     case Attributes.tet:
@@ -274,7 +188,6 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[2])],
                                 model.NodesDictionary[Int32.Parse(line[3])]
                             };
-//                            var factory = new ContinuumElement3DFactory(Material0, DynamicMaterial);
                             var Tet4 = elementFactory.CreateElement(CellType.Tet4, nodesCollection);
                             var element = new Element();
                             element.ID = TetID;
