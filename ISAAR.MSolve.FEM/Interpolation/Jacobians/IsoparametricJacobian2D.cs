@@ -18,7 +18,7 @@ namespace ISAAR.MSolve.FEM.Interpolation.Jacobians
     /// </summary>
     public class IsoparametricJacobian2D
     {
-        private const double determinantTolerance = 1E-8; // This needs to be in a static settings class.
+        private const double determinantTolerance = 1E-10; // This needs to be in a static settings class.
 
         /// <summary>
         /// The caller (usually the interpolation class) assumes responsibility for matching the nodes to the shape function 
@@ -31,12 +31,13 @@ namespace ISAAR.MSolve.FEM.Interpolation.Jacobians
             // The original matrix is not stored. Only the inverse and the determinant
             DirectMatrix = CalculateJacobianMatrix(nodes, naturalDerivatives);
             (InverseMatrix, DirectDeterminant) = DirectMatrix.InvertAndDeterminant();
+            DirectDeterminant = Math.Abs(DirectDeterminant);
             //(InverseMatrix, DirectDeterminant) = InvertAndDeterminant(DirectMatrix);
-            if (DirectDeterminant < determinantTolerance)
-            {
-                throw new ArgumentException("Jacobian determinant is negative or under the allowed tolerance"
-                    + $" ({DirectDeterminant} < {determinantTolerance}). Check the order of nodes or the element geometry.");
-            }
+            //if (DirectDeterminant < determinantTolerance)
+            //{
+            //    throw new ArgumentException("Jacobian determinant is negative or under the allowed tolerance"
+            //        + $" ({DirectDeterminant} < {determinantTolerance}). Check the order of nodes or the element geometry.");
+            //}
         }
 
         /// <summary>

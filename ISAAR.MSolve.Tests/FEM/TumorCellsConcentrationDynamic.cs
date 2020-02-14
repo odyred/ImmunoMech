@@ -12,6 +12,7 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers.Direct;
 using Xunit;
+using System.IO;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -44,10 +45,34 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static Model CreateModel()
         {
-            Model model = new Model();
-            string filename = "..\\..\\..\\InputFiles\\Cantilever2D.txt";
-            ComsolMeshReader modelReader = new ComsolMeshReader(model, filename);
-            modelReader.CreateModelFromFile();
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
+            ComsolMeshReader modelReader = new ComsolMeshReader(filename);
+            Model model = modelReader.CreateModelFromFile();
+            int[] boundaryIDs = new int[] { 0, 1, 2 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.Loads.Add(new Load() { DOF = ThermalDof.Temperature, Amount = 100, Node = node });
+                }
+            }
+            boundaryIDs = new int[] { 7, 8, 9 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
+                }
+            }
+            boundaryIDs = new int[]{3,4,6};
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
+                }
+            }
+
             return model;
         }
 
@@ -57,7 +82,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemThermal(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, 0.5, 1000);
+            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, 86400, 30*86400);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

@@ -16,7 +16,7 @@ namespace ISAAR.MSolve.FEM.Interpolation.Jacobians
     /// </summary>
     public class IsoparametricJacobian3D
     {
-        private const double determinantTolerance = 1E-8;
+        private const double determinantTolerance = 1E-15;
 
         /// <summary>
         /// The caller (usually the interpolation class) assumes responsibility for matching the nodes to the shape function 

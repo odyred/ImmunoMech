@@ -62,7 +62,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix MassMatrix(IElement element)
         {
-            return BuildCapacityMatrix();
+            return BuildCapacityMatrix() + BuildConvectionMatrix();
         }
 
         public Matrix BuildCapacityMatrix()
@@ -86,6 +86,28 @@ namespace ISAAR.MSolve.FEM.Elements
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
             capacity.ScaleIntoThis(Thickness * material.Density * material.SpecialHeatCoeff);
             return capacity;
+        }
+        public Matrix BuildConvectionMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var convection = Matrix.CreateZero(numDofs, numDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.Transpose() * shapeFunctionMatrix;
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                convection.AxpyIntoThis(partial, dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            convection.ScaleIntoThis(material.ThermalConvection);
+            return convection;
         }
 
         public Matrix BuildConductivityMatrix()

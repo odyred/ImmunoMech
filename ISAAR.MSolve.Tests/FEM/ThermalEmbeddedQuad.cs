@@ -54,6 +54,7 @@ namespace ISAAR.MSolve.Tests.FEM
             // Material
             double density = 1.0;
             double c = 1.0;
+            double h = 0;
 
             // Generate mesh
             var meshGenerator = new UniformMeshGenerator2D<Node>(minX, minY, maxX, maxY, numElementsX, numElementsY);
@@ -64,7 +65,7 @@ namespace ISAAR.MSolve.Tests.FEM
             for (int n = 0; n < vertices.Count; ++n) model.NodesDictionary.Add(n, vertices[n]);
 
             // Add the elements to the model
-            var elementFactory = new ThermalElement2DFactory(1.0, new ThermalMaterial(density, c, conductivityMatrix));
+            var elementFactory = new ThermalElement2DFactory(1.0, new ThermalMaterial(density, c, conductivityMatrix, h));
             for (int e = 0; e < cells.Count; ++e)
             {
                 ThermalElement2D element = elementFactory.CreateElement(cells[e].CellType, cells[e].Vertices);
@@ -80,8 +81,9 @@ namespace ISAAR.MSolve.Tests.FEM
             // Material
             double density = 1.0;
             double c = 1.0;
+            double h = 1.0;
             double crossSectionArea = 0.1;
-            var embeddedMaterial = new ThermalMaterial(density, c, conductivityFiber);
+            var embeddedMaterial = new ThermalMaterial(density, c, conductivityFiber, h);
 
             // Nodes
             int numNonEmbeddedNodes = model.NodesDictionary.Count;

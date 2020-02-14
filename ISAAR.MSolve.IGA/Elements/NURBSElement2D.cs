@@ -303,7 +303,6 @@ namespace ISAAR.MSolve.IGA.Problems.Structural.Elements
 				surfaceBasisVector2[2] = jacobianMatrix[1, 2];
 
 				Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-
 				double jacdet = jacobianMatrix[0, 0] * jacobianMatrix[1, 1]
 				                - jacobianMatrix[1, 0] * jacobianMatrix[0, 1];
 

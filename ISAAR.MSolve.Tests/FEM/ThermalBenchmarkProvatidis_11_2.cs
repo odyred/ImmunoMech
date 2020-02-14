@@ -51,6 +51,7 @@ namespace ISAAR.MSolve.Tests.FEM
             double density = 1.0;
             double k = 1.0;
             double c = 1.0;
+            double h = 0;
 
             // Nodes
             int numNodes = 9;
@@ -69,7 +70,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Elements
             int numElements = 4;
-            var elementFactory = new ThermalElement2DFactory(1.0, new ThermalMaterial(density, c, k));
+            var elementFactory = new ThermalElement2DFactory(1.0, new ThermalMaterial(density, c, k, h));
             var elements = new ThermalElement2D[4];
             elements[0] = elementFactory.CreateElement(CellType.Quad4, new Node[] { nodes[0], nodes[1], nodes[4], nodes[3] });
             elements[1] = elementFactory.CreateElement(CellType.Quad4, new Node[] { nodes[1], nodes[2], nodes[5], nodes[4] });

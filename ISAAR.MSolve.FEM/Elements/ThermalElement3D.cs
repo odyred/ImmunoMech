@@ -78,10 +78,32 @@ namespace ISAAR.MSolve.FEM.Elements
             capacity.Scale(material.Density * material.SpecialHeatCoeff);
             return capacity;
         }
+        public Matrix BuildConvectionMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var convection = Matrix.CreateZero(numDofs, numDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.Transpose() * shapeFunctionMatrix;
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                convection.AxpyIntoThis(partial, dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            convection.Scale(material.ThermalConvection);
+            return convection;
+        }
 
         public IMatrix StiffnessMatrix(IElement element)
         {
-            return BuildConductivityMatrix();
+            return BuildConductivityMatrix() + BuildConvectionMatrix();
         }
 
         public Matrix BuildConductivityMatrix()

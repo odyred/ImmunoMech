@@ -44,6 +44,7 @@
 
   <ItemGroup>
     <Folder Include="Analyzers\" />
+    <Folder Include="InputFiles\TumorGrowthModel\" />
     <Folder Include="Logging\" />
     <Folder Include="MaterialsTest\" />
     <Folder Include="Problems\" />
@@ -57,6 +58,9 @@
   </ItemGroup>
   
   <ItemGroup>
+    <None Update="InputFiles\TumorGrowthModel\mesh.mphtxt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

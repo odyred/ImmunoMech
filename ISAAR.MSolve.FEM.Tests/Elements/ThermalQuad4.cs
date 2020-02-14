@@ -12,6 +12,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
     {
         private static double thickness = 1.0;
         private static double thermalConductivity = 1.0;
+        private static double thermalConvection = 1.0;
         private static double density = 1.0;
         private static double specialHeatCoeff = 1.0;
 
@@ -29,7 +30,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
         [Fact]
         private static void TestCapacity()
         {
-            var factory = new ThermalElement2DFactory(thickness, new ThermalMaterial(density, specialHeatCoeff, thermalConductivity));
+            var factory = new ThermalElement2DFactory(thickness, new ThermalMaterial(density, specialHeatCoeff, thermalConductivity, thermalConvection));
             ThermalElement2D element = factory.CreateElement(CellType.Quad4, nodeSet0);
             IMatrix M = element.BuildCapacityMatrix();
 
@@ -48,7 +49,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
        [Fact]
         private static void TestConductivity()
         {
-            var factory = new ThermalElement2DFactory(thickness, new ThermalMaterial(density, specialHeatCoeff, thermalConductivity));
+            var factory = new ThermalElement2DFactory(thickness, new ThermalMaterial(density, specialHeatCoeff, thermalConductivity, thermalConvection));
             ThermalElement2D element = factory.CreateElement(CellType.Quad4, nodeSet0);
             IMatrix K = element.BuildConductivityMatrix();
 
