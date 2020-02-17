@@ -52,7 +52,7 @@ namespace ISAAR.MSolve.FEM.Readers
             double k = 1.0;
             double h = 1.0;
             var elementFactory3D = new ThermalElement3DFactory(new ThermalMaterial(density, c, k, h));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ThermalMaterial(density, 0, 0, h));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ThermalMaterial(density, c, k, h));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material

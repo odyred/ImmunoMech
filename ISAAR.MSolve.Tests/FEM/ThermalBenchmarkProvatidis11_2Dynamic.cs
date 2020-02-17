@@ -92,7 +92,7 @@ namespace ISAAR.MSolve.Tests.FEM
             model.NodesDictionary[6].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100.0 });
 
             // Neumann BC
-            double q = 50.0;
+            double q = 0.0;
             model.Loads.Add(new Load() { Amount = q / 2.0, Node = model.NodesDictionary[2], DOF = ThermalDof.Temperature });
             model.Loads.Add(new Load() { Amount = q, Node = model.NodesDictionary[5], DOF = ThermalDof.Temperature });
             model.Loads.Add(new Load() { Amount = q / 2.0, Node = model.NodesDictionary[8], DOF = ThermalDof.Temperature });

@@ -16,7 +16,7 @@ using System.IO;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class TumorCellsConcentrationDynamic
+    public class TumorCellsConcentrationStatic
     {
         private const int subdomainID = 0;
 
@@ -48,18 +48,14 @@ namespace ISAAR.MSolve.Tests.FEM
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
             ComsolMeshReader modelReader = new ComsolMeshReader(filename);
             Model model = modelReader.CreateModelFromFile();
-            foreach (Node node in modelReader.nodeBoundaries[0])
-                {
-                    model.Loads.Add(new Load() { DOF = ThermalDof.Temperature, Amount = 1, Node = node });
-                }
-                foreach (Node node in modelReader.nodeBoundaries[1])
-                {
-                    model.Loads.Add(new Load() { DOF = ThermalDof.Temperature, Amount = 1.065, Node = node });
-                }
-                foreach (Node node in modelReader.nodeBoundaries[2])
-                {
-                    model.Loads.Add(new Load() { DOF = ThermalDof.Temperature, Amount = 1.166, Node = node });
-                }
+            //int[] boundaryIDs = new int[] { 0, 1, 2 };
+            //foreach (int boundaryID in boundaryIDs)
+            //{
+            //    foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+            //    {
+            //        model.Loads.Add(new Load() { DOF = ThermalDof.Temperature, Amount = 100, Node = node });
+            //    }
+            //}
             int[] boundaryIDs = new int[] { 7, 8, 9 };
             foreach (int boundaryID in boundaryIDs)
             {
@@ -68,7 +64,7 @@ namespace ISAAR.MSolve.Tests.FEM
                     model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
             }
-            boundaryIDs = new int[]{3,4,6};
+            boundaryIDs = new int[] { 3, 4, 6 };
             foreach (int boundaryID in boundaryIDs)
             {
                 foreach (Node node in modelReader.nodeBoundaries[boundaryID])
@@ -86,7 +82,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemThermal(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, .5, 100);
+            var parentAnalyzer = new StaticAnalyzer(model, solver, provider, childAnalyzer);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

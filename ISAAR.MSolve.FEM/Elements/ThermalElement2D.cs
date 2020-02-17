@@ -100,7 +100,7 @@ namespace ISAAR.MSolve.FEM.Elements
             {
                 Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 Matrix partial = shapeFunctionMatrix.Transpose() * shapeFunctionMatrix;
-                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                var jacobian = new IsoparametricJacobian2D(Nodes, shapeGradientsNatural[gp]);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
                 convection.AxpyIntoThis(partial, dA);
             }
