@@ -1,5 +1,6 @@
 ﻿using ISAAR.MSolve.Analyzers;
 using ISAAR.MSolve.Discretization.Interfaces;
+using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
@@ -32,7 +33,7 @@ namespace ISAAR.MSolve.Problems
             //times.Add("addition", TimeSpan.Zero);
 
             var subdomainEquivalentForces = Vector.CreateZero(subdomain.FreeDofOrdering.NumFreeDofs);
-            foreach (IConvectionDiffusionBoundaryElement element in subdomain.Elements.Where(x=>x is IConvectionDiffusionBoundaryElement)) //TODO: why go through all the elements? Most of them will not have Dirichlet bc.
+            foreach (IElement element in subdomain.Elements.Where(x=>x is IConvectionDiffusionBoundaryElement)) //TODO: why go through all the elements? Most of them will not have Dirichlet bc.
             {
                 //var elStart = DateTime.Now;
                 IMatrix elementK = elementProvider.Matrix(element);

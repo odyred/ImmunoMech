@@ -58,13 +58,13 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         public bool MaterialModified => throw new NotImplementedException();
 
         public IElementDofEnumerator DofEnumerator { get; set; } = new GenericDofEnumerator();
-        int IElement.ID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        //int IElement.ID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public IElementType ElementType => throw new NotImplementedException();
+        //public IElementType ElementType => throw new NotImplementedException();
 
-        IReadOnlyList<INode> IElement.Nodes => throw new NotImplementedException();
+        //IReadOnlyList<INode> IElement.Nodes => throw new NotImplementedException();
 
-        public ISubdomain Subdomain => throw new NotImplementedException();
+        //public ISubdomain Subdomain => throw new NotImplementedException();
 
         public IMatrix MassMatrix(IElement element)
         {
@@ -357,28 +357,23 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             throw new NotImplementedException();
         }
 
-        public IMatrix StiffnessMatrix(IConvectionDiffusionBoundaryElement element)
+        public IMatrix StiffnessMatrix(IElement element)
         {
-            return BuildDiffusionMatrix();
-        }
-
-        public IMatrix RHSFLuxMatrix(IConvectionDiffusionBoundaryElement element)
-        {
-            return BuildRHSFluxMatrix();
-        }
-        public IMatrix RHSPrescribedMatrix(IConvectionDiffusionBoundaryElement element)
-        {
-            return BuildRHSPrescribedMatrix();
-        }
-
-        public IMatrix DampingMatrix(IConvectionDiffusionBoundaryElement element)
-        {
-            throw new NotImplementedException();
+            return BuildDiffusionMatrix();//D*u
         }
 
         public IMatrix RHSFLuxMatrix(IElement element)
         {
-            return BuildRHSFluxMatrix();
+            return BuildRHSFluxMatrix();//F*flux
+        }
+        public IMatrix RHSPrescribedMatrix(IElement element)
+        {
+            return BuildRHSPrescribedMatrix();//P*u0
+        }
+
+        public IMatrix DampingMatrix(IElement element)
+        {
+            throw new NotImplementedException();
         }
     }
 }

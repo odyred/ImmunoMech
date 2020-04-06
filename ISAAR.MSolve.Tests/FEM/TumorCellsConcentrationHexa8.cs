@@ -15,6 +15,9 @@ using ISAAR.MSolve.Solvers.Direct;
 using Xunit;
 using System.IO;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
+using ISAAR.MSolve.FEM.Loading.SurfaceLoads;
+using static ISAAR.MSolve.FEM.Loading.SurfaceLoads.WeakDirichlet;
+using ISAAR.MSolve.FEM.Loading;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -152,6 +155,15 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             model.SubdomainsDictionary[0].Elements.Add(element);
             model.ElementsDictionary.Add(0, element);
+            
+            var flux = new FluxLoad(1265525);
+            var dir = new DirichletDistribution(list=> {
+                return Vector.CreateWithValue(list.Count, 12);
+            });
+            var weakDirichlet = new WeakDirichlet(dir);
+
+            var dirichletFactory = new SurfaceLoadElementFactory(weakDirichlet);
+            var fluxFactory= new SurfaceLoadElementFactory(weakDirichlet);
             foreach (int i in new int[] { 1,})
             {
                 var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
@@ -164,6 +176,12 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
                 model.SubdomainsDictionary[0].Elements.Add(faceElement);
                 model.ElementsDictionary.Add(i, faceElement);
+
+                var dirichletElement=dirichletFactory.CreateElement(CellType.Quad4, face[i - 1]);
+                var fluxElement = fluxFactory.CreateElement(CellType.Quad4, face[i - 1]);
+
+                model.SurfaceLoads.Add(dirichletElement);
+                model.SurfaceLoads.Add(fluxElement);
             }
             //constraints
             foreach (int i in new int[] { 4, 5, 6, 7 })
@@ -191,6 +209,8 @@ namespace ISAAR.MSolve.Tests.FEM
 
             return model;
         }
+
+
 
         private static IVectorView SolveModel(Model model)
         {
