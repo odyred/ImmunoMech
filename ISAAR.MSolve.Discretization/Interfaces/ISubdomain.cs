@@ -30,7 +30,6 @@ namespace ISAAR.MSolve.Discretization.Interfaces
         IReadOnlyList<INode> Nodes { get; } //TODO: perhaps this should be a set
 
         double[] CalculateElementIncrementalConstraintDisplacements(IElement element, double constraintScalingFactor); //TODO: this should be done by a dedicated class instead of the subdomain
-
         void ClearMaterialStresses();
 
         IVector GetRhsFromSolution(IVectorView solution, IVectorView dSolution); //TODO: this should be done by a dedicated class instead of the subdomain

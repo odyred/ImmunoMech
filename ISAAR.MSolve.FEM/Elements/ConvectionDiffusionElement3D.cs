@@ -16,13 +16,13 @@ using ISAAR.MSolve.Materials;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
-    public class ThermalElement3D : IFiniteElement, ICell<Node>
+    public class ConvectionDiffusionElement3D : IFiniteElement, ICell<Node>
     {
         private readonly static IDofType[] nodalDOFTypes = new IDofType[] { ThermalDof.Temperature };
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
         private readonly ThermalMaterial material;
 
-        public ThermalElement3D(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
+        public ConvectionDiffusionElement3D(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
         IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
         IGaussPointExtrapolation3D gaussPointExtrapolation, ThermalMaterial material)
         {
@@ -55,11 +55,6 @@ namespace ISAAR.MSolve.FEM.Elements
         public IMatrix MassMatrix(IElement element)
         {
             return BuildCapacityMatrix();
-        }
-
-        public IMatrix StiffnessMatrix(IElement element)
-        {
-            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() + BuildStabilizingConductivityMatrix();
         }
 
         public Matrix BuildCapacityMatrix()
@@ -146,6 +141,12 @@ namespace ISAAR.MSolve.FEM.Elements
             convection.Scale(-Math.Pow(material.ThermalConvection, 2));
             return convection;
         }
+
+        public IMatrix StiffnessMatrix(IElement element)
+        {
+            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() + BuildStabilizingConductivityMatrix();
+        }
+
         public Matrix BuildDiffusionConductivityMatrix()
         {
             int numDofs = Nodes.Count;
