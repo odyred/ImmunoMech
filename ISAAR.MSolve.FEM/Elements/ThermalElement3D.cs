@@ -92,12 +92,6 @@ namespace ISAAR.MSolve.FEM.Elements
                 Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
             IReadOnlyList<Matrix> shapeGradientsNatural =
                 Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
-            double[,] first = new double[,] { { 1, 0, 0 } };
-            double[,] second = new double[,] { { 0, 1, 0 } };
-            double[,] third = new double[,] { { 0, 0, 1 } };
-            var xComponent = Matrix.CreateFromArray(first);
-            var yComponent = Matrix.CreateFromArray(second);
-            var zComponent = Matrix.CreateFromArray(third);
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
@@ -168,11 +162,11 @@ namespace ISAAR.MSolve.FEM.Elements
                 //partialK.Scale(materialsAtGaussPoints[gaussPoint].ThermalConductivity);
 
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight; //TODO: this is used by all methods that integrate. I should cache it.
-                conductivity.AxpyIntoThis(partialK, dA * material.ThermalConductivity);
+                conductivity.AxpyIntoThis(partialK, dA);
                 //conductivity.AxpyIntoThis(partialK, dA * 1);
             }
 
-            conductivity.Scale(1);
+            conductivity.Scale(material.ThermalConductivity);
             return conductivity;
         }
 

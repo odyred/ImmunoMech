@@ -52,27 +52,41 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                     jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * nodes[k].Y;
                     jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * nodes[k].Z;
                 }
+                Vector tangentVector1 = jacobianMatrix.GetRow(0);
+                Vector tangentVector2 = jacobianMatrix.GetRow(1);
+                Vector normalVector = tangentVector1.CrossProduct(tangentVector2);
+                var jacdet = normalVector.Norm2(); 
+                normalVector.ScaleIntoThis(1/jacdet);
+                Matrix jacobianMatrixLeftInverse = jacobianMatrix.Transpose() *
+                    (jacobianMatrix * jacobianMatrix.Transpose()).Invert();
+                Matrix shapeGradientsCartesian = (shapeGradientsNatural[gp]) * jacobianMatrixLeftInverse.Transpose();
+                Matrix deformation = shapeGradientsCartesian.Transpose();
+                Vector deformationNormal = normalVector * deformation;
+                //Vector deformationX = deformation.GetRow(0);
+                //Vector deformationY = deformation.GetRow(1);
+                //Vector deformationZ = deformation.GetRow(2);
                 Matrix partial = 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                //Matrix partial = deformationNormal.TensorProduct(shapeFunctionMatrix);
 
-                Vector surfaceBasisVector1 = Vector.CreateZero(3);
-                surfaceBasisVector1[0] = jacobianMatrix[0, 0];
-                surfaceBasisVector1[1] = jacobianMatrix[0, 1];
-                surfaceBasisVector1[2] = jacobianMatrix[0, 2];
+                //Vector surfaceBasisVector1 = Vector.CreateZero(3);
+                //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
+                //surfaceBasisVector1[1] = jacobianMatrix[0, 1];
+                //surfaceBasisVector1[2] = jacobianMatrix[0, 2];
 
-                Vector surfaceBasisVector2 = Vector.CreateZero(3);
-                surfaceBasisVector2[0] = jacobianMatrix[1, 0];
-                surfaceBasisVector2[1] = jacobianMatrix[1, 1];
-                surfaceBasisVector2[2] = jacobianMatrix[1, 2];
+                //Vector surfaceBasisVector2 = Vector.CreateZero(3);
+                //surfaceBasisVector2[0] = jacobianMatrix[1, 0];
+                //surfaceBasisVector2[1] = jacobianMatrix[1, 1];
+                //surfaceBasisVector2[2] = jacobianMatrix[1, 2];
 
-                Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-                var jacdet = surfaceBasisVector3.Norm2();
+                //Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
+                //var jacdet = surfaceBasisVector3.Norm2();
 
                 double dA = jacdet * integration.IntegrationPoints[gp].Weight;
                 stiffness.AxpyIntoThis(partial, dA);
             }
             //var appliedDisplacements=Vector.CreateWithValue(nodes.Count, _magnitude);
             var appliedDisplacements = _distribution(nodes);
-            var weakDirichletForces= stiffness * appliedDisplacements;
+            var weakDirichletForces = stiffness * appliedDisplacements;
 
             var table = new Table<INode, IDofType, double>();
             for (int i = 0; i < nodes.Count; i++)
@@ -82,4 +96,5 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
             return table;
         }
     }
+
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+//using CSparse.Complex;
 using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.Discretization.Integration.Quadratures;
@@ -14,6 +15,7 @@ using ISAAR.MSolve.FEM.Interpolation.Inverse;
 using ISAAR.MSolve.FEM.Interpolation.Jacobians;
 using ISAAR.MSolve.Geometry.Coordinates;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Materials;
 
 //TODO: Is there any point in having different material properties per Gauss point?
@@ -62,7 +64,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix MassMatrix(IElement element)
         {
-            return BuildCapacityMatrix() + BuildConvectionMatrix();
+            return BuildCapacityMatrix() + BuildMassTransportConductivityMatrix();
         }
 
         public Matrix BuildCapacityMatrix()
@@ -76,8 +78,8 @@ namespace ISAAR.MSolve.FEM.Elements
 
             for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
             {
-                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
-                Matrix partial = shapeFunctionMatrix.Transpose() * shapeFunctionMatrix;
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
                 var jacobian = new IsoparametricJacobian2D(Nodes, shapeGradientsNatural[gp]);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
                 capacity.AxpyIntoThis(partial, dA);
@@ -87,7 +89,7 @@ namespace ISAAR.MSolve.FEM.Elements
             capacity.ScaleIntoThis(Thickness * material.Density * material.SpecialHeatCoeff);
             return capacity;
         }
-        public Matrix BuildConvectionMatrix()
+        public Matrix BuildMassTransportConductivityMatrix()
         {
             int numDofs = Nodes.Count;
             var convection = Matrix.CreateZero(numDofs, numDofs);
@@ -98,9 +100,16 @@ namespace ISAAR.MSolve.FEM.Elements
 
             for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
             {
-                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
-                Matrix partial = shapeFunctionMatrix.Transpose() * shapeFunctionMatrix;
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 var jacobian = new IsoparametricJacobian2D(Nodes, shapeGradientsNatural[gp]);
+                Matrix shapeGradientsCartesian =
+                jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
+                Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
+                Vector deformationX = deformation.GetRow(0);
+                Vector deformationY = deformation.GetRow(1);
+                //Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = shapeFunctionMatrix.TensorProduct(deformationX) +
+                    shapeFunctionMatrix.TensorProduct(deformationY);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
                 convection.AxpyIntoThis(partial, dA);
             }
@@ -110,7 +119,36 @@ namespace ISAAR.MSolve.FEM.Elements
             return convection;
         }
 
-        public Matrix BuildConductivityMatrix()
+        public Matrix BuildStabilizingConductivityMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var convection = Matrix.CreateZero(numDofs, numDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                var jacobian = new IsoparametricJacobian2D(Nodes, shapeGradientsNatural[gp]);
+                Matrix shapeGradientsCartesian =
+                jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
+                Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
+                Vector deformationX = deformation.GetRow(0);
+                Vector deformationY = deformation.GetRow(1);
+                //Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = deformationX.TensorProduct(deformationY);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                convection.AxpyIntoThis(partial, dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            convection.ScaleIntoThis(-Math.Pow(material.ThermalConvection, 2));
+            return convection;
+        }
+
+        public Matrix BuildDiffusionConductivityMatrix()
         {
             int numDofs = Nodes.Count;
             var conductivity = Matrix.CreateZero(numDofs, numDofs);
@@ -168,7 +206,7 @@ namespace ISAAR.MSolve.FEM.Elements
         /// <summary>
         /// The shape function matrix is 1-by-n, where n = is the number of shape functions.
         /// </summary>
-        public Matrix BuildShapeFunctionMatrix(double[] shapeFunctions) //TODO: reconsider this. As it is, it just returns the shape functions in a Matrix
+        public Vector BuildShapeFunctionMatrix(double[] shapeFunctions) //TODO: reconsider this. As it is, it just returns the shape functions in a Matrix
         {
             //var array2D = new double[1, shapeFunctions.Length];
             //for (int i = 0; i < shapeFunctions.Length; ++i)
@@ -176,7 +214,7 @@ namespace ISAAR.MSolve.FEM.Elements
             //    array2D[0, i] = shapeFunctions[i];
             //}
             //return Matrix.CreateFromArray(array2D);
-            return Matrix.CreateFromArray(shapeFunctions, 1, shapeFunctions.Length);
+            return Vector.CreateFromArray(shapeFunctions);
         }
 
         public IReadOnlyList<IReadOnlyList<IDofType>> GetElementDofTypes(IElement element) => dofTypes;
@@ -223,7 +261,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix StiffnessMatrix(IElement element)
         {
-            return BuildConductivityMatrix();
+            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() + BuildStabilizingConductivityMatrix();
         }
 
         public IMatrix DampingMatrix(IElement element)

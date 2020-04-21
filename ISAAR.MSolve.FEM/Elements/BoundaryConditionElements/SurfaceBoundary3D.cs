@@ -107,39 +107,47 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
-                Matrix jacobian = Matrix.CreateZero(2, 2);
+                //Matrix jacobian = Matrix.CreateZero(2, 2);
                 for (int k = 0; k < this.Nodes.Count; k++)
                 {
                     jacobianMatrix[0, 0] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].X;
                     jacobianMatrix[0, 1] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Y;
-                    jacobian[0, 0] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].X;
-                    jacobian[0, 1] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Y;
+                    //jacobian[0, 0] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].X;
+                    //jacobian[0, 1] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Y;
                     jacobianMatrix[0, 2] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Z;
                     jacobianMatrix[1, 0] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].X;
                     jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
-                    jacobian[1, 0] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].X;
-                    jacobian[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
+                    //jacobian[1, 0] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].X;
+                    //jacobian[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
                     jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Z;
                 }
-                Matrix shapeGradientsCartesian = (shapeGradientsNatural[gp]) * jacobian.Invert();
+                Matrix jacobianMatrixLeftInverse = jacobianMatrix.Transpose() * (jacobianMatrix * jacobianMatrix.Transpose()).Invert();
+                //jacobian = jacobianMatrix * jacobianMatrix.Transpose();
+                //jacobian.ScaleIntoThis(20);
+                //var jacinv = jacobian.Invert();
+                Vector tangentVector1 = jacobianMatrix.GetRow(0);
+                Vector tangentVector2 = jacobianMatrix.GetRow(1);
+                Vector normalVector = tangentVector1.CrossProduct(tangentVector2);
+                var jacdet = normalVector.Norm2();
+                normalVector.ScaleIntoThis(1 / jacdet);
+                //Matrix shapeGradientsCartesian1 = (shapeGradientsNatural[gp]) * jacobian.Invert();
+                Matrix shapeGradientsCartesian = (shapeGradientsNatural[gp]) * jacobianMatrixLeftInverse.Transpose();
                 Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
-                Vector deformationX = deformation.GetRow(0);
-                Vector deformationY = deformation.GetRow(1);
-                Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationX) +
-                    shapeFunctionMatrix.TensorProduct(deformationY) + 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix));
+                Vector deformationNormal = normalVector * deformation;
+                Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationNormal))
+                    + 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
-                Vector surfaceBasisVector1 = Vector.CreateZero(3);
-                surfaceBasisVector1[0] = jacobianMatrix[0, 0];
-                surfaceBasisVector1[1] = jacobianMatrix[0, 1];
-                surfaceBasisVector1[2] = jacobianMatrix[0, 2];
+                //Vector surfaceBasisVector1 = Vector.CreateZero(3);
+                //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
+                //surfaceBasisVector1[1] = jacobianMatrix[0, 1];
+                //surfaceBasisVector1[2] = jacobianMatrix[0, 2];
 
-                Vector surfaceBasisVector2 = Vector.CreateZero(3);
-                surfaceBasisVector2[0] = jacobianMatrix[1, 0];
-                surfaceBasisVector2[1] = jacobianMatrix[1, 1];
-                surfaceBasisVector2[2] = jacobianMatrix[1, 2];
+                //Vector surfaceBasisVector2 = Vector.CreateZero(3);
+                //surfaceBasisVector2[0] = jacobianMatrix[1, 0];
+                //surfaceBasisVector2[1] = jacobianMatrix[1, 1];
+                //surfaceBasisVector2[2] = jacobianMatrix[1, 2];
 
-                Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-                var jacdet = surfaceBasisVector3.Norm2();
+                //Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
 
                 double dA = jacdet * QuadratureForStiffness.IntegrationPoints[gp].Weight;
                 stiffness.AxpyIntoThis(partial, dA);
@@ -224,7 +232,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                     jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
                     jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Z;
                 }
-                Matrix partial = 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = 10 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
                 Vector surfaceBasisVector1 = Vector.CreateZero(3);
                 surfaceBasisVector1[0] = jacobianMatrix[0, 0];
@@ -292,11 +300,12 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         private Matrix BuildDeformationMatrix(Matrix shapeGradientsCartesian)
         {
             //TODO: isn't this just the transpose of [dNi/dxj]?
-            var deformation = Matrix.CreateZero(2, Nodes.Count);
+            var deformation = Matrix.CreateZero(3, Nodes.Count);
             for (int nodeIdx = 0; nodeIdx < Nodes.Count; ++nodeIdx)
             {
                 deformation[0, nodeIdx] = shapeGradientsCartesian[nodeIdx, 0];
                 deformation[1, nodeIdx] = shapeGradientsCartesian[nodeIdx, 1];
+                deformation[2, nodeIdx] = shapeGradientsCartesian[nodeIdx, 2];
             }
             return deformation;
         }

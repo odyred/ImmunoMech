@@ -52,7 +52,7 @@ namespace ISAAR.MSolve.Tests.FEM
             double density = 1.0;
             double k = 1.0;
             double c = 1.0;
-            double h = 0;
+            double h = 1.0;
 
             // Nodes
             int numNodes = 9;

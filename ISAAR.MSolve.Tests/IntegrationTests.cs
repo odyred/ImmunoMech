@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using ISAAR.MSolve.Analyzers;
+using ISAAR.MSolve.Analyzers.Dynamic;
 using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.FEM;
@@ -462,6 +463,7 @@ namespace ISAAR.MSolve.Tests
             var provider = new ProblemStructural(trussModel, solver);
             var childAnalyzer = new LinearAnalyzer(trussModel, solver, provider);
             var parentAnalyzer = new StaticAnalyzer(trussModel, solver, provider, childAnalyzer);
+            //var parentAnalyzer = new NewmarkDynamicAnalyzer(trussModel,solver,provider,childAnalyzer,0.5,2,.5,.5);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

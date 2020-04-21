@@ -19,7 +19,7 @@ namespace ISAAR.MSolve.Problems
 {
     public class ProblemConvectionDiffusion : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
     {
-        private Dictionary<int, IMatrix> capacity, conductivityFreeFree;
+        private Dictionary<int, IMatrix> capacity, conductivityFreeFree, stabilizingConductivity;
         private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr;
         private readonly Model model;
         private readonly ISolver solver;
@@ -27,6 +27,7 @@ namespace ISAAR.MSolve.Problems
         private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
         private ElementConvectionDiffusionEquivalentRhsPrescibedProvider rhsPrescibedProvider = new ElementConvectionDiffusionEquivalentRhsPrescibedProvider();
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
+        private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
 
         public ProblemConvectionDiffusion(Model model, ISolver solver)
         {
@@ -54,6 +55,15 @@ namespace ISAAR.MSolve.Problems
                 if (conductivityFreeFree == null) BuildConductivityFreeFree();
                 //else RebuildConductivityMatrices();
                 return conductivityFreeFree;
+            }
+        }
+
+        private IDictionary<int, IMatrix> StabilizingConductivity
+        {
+            get
+            {
+                if (capacity == null) BuildStabilizingConductivity();
+                return stabilizingConductivity;
             }
         }
 
@@ -97,6 +107,7 @@ namespace ISAAR.MSolve.Problems
         }
 
         private void BuildCapacity() => capacity = solver.BuildGlobalMatrices(capacityProvider);
+        private void BuildStabilizingConductivity() => stabilizingConductivity = solver.BuildGlobalMatrices(stabilizingConductivityProvider);
 
         #region IAnalyzerProvider Members
         public void ClearMatrices()
@@ -133,7 +144,7 @@ namespace ISAAR.MSolve.Problems
             // The effective matrix should not overwrite the conductivity matrix. 
             // In a dynamic analysis that is not purely implicit we need the conductivity matrix.
             int id = subdomain.ID;
-            return Conductivity[id].LinearCombination(coefficients.Stiffness, Capacity[id], coefficients.Mass);
+            return Capacity[id];
         }
 
         public void ProcessRhs(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain, IVector rhs)

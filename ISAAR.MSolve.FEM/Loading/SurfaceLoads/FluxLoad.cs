@@ -36,6 +36,8 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Vector shapeFunctionMatrix =Vector.CreateFromArray(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
+                Vector IV = Vector.CreateWithValue(nodes.Count, 1);
+                Matrix IM = Matrix.CreateIdentity(nodes.Count);
                 for (int k = 0; k < nodes.Count; k++)
                 {
                     //xGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].X;
@@ -48,20 +50,25 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                     jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * nodes[k].Y;
                     jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * nodes[k].Z;
                 }
-                Matrix partial = 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Vector tangentVector1 = jacobianMatrix.GetRow(0);
+                Vector tangentVector2 = jacobianMatrix.GetRow(1);
+                Vector normalVector = tangentVector1.CrossProduct(tangentVector2);
 
-                Vector surfaceBasisVector1 = Vector.CreateZero(3);
-                surfaceBasisVector1[0] = jacobianMatrix[0, 0];
-                surfaceBasisVector1[1] = jacobianMatrix[0, 1];
-                surfaceBasisVector1[2] = jacobianMatrix[0, 2];
+                Matrix partial = IV.TensorProduct(shapeFunctionMatrix) * IM;
 
-                Vector surfaceBasisVector2 = Vector.CreateZero(3);
-                surfaceBasisVector2[0] = jacobianMatrix[1, 0];
-                surfaceBasisVector2[1] = jacobianMatrix[1, 1];
-                surfaceBasisVector2[2] = jacobianMatrix[1, 2];
+                //Vector surfaceBasisVector1 = Vector.CreateZero(3);
+                //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
+                //surfaceBasisVector1[1] = jacobianMatrix[0, 1];
+                //surfaceBasisVector1[2] = jacobianMatrix[0, 2];
 
-                Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-                var jacdet = surfaceBasisVector3.Norm2();
+                //Vector surfaceBasisVector2 = Vector.CreateZero(3);
+                //surfaceBasisVector2[0] = jacobianMatrix[1, 0];
+                //surfaceBasisVector2[1] = jacobianMatrix[1, 1];
+                //surfaceBasisVector2[2] = jacobianMatrix[1, 2];
+
+                //Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
+                //var jacdet = surfaceBasisVector3.Norm2();
+                var jacdet = normalVector.Norm2();
 
                 double dA = jacdet * integration.IntegrationPoints[gp].Weight;
                 stiffness.AxpyIntoThis(partial, dA);

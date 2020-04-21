@@ -49,7 +49,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
         {
             var factory = new ThermalElement2DFactory(thickness, new ThermalMaterial(density, specialHeatCoeff, thermalConductivity, thermalConvection));
             ThermalElement2D element = factory.CreateElement(CellType.Tri3, nodeSet0);
-            IMatrix K = element.BuildConductivityMatrix();
+            IMatrix K = element.BuildDiffusionConductivityMatrix();
 
             var expectedK = Matrix.CreateFromArray(new double[,]
             {

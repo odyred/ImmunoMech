@@ -21,7 +21,7 @@ using ISAAR.MSolve.FEM.Loading;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class TumorCellsConcentrationHexa8
+    public class TumorCellsConcentration2Hexa8
     {
         private const int subdomainID = 0;
 
@@ -69,21 +69,28 @@ namespace ISAAR.MSolve.Tests.FEM
                 nodeBoundaries.Add(new List<Node>());
             }
 
-            double[,] nodeData = new double[,] { {0,0,0},
+            double[,] nodeData = new double[,] { 
+            {0,0,0},
             {1,0,0},
             {1,1,0},
             {0,1,0},
+            
             {0,0,1},
             {1,0,1},
             {1,1,1},
-            {0,1,1} };
+            {0,1,1},            
+            
+            {0,0,2},
+            {1,0,2},
+            {1,1,2},
+            {0,1,2} };
 
             for (int nNode = 0; nNode < nodeData.GetLength(0); nNode++)
             {
                 model.NodesDictionary.Add(nNode, new Node(id: nNode, x: nodeData[nNode, 0], y: nodeData[nNode, 1], z: nodeData[nNode, 2]));
 
             }
-            IReadOnlyList<Node> nodes = new List<Node>
+            IReadOnlyList<Node> nodes1 = new List<Node>
             {
                 model.NodesDictionary[0],
                 model.NodesDictionary[1],
@@ -93,6 +100,17 @@ namespace ISAAR.MSolve.Tests.FEM
                 model.NodesDictionary[5],
                 model.NodesDictionary[6],
                 model.NodesDictionary[7],
+            };
+            IReadOnlyList<Node> nodes2 = new List<Node>
+            {
+                model.NodesDictionary[4],
+                model.NodesDictionary[5],
+                model.NodesDictionary[6],
+                model.NodesDictionary[7],
+                model.NodesDictionary[8],
+                model.NodesDictionary[9],
+                model.NodesDictionary[10],
+                model.NodesDictionary[11],
             };
             IList<IReadOnlyList<Node>> face = new List<IReadOnlyList<Node>>();
             //face = new List<IReadOnlyList<Node>>();
@@ -110,52 +128,66 @@ namespace ISAAR.MSolve.Tests.FEM
             };
             face[1] = new List<Node>
             {
-                model.NodesDictionary[4],
-                model.NodesDictionary[5],
-                model.NodesDictionary[6],
-                model.NodesDictionary[7],
+                model.NodesDictionary[8],
+                model.NodesDictionary[9],
+                model.NodesDictionary[10],
+                model.NodesDictionary[11],
             };
             face[2] = new List<Node>
             {
                 model.NodesDictionary[0],
                 model.NodesDictionary[1],
-                model.NodesDictionary[5],
-                model.NodesDictionary[4],
+                model.NodesDictionary[9],
+                model.NodesDictionary[8],
             };
             face[3] = new List<Node>
             {
                 model.NodesDictionary[1],
                 model.NodesDictionary[2],
-                model.NodesDictionary[6],
-                model.NodesDictionary[5],
+                model.NodesDictionary[11],
+                model.NodesDictionary[10],
             };
             face[4] = new List<Node>
             {
                 model.NodesDictionary[2],
                 model.NodesDictionary[3],
-                model.NodesDictionary[7],
-                model.NodesDictionary[6],
+                model.NodesDictionary[11],
+                model.NodesDictionary[10],
             };
             face[5] = new List<Node>
             {
                 model.NodesDictionary[3],
                 model.NodesDictionary[0],
-                model.NodesDictionary[4],
-                model.NodesDictionary[7],
+                model.NodesDictionary[8],
+                model.NodesDictionary[11],
             };
-            int[] elementData = new int[] { 0, 1, 2, 3, 4, 5, 6, 7 };// the last line will not be used. We assign only one element
-
-            var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodes);
-            var element = new Element();
-            element.ID = 0;
-            element.ElementType = Hexa8;
-            for (int j = 0; j < 8; j++)
+            //first hexa8
+            int[] elementData_1 = new int[] { 0, 1, 2, 3, 4, 5, 6, 7 };// the last line will not be used. We assign only one element
+            var Hexa8_1 = elementFactory3D.CreateElement(CellType.Hexa8, nodes1);
+            var element_1 = new Element();
+            element_1.ID = 0;
+            element_1.ElementType = Hexa8_1;
+            for (int j = 0; nodes1.Count < 8; j++)
             {
-                element.NodesDictionary.Add(elementData[j], model.NodesDictionary[elementData[j]]);
+                element_1.NodesDictionary.Add(nodes1[j].ID, model.NodesDictionary[elementData_1[j]]);
             }
-            model.SubdomainsDictionary[0].Elements.Add(element);
-            model.ElementsDictionary.Add(0, element);
-            
+            model.SubdomainsDictionary[0].Elements.Add(element_1);
+            model.ElementsDictionary.Add(0, element_1);
+
+            //second hexa8
+            int[] elementData_2 = new int[] { 4, 5, 6, 7, 8, 9, 10, 11 };// the last line will not be used. We assign only one element
+            var Hexa8_2 = elementFactory3D.CreateElement(CellType.Hexa8, nodes2);
+            var element_2 = new Element();
+            element_2.ID = 0;
+            element_2.ElementType = Hexa8_2;
+            for (int j = 0; nodes1.Count < 8; j++)
+            {
+                element_2.NodesDictionary.Add(nodes2[j].ID, model.NodesDictionary[elementData_2[j]]);
+            }
+            model.SubdomainsDictionary[0].Elements.Add(element_2);
+            model.ElementsDictionary.Add(1, element_2);
+
+            //newmann and dirichlet load
             var flux = new FluxLoad(10);
             var dir1 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 0);
@@ -169,7 +201,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var fluxFactory = new SurfaceLoadElementFactory(flux);
-            foreach (int i in new int[] { 1 })
+            foreach (int i in new int[] { 2 })
             {
                 var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
                 var faceElement = new Element();
@@ -189,7 +221,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 //model.SurfaceLoads.Add(fluxElement);
             }
 
-            foreach (int i in new int[] { 2 })
+            foreach (int i in new int[] { 3 })
             {
                 var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
                 var faceElement = new Element();
