@@ -25,7 +25,6 @@ namespace ISAAR.MSolve.Problems
         private readonly ISolver solver;
         private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
         private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
-        private ElementConvectionDiffusionEquivalentRhsPrescibedProvider rhsPrescibedProvider = new ElementConvectionDiffusionEquivalentRhsPrescibedProvider();
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
         private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
 
@@ -34,7 +33,7 @@ namespace ISAAR.MSolve.Problems
             this.model = model;
             this.linearSystems = solver.LinearSystems;
             this.solver = solver;
-            this.DirichletLoadsAssembler = new DirichletEquivalentLoadsConvectionDiffusion(rhsPrescibedProvider);
+            this.DirichletLoadsAssembler = new DirichletEquivalentLoadsStructural(conductivityProvider);
         }
 
         public IDirichletEquivalentLoadsAssembler DirichletLoadsAssembler { get; }
@@ -62,7 +61,7 @@ namespace ISAAR.MSolve.Problems
         {
             get
             {
-                if (capacity == null) BuildStabilizingConductivity();
+                if (stabilizingConductivity == null) BuildStabilizingConductivity();
                 return stabilizingConductivity;
             }
         }
@@ -175,11 +174,11 @@ namespace ISAAR.MSolve.Problems
         }
 
         public IVector MassMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-            => this.Capacity[subdomain.ID].Multiply(vector);
+            => this.Conductivity[subdomain.ID].Multiply(vector);
 
         //TODO: Ok this is weird. These methods should be named Second/First/ZeroOrderCoefficientTimesVector()
         public IVector DampingMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-            => this.Conductivity[subdomain.ID].Multiply(vector);
+            => this.StabilizingConductivity[subdomain.ID].Multiply(vector);
 
         #endregion
 

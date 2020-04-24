@@ -25,9 +25,9 @@ namespace ISAAR.MSolve.FEM.Elements
         private static readonly IDofType[][] dofTypes = {
             new IDofType[] { ThermalDof.Temperature }, new IDofType[] { ThermalDof.Temperature } };
 
-        private readonly ThermalMaterial material;
+        private readonly ConvectionDiffusionMaterial material;
 
-        public ConvectionDiffusionRod(IReadOnlyList<Node> nodes, double crossSectionArea, ThermalMaterial material)
+        public ConvectionDiffusionRod(IReadOnlyList<Node> nodes, double crossSectionArea, ConvectionDiffusionMaterial material)
         {
             Debug.Assert(nodes.Count == 2, "Thermal rod element must have exactly 2 nodes.");
             this.material = material;
@@ -59,7 +59,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public Matrix BuildCapacityMatrix()
         {
-            double kdAL = material.SpecialHeatCoeff * material.Density * CrossSectionArea * Length;
+            double kdAL =  CrossSectionArea * Length;
             double[,] capacity = { { kdAL / 3.0, kdAL / 6.0 }, { kdAL / 6.0, kdAL / 3.0 } };
             return Matrix.CreateFromArray(capacity);
         }
@@ -67,22 +67,22 @@ namespace ISAAR.MSolve.FEM.Elements
         public Matrix BuildDiffusionConductivityMatrix()
         {
 
-            double cAoverL = material.ThermalConductivity * CrossSectionArea / Length;
+            double cAoverL = material.DiffusionCoeff * CrossSectionArea / Length;
             double[,] conductivity = { { cAoverL, -cAoverL }, { -cAoverL, cAoverL } };
             return Matrix.CreateFromArray(conductivity);
         }
         public Matrix BuildMassTransportConductivityMatrix()
         {
 
-            double conA = material.ThermalConvection * CrossSectionArea;
-            double[,] conductivity = { { -conA, -conA }, { -conA, conA } };
+            double conA = material.ConvectionCoeff * CrossSectionArea/2;
+            double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }
 
         public Matrix BuildStabilizingConductivityMatrix()
         {
 
-            double cAoverL = -.5 * Math.Pow(material.ThermalConvection,2) * CrossSectionArea / Length;
+            double cAoverL = -.5 * Math.Pow(material.ConvectionCoeff,2) * CrossSectionArea / Length;
             double[,] conductivity = { { cAoverL, -cAoverL }, { -cAoverL, cAoverL } };
             return Matrix.CreateFromArray(conductivity);
         }
@@ -131,12 +131,15 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix StiffnessMatrix(IElement element)
         {
+            var a = DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix());
             return DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix());
+            //return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix();
         }
 
         public IMatrix DampingMatrix(IElement element)
         {
             return DofEnumerator.GetTransformedMatrix(BuildStabilizingConductivityMatrix());
+            //return BuildStabilizingConductivityMatrix();
         }
 
         public Dictionary<IDofType, int> GetInternalNodalDOFs(Element element, Node node)

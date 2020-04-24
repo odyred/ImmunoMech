@@ -64,7 +64,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix MassMatrix(IElement element)
         {
-            return BuildCapacityMatrix() + BuildMassTransportConductivityMatrix();
+            return BuildCapacityMatrix();
         }
 
         public Matrix BuildCapacityMatrix()
@@ -261,12 +261,12 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix StiffnessMatrix(IElement element)
         {
-            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() + BuildStabilizingConductivityMatrix();
+            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix();
         }
 
         public IMatrix DampingMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return BuildStabilizingConductivityMatrix();
         }
 
         public EmbeddedNode BuildHostElementEmbeddedNode(Element element, Node node, IEmbeddedDOFInHostTransformationVector transformationVector)

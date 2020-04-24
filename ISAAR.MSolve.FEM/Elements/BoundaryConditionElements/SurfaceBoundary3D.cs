@@ -104,6 +104,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
+                double kappa = material.ThermalConductivity / material.ThermalConvection;
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
@@ -135,7 +136,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
                 Vector deformationNormal = normalVector * deformation;
                 Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationNormal))
-                    + 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                    + kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);
                 //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
