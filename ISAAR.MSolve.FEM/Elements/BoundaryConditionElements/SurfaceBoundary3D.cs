@@ -21,14 +21,14 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
     public class SurfaceBoundary3D : IConvectionDiffusionBoundaryElement,  ICell<Node>
     {
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
-        private readonly ThermalMaterial material;
+        private readonly ConvectionDiffusionMaterial material;
         //private readonly Dictionary<GaussPoint, ThermalMaterial> materialsAtGaussPoints;
 
 
         public SurfaceBoundary3D(double thickness, IReadOnlyList<Node> nodes, IIsoparametricInterpolation2D interpolation,
             IQuadrature2D quadratureForStiffness, IQuadrature2D quadratureForConsistentMass,
             IGaussPointExtrapolation2D gaussPointExtrapolation,
-            ThermalMaterial material)
+            ConvectionDiffusionMaterial material)
         {
             this.material = material;
             this.GaussPointExtrapolation = gaussPointExtrapolation;
@@ -104,7 +104,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
-                double kappa = material.ThermalConductivity / material.ThermalConvection;
+                double kappa = material.DiffusionCoeff / material.ConvectionCoeff;
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
@@ -155,7 +155,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            stiffness.ScaleIntoThis(material.ThermalConductivity);
+            stiffness.ScaleIntoThis(material.DiffusionCoeff);
             return stiffness;
         }
         public Matrix BuildRHSPrescribedMatrix()

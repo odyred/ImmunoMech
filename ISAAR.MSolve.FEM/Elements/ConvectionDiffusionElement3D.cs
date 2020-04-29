@@ -20,11 +20,11 @@ namespace ISAAR.MSolve.FEM.Elements
     {
         private readonly static IDofType[] nodalDOFTypes = new IDofType[] { ThermalDof.Temperature };
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
-        private readonly ThermalMaterial material;
+        private readonly ConvectionDiffusionMaterial material;
 
         public ConvectionDiffusionElement3D(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
         IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
-        IGaussPointExtrapolation3D gaussPointExtrapolation, ThermalMaterial material)
+        IGaussPointExtrapolation3D gaussPointExtrapolation, ConvectionDiffusionMaterial material)
         {
             this.material = material;
             this.GaussPointExtrapolation = gaussPointExtrapolation;
@@ -76,7 +76,6 @@ namespace ISAAR.MSolve.FEM.Elements
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            capacity.Scale(material.Density * material.SpecialHeatCoeff);
             return capacity;
         }
         public Matrix BuildMassTransportConductivityMatrix()
@@ -87,12 +86,6 @@ namespace ISAAR.MSolve.FEM.Elements
                 Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
             IReadOnlyList<Matrix> shapeGradientsNatural =
                 Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
-            double[,] first = new double[,] { { 1, 0, 0 } };
-            double[,] second = new double[,] { { 0, 1, 0 } };
-            double[,] third = new double[,] { { 0, 0, 1 } };
-            var xComponent = Matrix.CreateFromArray(first);
-            var yComponent = Matrix.CreateFromArray(second);
-            var zComponent = Matrix.CreateFromArray(third);
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
@@ -111,8 +104,30 @@ namespace ISAAR.MSolve.FEM.Elements
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            convection.Scale(material.ThermalConvection);
+            convection.Scale(material.ConvectionCoeff);
             return convection;
+        }
+        public Matrix BuildLoadFromUnknownConductivityMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var conductivity = Matrix.CreateZero(numDofs, numDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                conductivity.AxpyIntoThis(partial, dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            conductivity.Scale(material.LoadFromUnknownCoeff);
+            return conductivity;
         }
         public Matrix BuildStabilizingConductivityMatrix()
         {
@@ -138,13 +153,44 @@ namespace ISAAR.MSolve.FEM.Elements
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            convection.Scale(-Math.Pow(material.ThermalConvection, 2));
+            convection.Scale(-Math.Pow(material.ConvectionCoeff, 2));
+            return convection;
+        }
+
+        public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var convection = Matrix.CreateZero(numDofs, numDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
+            for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
+            {
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix shapeGradientsCartesian =
+                   jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
+                Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
+                Vector deformationX = deformation.GetRow(0);
+                Vector deformationY = deformation.GetRow(1);
+                Vector deformationZ = deformation.GetRow(2);
+                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) +
+                    shapeFunctionMatrix.TensorProduct(deformationY) +
+                    shapeFunctionMatrix.TensorProduct(deformationZ);
+                double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
+                convection.AxpyIntoThis(partialK, dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            convection.Scale(-0.5*material.ConvectionCoeff*material.LoadFromUnknownCoeff);
             return convection;
         }
 
         public IMatrix StiffnessMatrix(IElement element)
         {
-            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix();
+            return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() +
+                BuildLoadFromUnknownConductivityMatrix();
         }
 
         public Matrix BuildDiffusionConductivityMatrix()
@@ -169,7 +215,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 //partialK.Scale(materialsAtGaussPoints[gaussPoint].ThermalConductivity);
 
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight; //TODO: this is used by all methods that integrate. I should cache it.
-                conductivity.AxpyIntoThis(partialK, dA * material.ThermalConductivity);
+                conductivity.AxpyIntoThis(partialK, dA * material.DiffusionCoeff);
                 //conductivity.AxpyIntoThis(partialK, dA * 1);
             }
 
@@ -245,7 +291,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix DampingMatrix(IElement element)
         {
-            return BuildStabilizingConductivityMatrix();
+            return BuildStabilizingConductivityMatrix() + BuildStabilizingLoadFromUnknownConductivityMatrix();
         }
     }
 }

@@ -14,7 +14,7 @@ using Xunit;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class ConvectionDiffusion1DBenchmark
+    public class NoConvectionDiffusion1DBenchmark
     {
         private const int subdomainID = 0;
 
@@ -49,9 +49,9 @@ namespace ISAAR.MSolve.Tests.FEM
             model.SubdomainsDictionary.Add(0, new Subdomain(subdomainID));
 
             // Material
-            double k = 1.0;
-            double U = 2;
-            double L = 0;
+            double k = 0;
+            double U = 0;
+            double L = 1;
             double h = 1;
             double crossSectionArea = 1;
             var material = new ConvectionDiffusionMaterial(k, U, L);
@@ -67,7 +67,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var numElements = numNodes - 1;
             for (int i = 0; i < numElements; i++)
             {
-                Node[] startEndNodes = { model.NodesDictionary[i], model.NodesDictionary[i+1] };
+                Node[] startEndNodes = { model.NodesDictionary[i], model.NodesDictionary[i + 1] };
                 var elementType = new ConvectionDiffusionRod(startEndNodes, crossSectionArea, material);
                 var elementWrapper = new Element() { ID = i, ElementType = elementType };
                 foreach (var node in startEndNodes) elementWrapper.AddNode(node);
@@ -98,7 +98,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static IVectorView SolveModel(Model model)
         {
-            double[] temp0 = new double[] { 1,0,0,0,0,0,0,0,0,0 };
+            double[] temp0 = new double[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             Vector initialTemp = Vector.CreateFromArray(temp0);
             DenseMatrixSolver solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
             //Gmres solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);

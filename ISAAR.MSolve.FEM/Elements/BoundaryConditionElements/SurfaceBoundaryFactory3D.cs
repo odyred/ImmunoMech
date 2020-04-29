@@ -17,7 +17,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         private static readonly IReadOnlyDictionary<CellType, IQuadrature2D> integrationsForMass;
         private static readonly IReadOnlyDictionary<CellType, IIsoparametricInterpolation2D> interpolations;
 
-        private readonly ThermalMaterial commonMaterial;
+        private readonly ConvectionDiffusionMaterial commonMaterial;
         private readonly double commonThickness;
 
         static SurfaceBoundaryFactory3D()
@@ -69,7 +69,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             SurfaceBoundaryFactory3D.extrapolations = extrapolations;
         }
 
-        public SurfaceBoundaryFactory3D(double commonThickness, ThermalMaterial commonMaterial)
+        public SurfaceBoundaryFactory3D(double commonThickness, ConvectionDiffusionMaterial commonMaterial)
         {
             this.commonThickness = commonThickness;
             this.commonMaterial = commonMaterial;

@@ -48,11 +48,11 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model CreateModelFromFile()
         {
             double density = 1.0;
-            double c = 1.0;
+            double U = 1.0;
             double k = 1.0;
-            double h = 1.0;
-            var elementFactory3D = new ThermalElement3DFactory(new ThermalMaterial(density, c, k, h));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ThermalMaterial(density, c, k, h));
+            double L = 1.0;
+            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, L));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material

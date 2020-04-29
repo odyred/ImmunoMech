@@ -38,6 +38,7 @@ namespace ISAAR.MSolve.FEM.Entities
             = new List<ElementMassAccelerationLoad>();
         public IList<Load> Loads { get; private set; } = new List<Load>();
         public IList<ISurfaceLoadElement> SurfaceLoads { get; private set; } = new List<ISurfaceLoadElement>();
+        public IList<IBodyLoadElement> BodyLoads { get; private set; } = new List<IBodyLoadElement>();
 
         public IList<MassAccelerationLoad> MassAccelerationLoads { get; } = new List<MassAccelerationLoad>();
         public IList<IMassAccelerationHistoryLoad> MassAccelerationHistoryLoads { get; } = new List<IMassAccelerationHistoryLoad>();
@@ -59,9 +60,37 @@ namespace ISAAR.MSolve.FEM.Entities
             foreach (Subdomain subdomain in SubdomainsDictionary.Values) subdomain.Forces.Clear();
             AssignNodalLoads(distributeNodalLoads);
             AssignSurfaceLoads(distributeNodalLoads);
+            AssignBodyLoads(distributeNodalLoads);
             AssignElementMassLoads();
             AssignMassAccelerationLoads();
         }
+
+        public void AssignBodyLoads(NodalLoadsToSubdomainsDistributor distributeNodalLoads)
+        {
+            var globalNodalLoads = new Table<INode, IDofType, double>();
+            foreach (var loadElement in BodyLoads)
+            {
+                var surfaceLoadTable = loadElement.CalculateBodyLoad();
+                foreach ((INode node, IDofType dof, double load) tuple in surfaceLoadTable)
+                {
+                    if (globalNodalLoads.Contains(tuple.node, tuple.dof))
+                    {
+                        globalNodalLoads[tuple.node, tuple.dof] += tuple.load;
+                    }
+                    else
+                    {
+                        globalNodalLoads.TryAdd(tuple.node, tuple.dof, tuple.load);
+                    }
+                }
+            }
+
+            Dictionary<int, SparseVector> subdomainNodalLoads = distributeNodalLoads(globalNodalLoads);
+            foreach (var idSubdomainLoads in subdomainNodalLoads)
+            {
+                SubdomainsDictionary[idSubdomainLoads.Key].Forces.AddIntoThis(idSubdomainLoads.Value);
+            }
+        }
+
 
         public void AssignSurfaceLoads(NodalLoadsToSubdomainsDistributor distributeNodalLoads)
         {

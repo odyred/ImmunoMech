@@ -12,6 +12,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.LinearSystems;
+using ISAAR.MSolve.FEM.Loading.Providers;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.
@@ -20,6 +21,7 @@ namespace ISAAR.MSolve.Problems
     public class ProblemConvectionDiffusion : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
     {
         private Dictionary<int, IMatrix> capacity, conductivityFreeFree, stabilizingConductivity;
+        private Dictionary<int, SparseVector> stabilizingDomainLoad;
         private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr;
         private readonly Model model;
         private readonly ISolver solver;
@@ -27,6 +29,7 @@ namespace ISAAR.MSolve.Problems
         private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
         private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
+        private StabilizingDomainLoadProvider stabilizingDomainLoadProvider = new StabilizingDomainLoadProvider();
 
         public ProblemConvectionDiffusion(Model model, ISolver solver)
         {
@@ -63,6 +66,14 @@ namespace ISAAR.MSolve.Problems
             {
                 if (stabilizingConductivity == null) BuildStabilizingConductivity();
                 return stabilizingConductivity;
+            }
+        }
+        private IDictionary<int, SparseVector> StabilizingDomainLoad
+        {
+            get
+            {
+                if (stabilizingDomainLoad == null) BuildStabilizingDomainLoad();
+                return stabilizingDomainLoad;
             }
         }
 
@@ -107,6 +118,7 @@ namespace ISAAR.MSolve.Problems
 
         private void BuildCapacity() => capacity = solver.BuildGlobalMatrices(capacityProvider);
         private void BuildStabilizingConductivity() => stabilizingConductivity = solver.BuildGlobalMatrices(stabilizingConductivityProvider);
+        private void BuildStabilizingDomainLoad() => stabilizingDomainLoad = solver.DistributeNodalLoads(stabilizingDomainLoadProvider.StabilizingLoad);
 
         #region IAnalyzerProvider Members
         public void ClearMatrices()
@@ -140,8 +152,6 @@ namespace ISAAR.MSolve.Problems
         public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients,
             ISubdomain subdomain)
         {
-            // The effective matrix should not overwrite the conductivity matrix. 
-            // In a dynamic analysis that is not purely implicit we need the conductivity matrix.
             int id = subdomain.ID;
             return Capacity[id];
         }
@@ -179,6 +189,8 @@ namespace ISAAR.MSolve.Problems
         //TODO: Ok this is weird. These methods should be named Second/First/ZeroOrderCoefficientTimesVector()
         public IVector DampingMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.StabilizingConductivity[subdomain.ID].Multiply(vector);
+        public SparseVector StabilizingRhs(ISubdomain subdomain)
+            => this.StabilizingDomainLoad[subdomain.ID];
 
         #endregion
 

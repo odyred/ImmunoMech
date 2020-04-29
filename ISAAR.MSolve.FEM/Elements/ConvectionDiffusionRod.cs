@@ -74,16 +74,28 @@ namespace ISAAR.MSolve.FEM.Elements
         public Matrix BuildMassTransportConductivityMatrix()
         {
 
-            double conA = material.ConvectionCoeff * CrossSectionArea/2;
+            double conA = material.ConvectionCoeff * CrossSectionArea / 2;
             double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }
+        public Matrix BuildLoadFromUnknownConductivityMatrix()
+        {
 
+            double conA = material.LoadFromUnknownCoeff * CrossSectionArea * Length;
+            double[,] conductivity = { { conA / 3.0, conA / 6.0 }, { conA / 6.0, conA / 3.0 } };
+            return Matrix.CreateFromArray(conductivity);
+        }
         public Matrix BuildStabilizingConductivityMatrix()
         {
 
             double cAoverL = -.5 * Math.Pow(material.ConvectionCoeff,2) * CrossSectionArea / Length;
             double[,] conductivity = { { cAoverL, -cAoverL }, { -cAoverL, cAoverL } };
+            return Matrix.CreateFromArray(conductivity);
+        }
+        public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
+        {
+            double conA = -.5 * material.LoadFromUnknownCoeff * material.ConvectionCoeff * CrossSectionArea / 2;
+            double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }
 
@@ -131,14 +143,15 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix StiffnessMatrix(IElement element)
         {
-            var a = DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix());
-            return DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix());
+            return DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() + 
+                BuildLoadFromUnknownConductivityMatrix());
             //return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix();
         }
 
         public IMatrix DampingMatrix(IElement element)
         {
-            return DofEnumerator.GetTransformedMatrix(BuildStabilizingConductivityMatrix());
+            return DofEnumerator.GetTransformedMatrix(BuildStabilizingConductivityMatrix() + 
+                BuildStabilizingLoadFromUnknownConductivityMatrix());
             //return BuildStabilizingConductivityMatrix();
         }
 

@@ -19,7 +19,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
     /// 
     /// Authors: Yannis Kalogeris
     /// </summary>
-    public class ConvectionDiffusionDynamicAnalyzer : INonLinearParentAnalyzer //TODO: why is this non linear
+    public class ConvectionDiffusionDynamicAnalyzer_Beta : INonLinearParentAnalyzer //TODO: why is this non linear
     {
         private readonly double timeStep, totalTime;
         private readonly IStructuralModel model;
@@ -33,8 +33,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> conductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
+        private Dictionary<int, IVector> dummyWeakImpositionTimesTemperature = new Dictionary<int, IVector>();
 
-        public ConvectionDiffusionDynamicAnalyzer(IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
+        public ConvectionDiffusionDynamicAnalyzer_Beta(IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, IVector initialTemperature = null)
         {
             this.model = model;
@@ -47,9 +48,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             this.totalTime = totalTime;
             this.ChildAnalyzer.ParentAnalyzer = this;
             this.initialTemperature = initialTemperature;
-        }
+        }   
 
-        public Dictionary<int, IAnalyzerLog[]> Logs => null; //TODO: this can't be right
+    public Dictionary<int, IAnalyzerLog[]> Logs => null; //TODO: this can't be right
         public Dictionary<int, ImplicitIntegrationAnalyzerLog> ResultStorages { get; }
             = new Dictionary<int, ImplicitIntegrationAnalyzerLog>();
 
@@ -202,12 +203,18 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             //TODO: stabilizingRhs has not been implemented
 
             // result = -dt(conductuvity*temperature + rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
+            double[,] kappa = new double[model.Nodes.Count, model.Nodes.Count]; 
+            kappa[0,0] = 1; 
+            kappa[model.Nodes.Count-1, model.Nodes.Count-1] = 1;
+            IMatrix penalty = Matrix.CreateFromArray(kappa);
             int id = linearSystem.Subdomain.ID;
+            dummyWeakImpositionTimesTemperature[id] = penalty.Multiply(temperature[id]);
             conductivityTimesTemperature[id] = provider.MassMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
+            conductivityTimesTemperature[id] = conductivityTimesTemperature[id].LinearCombination(1, dummyWeakImpositionTimesTemperature[id],1);
             stabilizingConductivityTimesTemperature[id] = provider.DampingMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
 
             IVector rhsResult = conductivityTimesTemperature[id].Subtract(rhs[id]);
-            var rhsResultnew = rhsResult.LinearCombination(1, stabilizingConductivityTimesTemperature[id], -timeStep);
+            var rhsResultnew = rhsResult.LinearCombination(1,stabilizingConductivityTimesTemperature[id], -timeStep);
             rhsResultnew.ScaleIntoThis(-timeStep);
 
             //rhsPrevious[id] = rhs[id];
@@ -218,19 +225,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             temperature.Clear();
             rhs.Clear();
-            stabilizingRhs.Clear();
             rhsPrevious.Clear();
             conductivityTimesTemperature.Clear();
             stabilizingConductivityTimesTemperature.Clear();
+            dummyWeakImpositionTimesTemperature.Clear();
 
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
                 int id = linearSystem.Subdomain.ID;
                 conductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
                 stabilizingConductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
+                dummyWeakImpositionTimesTemperature.Add(id, linearSystem.CreateZeroVector());
                 //temperature.Add(id, linearSystem.CreateZeroVector());
                 rhs.Add(id, linearSystem.CreateZeroVector());
-                stabilizingRhs.Add(id, linearSystem.CreateZeroVector());
                 rhsPrevious.Add(id, linearSystem.CreateZeroVector());
 
                 // Account for initial conditions coming from a previous solution. 
@@ -252,7 +259,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 provider.ProcessRhs(coeffs, linearSystem.Subdomain, linearSystem.RhsVector);
                 rhs[linearSystem.Subdomain.ID] = linearSystem.RhsVector.Copy(); //TODO: copying the vectors is wasteful.
-                stabilizingRhs[linearSystem.Subdomain.ID] = provider.; //TODO: copying the vectors is wasteful.
             }
         }
 
