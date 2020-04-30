@@ -18,10 +18,10 @@ using ISAAR.MSolve.FEM.Loading.Providers;
 //TODO: I am not too fond of the provider storing global sized matrices.
 namespace ISAAR.MSolve.Problems
 {
-    public class ProblemConvectionDiffusion : IImplicitIntegrationProvider, IStaticProvider, INonLinearProvider
+    public class ProblemConvectionDiffusion : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
     {
         private Dictionary<int, IMatrix> capacity, conductivityFreeFree, stabilizingConductivity;
-        private Dictionary<int, SparseVector> stabilizingDomainLoad;
+        private Dictionary<int, IVector> stabilizingDomainLoad;
         private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr;
         private readonly Model model;
         private readonly ISolver solver;
@@ -68,11 +68,11 @@ namespace ISAAR.MSolve.Problems
                 return stabilizingConductivity;
             }
         }
-        private IDictionary<int, SparseVector> StabilizingDomainLoad
+        private IDictionary<int, IVector> StabilizingDomainLoad
         {
             get
             {
-                if (stabilizingDomainLoad == null) BuildStabilizingDomainLoad();
+                if (stabilizingDomainLoad == null) stabilizingDomainLoad = model.BuildGlobalStabilizingBodyLoads(solver.DistributeNodalLoads);
                 return stabilizingDomainLoad;
             }
         }
@@ -118,7 +118,7 @@ namespace ISAAR.MSolve.Problems
 
         private void BuildCapacity() => capacity = solver.BuildGlobalMatrices(capacityProvider);
         private void BuildStabilizingConductivity() => stabilizingConductivity = solver.BuildGlobalMatrices(stabilizingConductivityProvider);
-        private void BuildStabilizingDomainLoad() => stabilizingDomainLoad = solver.DistributeNodalLoads(stabilizingDomainLoadProvider.StabilizingLoad);
+        //private void BuildStabilizingDomainLoad() => stabilizingDomainLoad = solver.DistributeNodalLoads(stabilizingDomainLoadProvider.StabilizingLoad);
 
         #region IAnalyzerProvider Members
         public void ClearMatrices()
@@ -149,14 +149,13 @@ namespace ISAAR.MSolve.Problems
 
         #region IImplicitIntegrationProvider Members
 
-        public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients,
-            ISubdomain subdomain)
+        public IMatrixView LinearCombinationOfMatricesIntoStiffness(ISubdomain subdomain)
         {
             int id = subdomain.ID;
             return Capacity[id];
         }
 
-        public void ProcessRhs(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain, IVector rhs)
+        public void ProcessRhs(ISubdomain subdomain, IVector rhs)
         {
             // Method intentionally left empty.
         }
@@ -183,13 +182,13 @@ namespace ISAAR.MSolve.Problems
             return rhsVectors;
         }
 
-        public IVector MassMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+        public IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.Conductivity[subdomain.ID].Multiply(vector);
 
         //TODO: Ok this is weird. These methods should be named Second/First/ZeroOrderCoefficientTimesVector()
-        public IVector DampingMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+        public IVector StabilizingConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.StabilizingConductivity[subdomain.ID].Multiply(vector);
-        public SparseVector StabilizingRhs(ISubdomain subdomain)
+        public IVector StabilizingRhs(ISubdomain subdomain)
             => this.StabilizingDomainLoad[subdomain.ID];
 
         #endregion

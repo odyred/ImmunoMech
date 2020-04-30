@@ -25,7 +25,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly IStructuralModel model;
         private readonly IReadOnlyDictionary<int, ILinearSystem> linearSystems;
         private readonly ISolver solver;
-        private readonly IImplicitIntegrationProvider provider;
+        private readonly IConvectionDiffusionIntegrationProvider provider;
         private readonly IVector initialTemperature;
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingRhs = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
@@ -34,7 +34,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> conductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
 
-        public ConvectionDiffusionDynamicAnalyzer(IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
+        public ConvectionDiffusionDynamicAnalyzer(IStructuralModel model, ISolver solver, IConvectionDiffusionIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, IVector initialTemperature = null)
         {
             this.model = model;
@@ -64,7 +64,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             };
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
-                linearSystem.Matrix = provider.LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
+                linearSystem.Matrix = provider.LinearCombinationOfMatricesIntoStiffness(linearSystem.Subdomain);
             }
         }
 
@@ -121,7 +121,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             #endregion
 
             // result = M * u
-            return provider.MassMatrixVectorProduct(linearSystem.Subdomain, currentSolution);
+            return provider.ConductivityMatrixVectorProduct(linearSystem.Subdomain, currentSolution);
         }
 
         public void Initialize(bool isFirstAnalysis = true)
@@ -203,8 +203,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
             // result = -dt(conductuvity*temperature + rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
             int id = linearSystem.Subdomain.ID;
-            conductivityTimesTemperature[id] = provider.MassMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
-            stabilizingConductivityTimesTemperature[id] = provider.DampingMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
+            conductivityTimesTemperature[id] = provider.ConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
+            stabilizingConductivityTimesTemperature[id] = provider.StabilizingConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
 
             IVector rhsResult = conductivityTimesTemperature[id].Subtract(rhs[id]);
             var rhsResultnew = rhsResult.LinearCombination(1, stabilizingConductivityTimesTemperature[id], -timeStep);
@@ -250,9 +250,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             };
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
-                provider.ProcessRhs(coeffs, linearSystem.Subdomain, linearSystem.RhsVector);
+                provider.ProcessRhs(linearSystem.Subdomain, linearSystem.RhsVector);
                 rhs[linearSystem.Subdomain.ID] = linearSystem.RhsVector.Copy(); //TODO: copying the vectors is wasteful.
-                stabilizingRhs[linearSystem.Subdomain.ID] = provider.; //TODO: copying the vectors is wasteful.
+                stabilizingRhs[linearSystem.Subdomain.ID] = provider.StabilizingRhs(linearSystem.Subdomain);
             }
         }
 

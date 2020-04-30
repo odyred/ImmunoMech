@@ -61,6 +61,7 @@ namespace ISAAR.MSolve.FEM.Entities
             AssignNodalLoads(distributeNodalLoads);
             AssignSurfaceLoads(distributeNodalLoads);
             AssignBodyLoads(distributeNodalLoads);
+            //AssignStabilizingBodyLoads(distributeNodalLoads);
             AssignElementMassLoads();
             AssignMassAccelerationLoads();
         }
@@ -89,6 +90,34 @@ namespace ISAAR.MSolve.FEM.Entities
             {
                 SubdomainsDictionary[idSubdomainLoads.Key].Forces.AddIntoThis(idSubdomainLoads.Value);
             }
+        }
+        public Dictionary<int, IVector> BuildGlobalStabilizingBodyLoads(NodalLoadsToSubdomainsDistributor distributeNodalLoads)
+        {
+            var globalNodalLoads = new Table<INode, IDofType, double>();
+            foreach (var loadElement in BodyLoads)
+            {
+                var surfaceLoadTable = loadElement.CalculateStabilizingBodyLoad();
+                foreach ((INode node, IDofType dof, double load) tuple in surfaceLoadTable)
+                {
+                    if (globalNodalLoads.Contains(tuple.node, tuple.dof))
+                    {
+                        globalNodalLoads[tuple.node, tuple.dof] += tuple.load;
+                    }
+                    else
+                    {
+                        globalNodalLoads.TryAdd(tuple.node, tuple.dof, tuple.load);
+                    }
+                }
+            }
+            var a= distributeNodalLoads(globalNodalLoads);
+
+            Dictionary<int, IVector> subdomainNodalLoads = new Dictionary<int, IVector>();
+            foreach (var keyValuePair in a)
+            {
+                subdomainNodalLoads.Add(keyValuePair.Key, keyValuePair.Value);
+            }
+
+            return subdomainNodalLoads;
         }
 
 
