@@ -11,38 +11,49 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers.Direct;
 using Xunit;
+using Accord;
+using ISAAR.MSolve.Discretization.Interfaces;
+using System.Collections.Generic;
+using ISAAR.MSolve.Analyzers.Interfaces;
+using System.Linq;
+using ISAAR.MSolve.Solvers;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class ConvectionDiffusion1DBenchmark
+    public class ConvectionDiffusionMulti1DBenchmark
     {
         private const int subdomainID = 0;
 
         [Fact]
         private static void RunTest()
         {
-            Model model = CreateModel();
-            IVectorView solution = SolveModel(model);
-            Assert.True(CompareResults(solution));
+            var models = new[] { CreateModel(1, 2, 0, 1), CreateModel(0, 2, 0, 1) };
+            IVectorView[] solutions = SolveModels(models);
+            Assert.True(CompareResults(solutions[0]));
+        }
+
+        private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+            IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
+        {
+            modelsToReplace[0] = CreateModel(1, 2, 0, 1);
+            modelsToReplace[1] = CreateModel(0, 2, 0, 1);
+
+            for (int i = 0; i < modelsToReplace.Length; i++)
+            {
+                solversToReplace[i] = (new DenseMatrixSolver.Builder()).BuildSolver(modelsToReplace[i]);
+                providersToReplace[i] = new ProblemConvectionDiffusion((Model)modelsToReplace[i], solversToReplace[i]);
+                childAnalyzersToReplace[i] = new LinearAnalyzer(modelsToReplace[i], solversToReplace[i], providersToReplace[i]);
+            }
         }
 
         private static bool CompareResults(IVectorView solution)
         {
-            var comparer = new ValueComparer(2E-2);
+            var comparer = new ValueComparer(1E-5);
 
             //                                                   dofs:   1,   2,   4,   5,   7,   8
-            var expectedSolution = Vector.CreateFromArray(new double[] { 0.999035307401193,
-                0.997371094382290,
-                0.993518945712248,
-                0.985437312426501,
-                0.970000503922635,
-                0.943065362762755,
-                0.900046845798943,
-                0.837421108911808,
-                0.753470801649483,
-                0.488434721438016});
-            int numFreeDofs = 10;
-            if (solution.Length != 10) return false;
+            var expectedSolution = Vector.CreateFromArray(new double[] { 150, 200, 150, 200, 150, 200 });
+            int numFreeDofs = 6;
+            if (solution.Length != 6) return false;
             for (int i = 0; i < numFreeDofs; ++i)
             {
                 if (!comparer.AreEqual(expectedSolution[i], solution[i])) return false;
@@ -50,18 +61,13 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Model CreateModel()
+        private static Model CreateModel(double k, double U, double L, double h)
         {
             var model = new Model();
 
             // Subdomains
             model.SubdomainsDictionary.Add(0, new Subdomain(subdomainID));
 
-            // Material
-            double k = 1.0;
-            double U = 0;
-            double L = 0;
-            double h = 1;
             double crossSectionArea = 1;
             var material = new ConvectionDiffusionMaterial(k, U, L);
 
@@ -105,22 +111,26 @@ namespace ISAAR.MSolve.Tests.FEM
             return model;
         }
 
-        private static IVectorView SolveModel(Model model)
+        private static IVectorView[] SolveModels(Model[] models)
         {
-            double[] temp0 = new double[] { 1,0,0,0,0,0,0,0,0,0 };
-            Vector initialTemp = Vector.CreateFromArray(temp0);
-            var solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
-            //Gmres solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
-            var provider = new ProblemConvectionDiffusion(model, solver);
+            Vector[] initialTemps = new Vector[models.Length];
+            DenseMatrixSolver[] solvers = new DenseMatrixSolver[models.Length];
+            IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
+            IChildAnalyzer[] childAnalyzers = new IChildAnalyzer[models.Length];
+            for (int i = 0; i < models.Length; i++)
+            {
+                initialTemps[i] = Vector.CreateFromArray(new double[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+                solvers[i] = (new DenseMatrixSolver.Builder()).BuildSolver(models[i]);
+                providers[i] = new ProblemConvectionDiffusion(models[i], solvers[i]);
+                childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
+            }
 
-            var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer_Beta(model, solver, provider, childAnalyzer, 0.05, 5, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzerMultiModel(UpdateModels, models, solvers, providers, childAnalyzers, 0.05, 5, initialTemperature: initialTemps);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
 
-            //return solver.LinearSystems[subdomainID].Solution;
-            return parentAnalyzer.temperature[subdomainID];
+            return solvers.Select(x => x.LinearSystems[subdomainID].Solution).ToArray();
         }
     }
 }

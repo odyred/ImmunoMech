@@ -10,6 +10,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
@@ -17,12 +18,14 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
     public class WeakDirichlet : ISurfaceLoad
     {
         private readonly double _magnitude;
+        private readonly double _diffusionCoeff;
         private readonly DirichletDistribution _distribution;
 
         public delegate Vector DirichletDistribution(IReadOnlyList<Node> list);
-        public WeakDirichlet(DirichletDistribution distribution)
+        public WeakDirichlet(DirichletDistribution distribution, double diffusionCoeff)
         {
             _distribution = distribution;
+            _diffusionCoeff = diffusionCoeff;
         }
 
         public Table<INode, IDofType, double> CalculateSurfaceLoad(IIsoparametricInterpolation2D interpolation, IQuadrature2D integration, IReadOnlyList<Node> nodes)
@@ -34,6 +37,17 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
             IReadOnlyList<Matrix> shapeGradientsNatural =
                interpolation.EvaluateNaturalGradientsAtGaussPoints(integration);
 
+            double[] dist = new double[nodes.Count];
+            //for (int i = 0; i < nodes.Count - 1; i++)
+            //{
+            //    for (int j = i + 1; j < nodes.Count; j++)
+            //    {
+            //        dist[i + j - 1] = Math.Sqrt(Math.Pow(nodes[i].X - nodes[j].X, 2) +
+            //            Math.Pow(nodes[i].Y - nodes[j].Y, 2) + Math.Pow(nodes[i].Z - nodes[j].Z, 2));
+            //    }
+            //}
+            //double kappa = _diffusionCoeff / dist.Min();
+            double kappa = _diffusionCoeff / 1;
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
@@ -65,7 +79,8 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 //Vector deformationX = deformation.GetRow(0);
                 //Vector deformationY = deformation.GetRow(1);
                 //Vector deformationZ = deformation.GetRow(2);
-                Matrix partial = 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
+                    -_diffusionCoeff * deformationNormal.TensorProduct(shapeFunctionMatrix);
                 //Matrix partial = deformationNormal.TensorProduct(shapeFunctionMatrix);
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);

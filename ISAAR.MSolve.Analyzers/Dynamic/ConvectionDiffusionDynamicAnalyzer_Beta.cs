@@ -30,7 +30,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingRhs = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
         private Dictionary<int, IVector> rhsPrevious = new Dictionary<int, IVector>();//TODO: at the moment domain loads are not implemented in this
-        private Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
+        public Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> conductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> dummyWeakImpositionTimesTemperature = new Dictionary<int, IVector>();

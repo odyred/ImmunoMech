@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+using ISAAR.MSolve.LinearAlgebra.Output.Formatting;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Logging.Interfaces;
@@ -30,7 +33,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingRhs = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
         private Dictionary<int, IVector> rhsPrevious = new Dictionary<int, IVector>();//TODO: at the moment domain loads are not implemented in this
-        private Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
+        public Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> conductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
 
@@ -275,6 +278,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 int id = linearSystem.Subdomain.ID;
                 //temperature[id].CopyFrom(linearSystem.Solution);
                 temperature[id].AddIntoThis(linearSystem.Solution);
+                if (timeStep % 1 == 0)
+                {
+                    //string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
+                    string path2 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature7.txt";
+                    //var path = Path.Combine(path0, $"temperature{timeStep}.txt");
+                    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    //                    writer.WriteToFile(temperature[id], path);
+                    //writer.WriteToFile(temperature[id][0], path1);
+
+                    File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
+                    File.AppendAllLines(path2, new string[] { temperature[id][7].ToString() }, Encoding.UTF8);
+                }
             }
         }
     }

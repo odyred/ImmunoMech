@@ -100,11 +100,11 @@ namespace ISAAR.MSolve.FEM.Elements
                     shapeFunctionMatrix.TensorProduct(deformationY) +
                     shapeFunctionMatrix.TensorProduct(deformationZ);
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA);
+                convection.AxpyIntoThis(partialK, dA * material.ConvectionCoeff);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            convection.Scale(material.ConvectionCoeff);
+            //convection.Scale(1);
             return convection;
         }
         public Matrix BuildLoadFromUnknownConductivityMatrix()
@@ -122,11 +122,11 @@ namespace ISAAR.MSolve.FEM.Elements
                 Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
-                conductivity.AxpyIntoThis(partial, dA);
+                conductivity.AxpyIntoThis(partial, dA * material.LoadFromUnknownCoeff);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            conductivity.Scale(material.LoadFromUnknownCoeff);
+            //conductivity.Scale(1);
             return conductivity;
         }
         public Matrix BuildStabilizingConductivityMatrix()
@@ -149,11 +149,11 @@ namespace ISAAR.MSolve.FEM.Elements
                     deformationX.TensorProduct(deformationZ) +
                     deformationY.TensorProduct(deformationZ);
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA);
+                convection.AxpyIntoThis(partialK, dA * -Math.Pow(material.ConvectionCoeff, 2));
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            convection.Scale(-Math.Pow(material.ConvectionCoeff, 2));
+            //convection.Scale(1);
             return convection;
         }
 
@@ -179,11 +179,11 @@ namespace ISAAR.MSolve.FEM.Elements
                     shapeFunctionMatrix.TensorProduct(deformationY) +
                     shapeFunctionMatrix.TensorProduct(deformationZ);
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA);
+                convection.AxpyIntoThis(partialK, dA * -0.5 * material.ConvectionCoeff * material.LoadFromUnknownCoeff);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            convection.Scale(-0.5*material.ConvectionCoeff*material.LoadFromUnknownCoeff);
+            //convection.Scale(1);
             return convection;
         }
 
@@ -218,8 +218,8 @@ namespace ISAAR.MSolve.FEM.Elements
                 conductivity.AxpyIntoThis(partialK, dA * material.DiffusionCoeff);
                 //conductivity.AxpyIntoThis(partialK, dA * 1);
             }
-
-            conductivity.Scale(1);
+            
+            //conductivity.Scale(1);
             return conductivity;
         }
 

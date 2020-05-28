@@ -52,9 +52,10 @@ namespace ISAAR.MSolve.Tests.FEM
             double density = 1.0;
             double c = 1.0;
             double k = 1.0;
+            double U = 1.0;
             double h = .0;
-            var elementFactory3D = new ThermalElement3DFactory(new ThermalMaterial(density, c, k, h));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ThermalMaterial(density, 0, 0, h));
+            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, 0));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, 0));
             var model = new Model();
 
             model.SubdomainsDictionary[0] = new Subdomain(0);
@@ -225,11 +226,13 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static IVectorView SolveModel(Model model)
         {
+            double[] temp0 = new double[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            Vector initialTemp = Vector.CreateFromArray(temp0);
             SkylineSolver solver = (new SkylineSolver.Builder()).BuildSolver(model);
-            var provider = new ProblemThermal(model, solver);
+            var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, .5, 100);
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, .5, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

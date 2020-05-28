@@ -16,7 +16,7 @@ using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader
+    public class ComsolMeshReader1
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
@@ -33,13 +33,11 @@ namespace ISAAR.MSolve.FEM.Readers
             edg = 1007,
             tri = 1008,
             tet = 1009,
-            hex = 1010,
-            quad = 1011,
         }
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader(string filename)
+        public ComsolMeshReader1(string filename)
         {
             Filename = filename;
         }
@@ -47,8 +45,6 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfNodes;
         int NumberOfTriElements;
         int NumberOfTetElements;
-        int NumberOfHexElements;
-        int NumberOfQuadElements;
 
         public Model CreateModelFromFile()
         {
@@ -137,7 +133,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             double x = Double.Parse(line[0], CultureInfo.InvariantCulture);
                             double y = Double.Parse(line[1], CultureInfo.InvariantCulture);
                             double z = Double.Parse(line[2], CultureInfo.InvariantCulture);
-                            Node node = new Node (nodeGlobalID, x, y, z);
+                            Node node = new Node(nodeGlobalID, x, y, z);
                             model.NodesDictionary.Add(nodeGlobalID, node);
                             nodelist.Add(node);
                         }
@@ -183,28 +179,28 @@ namespace ISAAR.MSolve.FEM.Readers
                                 element.AddNode(node);
                                 r3 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
                             }
-                            if (element.Nodes[0].X == 0 && r3 < 3 * 5e-4)
+                            if (element.Nodes[0].X == 0 && r3 < 3 * 4e-2)
                             {
                                 elementBoundaries[0].Add(model.ElementsDictionary[TriID]);
                                 //model.NodesDictionary[element.Nodes[0].ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 10 });
                             }
-                            else if (element.Nodes[0].Y == 0 && r3 < 3 * 5e-4)
+                            else if (element.Nodes[0].Y == 0 && r3 < 3 * 4e-2)
                             {
                                 elementBoundaries[1].Add(model.ElementsDictionary[TriID]);
                             }
-                            else if (element.Nodes[0].Z == 0 && r3 < 3 * 5e-4)
+                            else if (element.Nodes[0].Z == 0 && r3 < 3 * 4e-2)
                             {
                                 elementBoundaries[2].Add(model.ElementsDictionary[TriID]);
                             }
-                            else if (element.Nodes[0].X == 0 && r3 > 3 * 5e-4)
+                            else if (element.Nodes[0].X == 0 && r3 > 3 * 4e-2)
                             {
                                 elementBoundaries[3].Add(model.ElementsDictionary[TriID]);
                             }
-                            else if (element.Nodes[0].Y == 0 && r3 > 3 * 5e-4)
+                            else if (element.Nodes[0].Y == 0 && r3 > 3 * 4e-2)
                             {
                                 elementBoundaries[4].Add(model.ElementsDictionary[TriID]);
                             }
-                            else if (r3 == 3 * 5e-4)
+                            else if (r3 == 3 * 4e-2)
                             {
                                 elementBoundaries[5].Add(model.ElementsDictionary[TriID]);
                             }
@@ -212,7 +208,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             {
                                 elementBoundaries[6].Add(model.ElementsDictionary[TriID]);
                             }
-                            else if (element.Nodes[0].Z == 0 && r3 > 3 * 5e-4)
+                            else if (element.Nodes[0].Z == 0 && r3 > 3 * 4e-2)
                             {
                                 elementBoundaries[7].Add(model.ElementsDictionary[TriID]);
                             }
@@ -229,28 +225,28 @@ namespace ISAAR.MSolve.FEM.Readers
                         foreach (Node node in nodesCollection)
                         {
                             double r = Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
-                            if (node.X == 0 && node.Y <= 5e-4 && node.Z <= 5e-4)
+                            if (node.X == 0 && node.Y <= 4e-2 && node.Z <= 4e-2)
                             {
                                 nodeBoundaries[0].Add(model.NodesDictionary[node.ID]);
                                 //model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 10 });
                             }
-                            else if (node.X <= 5e-4 && node.Y == 0 && node.Z <= 5e-4)
+                            else if (node.X <= 4e-2 && node.Y == 0 && node.Z <= 4e-2)
                             {
                                 nodeBoundaries[1].Add(model.NodesDictionary[node.ID]);
                             }
-                            else if (node.X <= 5e-4 && node.Y <= 5e-4 && node.Z == 0)
+                            else if (node.X <= 4e-2 && node.Y <= 4e-2 && node.Z == 0)
                             {
                                 nodeBoundaries[2].Add(model.NodesDictionary[node.ID]);
                             }
-                            else if (node.X == 0 && r > 5e-4)
+                            else if (node.X == 0 && r > 4e-2)
                             {
                                 nodeBoundaries[3].Add(model.NodesDictionary[node.ID]);
                             }
-                            else if (node.Y == 0 && r > 5e-4)
+                            else if (node.Y == 0 && r > 4e-2)
                             {
                                 nodeBoundaries[4].Add(model.NodesDictionary[node.ID]);
                             }
-                            else if (r == 5e-4)
+                            else if (r == 4e-2)
                             {
                                 nodeBoundaries[5].Add(model.NodesDictionary[node.ID]);
                             }
@@ -258,141 +254,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             {
                                 nodeBoundaries[6].Add(model.NodesDictionary[node.ID]);
                             }
-                            else if (node.Z == 0 && r > 5e-4)
-                            {
-                                nodeBoundaries[7].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.Y == 0.1)
-                            {
-                                nodeBoundaries[8].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.X == 0.1)
-                            {
-                                nodeBoundaries[9].Add(model.NodesDictionary[node.ID]);
-                            }
-                            //else
-                            //{
-                            //    model.Loads.Add(new Load() { Node = model.NodesDictionary[node.ID], DOF = ThermalDof.Temperature, Amount = 10 });
-                            //}
-                        }
-                        break;
-                    case Attributes.quad:
-                        do
-                        {
-                            i++;
-                            line = text[i].Split(delimeters);
-                        } while (line[0] == "");
-                        i++;
-                        line = text[i].Split(delimeters);
-                        NumberOfTriElements = Int32.Parse(line[0]);
-                        i++;
-                        IList<Node> quadNodesCollection = new List<Node>();
-                        for (int QuadID = 0; QuadID < NumberOfTriElements; QuadID++)
-                        {
-                            i++;
-                            line = text[i].Split(delimeters);
-
-                            for (int j = 0; j < (line.Length - 1); j++)
-                            {
-                                quadNodesCollection.Add(model.NodesDictionary[Int32.Parse(line[j])]);
-                            }
-
-                            IReadOnlyList<Node> nodes = new List<Node>
-                            {
-                                model.NodesDictionary[Int32.Parse(line[3])],
-                                model.NodesDictionary[Int32.Parse(line[2])],
-                                model.NodesDictionary[Int32.Parse(line[1])],
-                                model.NodesDictionary[Int32.Parse(line[0])]
-                            };
-
-                            var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                            var element = new Element();
-                            element.ID = QuadID;
-                            element.ElementType = Quad;
-                            model.SubdomainsDictionary[0].Elements.Add(element);
-                            model.ElementsDictionary.Add(QuadID, element);
-                            //double r3 = 0;
-                            //foreach (Node node in nodes)
-                            //{
-                            //    element.AddNode(node);
-                            //    r3 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
-                            //}
-                            //if (element.Nodes[0].X == 0 && r3 < 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[0].Add(model.ElementsDictionary[QuadID]);
-                            //    //model.NodesDictionary[element.Nodes[0].ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 10 });
-                            //}
-                            //else if (element.Nodes[0].Y == 0 && r3 < 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[1].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].Z == 0 && r3 < 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[2].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].X == 0 && r3 > 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[3].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].Y == 0 && r3 > 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[4].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (r3 == 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[5].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].Z == 0.1 && element.Nodes[1].Z == 0.1 && element.Nodes[2].Z == 0.1)
-                            //{
-                            //    elementBoundaries[6].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].Z == 0 && r3 > 3 * 5e-4)
-                            //{
-                            //    elementBoundaries[7].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].Y == 0.1 && element.Nodes[1].Y == 0.1 && element.Nodes[2].Y == 0.1)
-                            //{
-                            //    elementBoundaries[8].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                            //else if (element.Nodes[0].X == 0.1 && element.Nodes[1].X == 0.1 && element.Nodes[2].X == 0.1)
-                            //{
-                            //    elementBoundaries[9].Add(model.ElementsDictionary[QuadID]);
-                            //}
-                        }
-                        quadNodesCollection = quadNodesCollection.Distinct().ToList();
-                        foreach (Node node in quadNodesCollection)
-                        {
-                            double r = Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
-                            if (node.X == 0 && node.Y <= 5e-4 && node.Z <= 5e-4)
-                            {
-                                nodeBoundaries[0].Add(model.NodesDictionary[node.ID]);
-                                //model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 10 });
-                            }
-                            else if (node.X <= 5e-4 && node.Y == 0 && node.Z <= 5e-4)
-                            {
-                                nodeBoundaries[1].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.X <= 5e-4 && node.Y <= 5e-4 && node.Z == 0)
-                            {
-                                nodeBoundaries[2].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.X == 0 && r > 5e-4)
-                            {
-                                nodeBoundaries[3].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.Y == 0 && r > 5e-4)
-                            {
-                                nodeBoundaries[4].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (r == 5e-4)
-                            {
-                                nodeBoundaries[5].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.Z == 0.1)
-                            {
-                                nodeBoundaries[6].Add(model.NodesDictionary[node.ID]);
-                            }
-                            else if (node.Z == 0 && r > 5e-4)
+                            else if (node.Z == 0 && r > 4e-2)
                             {
                                 nodeBoundaries[7].Add(model.NodesDictionary[node.ID]);
                             }
@@ -444,7 +306,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
-                            if (r4 < 4*5e-4)
+                            if (r4 < 4 * 4e-2)
                                 elementDomains[0].Add(element);
                             else
                                 elementDomains[1].Add(element);

@@ -9,7 +9,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
     /// </summary>
     internal static class AnalyticFormulas
     {
-        internal const double determinantTolerance = 1e-15;
+        internal const double determinantTolerance = 1e-19;
 
         internal static double Matrix2x2ColMajorDeterminant(double[] matrix)
         {

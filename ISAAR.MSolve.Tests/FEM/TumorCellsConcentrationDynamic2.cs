@@ -22,14 +22,14 @@ using System;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class TumorCellsConcentrationDynamic
+    public class TumorCellsConcentrationDynamic2
     {
         private const int subdomainID = 0;
         [Fact]
         private static void RunTest()
         {
             Model model = CreateModel().Item1;
-            ComsolMeshReader modelReader = CreateModel().Item2;
+            ComsolMeshReader2 modelReader = CreateModel().Item2;
             IVectorView solution = SolveModel(model,modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -49,33 +49,42 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model,ComsolMeshReader> CreateModel()
+        private static Tuple<Model,ComsolMeshReader2> CreateModel()
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
-            ComsolMeshReader modelReader = new ComsolMeshReader(filename);
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
+            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
-            var flux = new FluxLoad(10);
+            var flux = new FluxLoad(0);
             var dir1 = new DirichletDistribution(list => {
-                return Vector.CreateWithValue(list.Count, 0);
-            });
-            var dir2 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 1);
             });
-            var weakDirichlet1 = new WeakDirichlet(dir1,modelReader.diffusionCeoff);
-            var weakDirichlet2 = new WeakDirichlet(dir2, modelReader.diffusionCeoff);
+            var dir2 = new DirichletDistribution(list => {
+                return Vector.CreateWithValue(list.Count, 0);
+            });
+            var weakDirichlet1 = new WeakDirichlet(dir1,modelReader.diffusionCoeff);
+            var weakDirichlet2 = new WeakDirichlet(dir2, modelReader.diffusionCoeff);
 
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var fluxFactory = new SurfaceLoadElementFactory(flux);
 
-            int[] boundaryIDs = new int[] { 2, 7, 8, 9 };
+            //model.NodesDictionary[0].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
+            //model.NodesDictionary[1].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
+            //model.NodesDictionary[2].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
+            //model.NodesDictionary[3].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
+            //model.NodesDictionary[40].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+            //model.NodesDictionary[41].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+            //model.NodesDictionary[42].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+            //model.NodesDictionary[43].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+
+            int[] boundaryIDs = new int[] { 0, };
             foreach (int boundaryID in boundaryIDs)
             {
                 foreach (Element element in modelReader.elementBoundaries[boundaryID])
                 {
-                    IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes; 
-                    var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Tri3, nodes);
+                    IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
+                    var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
                     model.SurfaceLoads.Add(dirichletElement1);
                     //var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
@@ -86,45 +95,64 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
             }
-            boundaryIDs = new int[]{ 0, 1, 3, 4, 6 };
+            boundaryIDs = new int[] { 5 };
             foreach (int boundaryID in boundaryIDs)
             {
                 foreach (Element element in modelReader.elementBoundaries[boundaryID])
                 {
                     IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
-                    var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Tri3, nodes);
+                    var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
                     model.SurfaceLoads.Add(dirichletElement2);
                 }
             }
 
-            return new Tuple<Model,ComsolMeshReader>(model,modelReader);
+            //boundaryIDs = new int[] { 1, 2, 3, 4 };
+            //foreach (int boundaryID in boundaryIDs)
+            //{
+            //    foreach (Element element in modelReader.elementBoundaries[boundaryID])
+            //    {
+            //        IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
+            //        var fluxElement = fluxFactory.CreateElement(CellType.Quad4, nodes);
+            //        model.SurfaceLoads.Add(fluxElement);
+            //    }
+            //}
+
+            return new Tuple<Model,ComsolMeshReader2>(model,modelReader);
         }
 
-        private static IVectorView SolveModel(Model model, ComsolMeshReader modelReader)
+        private static IVectorView SolveModel(Model model, ComsolMeshReader2 modelReader)
         {
             double[] temp0 = new double[model.Nodes.Count];
-            int[] boundaryIDs = new int[] {2, 7, 8, 9 };
+            int[] boundaryIDs = new int[] { 0 };
             foreach (int boundaryID in boundaryIDs)
             {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                foreach (Element element in modelReader.elementBoundaries[boundaryID])
                 {
-                    temp0[node.ID] = 0;
+                    foreach (Node node in element.Nodes)
+                    {
+                        temp0[node.ID] = 1;
+                    }
                 }
             }
-            boundaryIDs = new int[] { 0, 1, 3, 4, 6 };
+            boundaryIDs = new int[] { 5 };
             foreach (int boundaryID in boundaryIDs)
             {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                foreach (Element element in modelReader.elementBoundaries[boundaryID])
                 {
-                    temp0[node.ID] = 1;
+                    foreach (Node node in element.Nodes)
+                    {
+                        temp0[node.ID] = 0;
+                    }
                 }
             }
             Vector initialTemp = Vector.CreateFromArray(temp0);
-            DenseMatrixSolver solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
+            var builder = new DenseMatrixSolver.Builder();
+            //builder.IsMatrixPositiveDefinite = false;
+            var solver = builder.BuildSolver(model);
             var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 5e-8, 1e-3, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.25e-5, 5, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

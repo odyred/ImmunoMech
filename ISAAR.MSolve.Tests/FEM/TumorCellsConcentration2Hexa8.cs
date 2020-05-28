@@ -52,12 +52,12 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             IList<IList<Node>> nodeBoundaries;
             IList<IList<Element>> elementBoundaries;
-            double density = 1.0;
-            double c = 1.0;
             double k = 1.0;
+            double U = 1.0;
+            double L = 0.0;
             double h = 1.0;
-            var elementFactory3D = new ThermalElement3DFactory(new ThermalMaterial(density, c, k, h));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ThermalMaterial(density, c, k, h));
+            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, L));
             var model = new Model();
 
             model.SubdomainsDictionary[0] = new Subdomain(0);
@@ -195,8 +195,8 @@ namespace ISAAR.MSolve.Tests.FEM
             var dir2 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 10);
             });
-            var weakDirichlet1 = new WeakDirichlet(dir1);
-            var weakDirichlet2 = new WeakDirichlet(dir2);
+            var weakDirichlet1 = new WeakDirichlet(dir1, k);
+            var weakDirichlet2 = new WeakDirichlet(dir2, k);
 
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
@@ -258,7 +258,7 @@ namespace ISAAR.MSolve.Tests.FEM
             //    load1 = new Load()
             //    {
             //        Node = model.NodesDictionary[i],
-            //        DOF = ThermalDof.Temperature,
+            //        DOF = ConvectionDiffusionDof.Temperature,
             //        Amount = 12.5
             //    };
             //    model.Loads.Add(load1);
@@ -272,11 +272,13 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static IVectorView SolveModel(Model model)
         {
+            double[] temp0 = new double[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 };//false array
+            Vector initialTemp = Vector.CreateFromArray(temp0);
             SkylineSolver solver = (new SkylineSolver.Builder()).BuildSolver(model);
             var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider); // NonlinearAnalyzer
-            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, .3, 5); // ThermalStaticAnalyzer
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.05, 5, initialTemp); // ConvectionDiffusionStaticAnalyzer
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

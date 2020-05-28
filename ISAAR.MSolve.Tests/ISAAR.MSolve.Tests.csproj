@@ -44,7 +44,6 @@
 
   <ItemGroup>
     <Folder Include="Analyzers\" />
-    <Folder Include="InputFiles\TumorGrowthModel\" />
     <Folder Include="Logging\" />
     <Folder Include="MaterialsTest\" />
     <Folder Include="Problems\" />

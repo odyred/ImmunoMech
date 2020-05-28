@@ -18,7 +18,7 @@ using System.Text;
 
 namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
 {
-    public class SurfaceBoundary3D : IConvectionDiffusionBoundaryElement,  ICell<Node>
+    public class SurfaceBoundary3D : IFiniteElement,  ICell<Node>
     {
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
         private readonly ConvectionDiffusionMaterial material;
@@ -101,10 +101,20 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
             IReadOnlyList<Matrix> shapeGradientsNatural =
                 Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
+            double[] dist = new double[Nodes.Count];
+            //for (int i = 0; i < Nodes.Count-1; i++) 
+            //{
+            //    for (int j = i+1; j < Nodes.Count; j++) 
+            //    {
+            //        dist[i+j-1] = Math.Sqrt(Math.Pow(Nodes[i].X - Nodes[j].X,2) +
+            //            Math.Pow(Nodes[i].Y - Nodes[j].Y,2) + Math.Pow(Nodes[i].Z - Nodes[j].Z, 2));
+            //    }
+            //}
+            //double kappa = material.DiffusionCoeff / dist.Min();
+            double kappa = material.DiffusionCoeff / 1;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
-                double kappa = material.DiffusionCoeff / material.ConvectionCoeff;
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
@@ -135,8 +145,10 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 Matrix shapeGradientsCartesian = (shapeGradientsNatural[gp]) * jacobianMatrixLeftInverse.Transpose();
                 Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
                 Vector deformationNormal = normalVector * deformation;
-                Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationNormal))
-                    + kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                //Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationNormal))
+                //    + kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
+                    - (shapeFunctionMatrix.TensorProduct(deformationNormal));
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);
                 //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
@@ -151,152 +163,19 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 //Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
 
                 double dA = jacdet * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                stiffness.AxpyIntoThis(partial, dA);
+                stiffness.AxpyIntoThis(partial, dA * material.DiffusionCoeff);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            stiffness.ScaleIntoThis(material.DiffusionCoeff);
+            //stiffness.ScaleIntoThis(1);
             return stiffness;
         }
-        public Matrix BuildRHSPrescribedMatrix()
+        public Matrix BuildZeroMatrix()
         {
             int numDofs = Nodes.Count;
-            var stiffness = Matrix.CreateZero(numDofs, numDofs);
-            IReadOnlyList<double[]> shapeFunctions =
-                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
-            IReadOnlyList<Matrix> shapeGradientsNatural =
-                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
-
-            for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
-            {
-                //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
-                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
-                Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
-                for (int k = 0; k < this.Nodes.Count; k++)
-                {
-                    //xGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].X;
-                    //yGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].Y;
-                    //zGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].Z;
-                    jacobianMatrix[0, 0] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].X;
-                    jacobianMatrix[0, 1] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Y;
-                    jacobianMatrix[0, 2] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Z;
-                    jacobianMatrix[1, 0] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].X;
-                    jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
-                    jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Z;
-                }
-                Matrix partial = 100 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
-
-                Vector surfaceBasisVector1 = Vector.CreateZero(3);
-                surfaceBasisVector1[0] = jacobianMatrix[0, 0];
-                surfaceBasisVector1[1] = jacobianMatrix[0, 1];
-                surfaceBasisVector1[2] = jacobianMatrix[0, 2];
-
-                Vector surfaceBasisVector2 = Vector.CreateZero(3);
-                surfaceBasisVector2[0] = jacobianMatrix[1, 0];
-                surfaceBasisVector2[1] = jacobianMatrix[1, 1];
-                surfaceBasisVector2[2] = jacobianMatrix[1, 2];
-
-                Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-                var jacdet = surfaceBasisVector3.Norm2();
-
-                double dA = jacdet * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                stiffness.AxpyIntoThis(partial, dA);
-            }
-
-            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            return stiffness;
+            var value = Matrix.CreateZero(numDofs, numDofs);
+            return value;
         }
-
-        public Matrix BuildRHSFluxMatrix()
-        {
-            int numDofs = Nodes.Count;
-            var stiffness = Matrix.CreateZero(numDofs, numDofs);
-            IReadOnlyList<double[]> shapeFunctions =
-                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
-            IReadOnlyList<Matrix> shapeGradientsNatural =
-                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
-
-            for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
-            {
-                //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
-                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
-                Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
-                for (int k = 0; k < this.Nodes.Count; k++)
-                {
-                    //xGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].X;
-                    //yGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].Y;
-                    //zGaussPoint += shapeFunctionMatrix[gp, k] * this.Nodes[k].Z;
-                    jacobianMatrix[0, 0] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].X;
-                    jacobianMatrix[0, 1] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Y;
-                    jacobianMatrix[0, 2] += shapeGradientsNatural[gp][k, 0] * this.Nodes[k].Z;
-                    jacobianMatrix[1, 0] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].X;
-                    jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Y;
-                    jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * this.Nodes[k].Z;
-                }
-                Matrix partial = 10 * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
-
-                Vector surfaceBasisVector1 = Vector.CreateZero(3);
-                surfaceBasisVector1[0] = jacobianMatrix[0, 0];
-                surfaceBasisVector1[1] = jacobianMatrix[0, 1];
-                surfaceBasisVector1[2] = jacobianMatrix[0, 2];
-
-                Vector surfaceBasisVector2 = Vector.CreateZero(3);
-                surfaceBasisVector2[0] = jacobianMatrix[1, 0];
-                surfaceBasisVector2[1] = jacobianMatrix[1, 1];
-                surfaceBasisVector2[2] = jacobianMatrix[1, 2];
-
-                Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
-                var jacdet = surfaceBasisVector3.Norm2();
-
-                double dA = jacdet * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                stiffness.AxpyIntoThis(partial, dA);
-            }
-
-            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            return stiffness;
-        }
-        //public Matrix BuildConductivityMatrix()
-        //{
-        //    int numDofs = Nodes.Count;
-        //    var conductivity = Matrix.CreateZero(numDofs, numDofs);
-        //    IReadOnlyList<Matrix> shapeGradientsNatural =
-        //        Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
-
-        //    for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
-        //    {
-        //        // Calculate the necessary quantities for the integration
-        //        //Matrix constitutive = (Matrix)(materialsAtGaussPoints[gp].ConstitutiveMatrix); // ugly cast will be removed along with the legacy Matrix classes
-        //        var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
-        //        Matrix shapeGradientsCartesian =
-        //            jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
-        //        Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
-
-        //        // Contribution of this gauss point to the element stiffness matrix
-        //        Matrix partialK = deformation.Transpose() * deformation;
-        //        //Matrix partialΚ = deformation.Transpose() * (constitutive * deformation);
-        //        //partialK.Scale(materialsAtGaussPoints[gaussPoint].ThermalConductivity);
-
-        //        double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight; //TODO: this is used by all methods that integrate. I should cache it.
-        //        conductivity.AxpyIntoThis(partialK, dA * material.ThermalConductivity);
-        //    }
-
-        //    conductivity.ScaleIntoThis(Thickness);
-        //    return conductivity;
-        //}
-
-        // Provatidis uses two distinct vectors K = N,x^T * k * N,x + N,y^T * k * N,y
-        //private (Matrix dNdX, Matrix dNdY) CalcdNdx(EvalShapeGradients2D shapeGrad)
-        //{
-        //    int n = Nodes.Count;
-        //    var dNdX = new double[n, 1];
-        //    var dNdY = new double[n, 1];
-        //    for (int i = 0; i < n; ++i)
-        //    {
-        //        dNdX[i, 0] = shapeGrad[i][0];
-        //        dNdY[i, 0] = shapeGrad[i][1];
-        //    }
-        //    return (new Matrix(dNdX), new Matrix(dNdY));
-        //}
 
         private Matrix BuildDeformationMatrix(Matrix shapeGradientsCartesian)
         {
@@ -372,18 +251,18 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             return BuildDiffusionMatrix();//D*u
         }
 
-        public IMatrix RHSFLuxMatrix(IElement element)
-        {
-            return BuildRHSFluxMatrix();//F*flux
-        }
-        public IMatrix RHSPrescribedMatrix(IElement element)
-        {
-            return BuildRHSPrescribedMatrix();//P*u0
-        }
+        //public IMatrix RHSFLuxMatrix(IElement element)
+        //{
+        //    return BuildRHSFluxMatrix();//F*flux
+        //}
+        //public IMatrix RHSPrescribedMatrix(IElement element)
+        //{
+        //    return BuildRHSPrescribedMatrix();//P*u0
+        //}
 
         public IMatrix DampingMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return BuildZeroMatrix();
         }
     }
 }

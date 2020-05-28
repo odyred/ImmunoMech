@@ -55,7 +55,7 @@ namespace ISAAR.MSolve.Tests.FEM
             double density = 1.0;
             double U = 2.0;
             double k = 1.0;
-            double L = 1.0;
+            double L = .0;
             var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, L));
             var model = new Model();
@@ -70,13 +70,13 @@ namespace ISAAR.MSolve.Tests.FEM
             }
 
             double[,] nodeData = new double[,] { {0,0,0},
+            {0,1,0},
+            {0,1,1},
+            {0,0,1},
             {1,0,0},
             {1,1,0},
-            {0,1,0},
-            {0,0,1},
-            {1,0,1},
             {1,1,1},
-            {0,1,1} };
+            {1,0,1} };
 
             for (int nNode = 0; nNode < nodeData.GetLength(0); nNode++)
             {
@@ -132,16 +132,16 @@ namespace ISAAR.MSolve.Tests.FEM
             face[4] = new List<Node>
             {
                 model.NodesDictionary[2],
-                model.NodesDictionary[3],
-                model.NodesDictionary[7],
                 model.NodesDictionary[6],
+                model.NodesDictionary[7],
+                model.NodesDictionary[3],
             };
             face[5] = new List<Node>
             {
-                model.NodesDictionary[3],
                 model.NodesDictionary[0],
                 model.NodesDictionary[4],
                 model.NodesDictionary[7],
+                model.NodesDictionary[3],
             };
             int[] elementData = new int[] { 0, 1, 2, 3, 4, 5, 6, 7 };// the last line will not be used. We assign only one element
 
@@ -155,58 +155,80 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             model.SubdomainsDictionary[0].Elements.Add(element);
             model.ElementsDictionary.Add(0, element);
-            
-            var flux = new FluxLoad(10);
+
+            var flux1 = new FluxLoad(1);
+            var flux2 = new FluxLoad(10);
             var dir1 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 0);
             });
             var dir2 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 10);
             });
-            var weakDirichlet1 = new WeakDirichlet(dir1);
-            var weakDirichlet2 = new WeakDirichlet(dir2);
+            var weakDirichlet1 = new WeakDirichlet(dir1,k);
+            var weakDirichlet2 = new WeakDirichlet(dir2,k);
 
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
-            var fluxFactory = new SurfaceLoadElementFactory(flux);
-            foreach (int i in new int[] { 1 })
+            var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
+            var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
+            //foreach (int i in new int[] { 1 })
+            //{
+            //    var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
+            //    var faceElement = new Element();
+            //    faceElement.ID = i;
+            //    faceElement.ElementType = Quad;
+            //    foreach (Node node in face[i - 1])
+            //    {
+            //        faceElement.AddNode(node);
+            //    }
+            //    model.SubdomainsDictionary[0].Elements.Add(faceElement);
+            //    model.ElementsDictionary.Add(i, faceElement);
+
+            //    var dirichletElement = dirichletFactory1.CreateElement(CellType.Quad4, face[i - 1]);
+            //    //var fluxElement = fluxFactory.CreateElement(CellType.Quad4, face[i - 1]);
+
+            //    model.SurfaceLoads.Add(dirichletElement);
+            //    //model.SurfaceLoads.Add(fluxElement);
+            //}
+
+            foreach (int i in new int[] { 0 })
             {
-                var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
-                var faceElement = new Element();
-                faceElement.ID = i;
-                faceElement.ElementType = Quad;
-                foreach (Node node in face[i - 1])
-                {
-                    faceElement.AddNode(node);
-                }
-                model.SubdomainsDictionary[0].Elements.Add(faceElement);
-                model.ElementsDictionary.Add(i, faceElement);
+                //var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i]);
+                //var faceElement = new Element();
+                //faceElement.ID = 1;
+                //faceElement.ElementType = Quad;
+                //foreach (Node node in face[i])
+                //{
+                //    faceElement.AddNode(node);
+                //}
+                //model.SubdomainsDictionary[0].Elements.Add(faceElement);
+                //model.ElementsDictionary.Add(1, faceElement);
 
-                var dirichletElement = dirichletFactory1.CreateElement(CellType.Quad4, face[i - 1]);
-                //var fluxElement = fluxFactory.CreateElement(CellType.Quad4, face[i - 1]);
+                //var dirichletElement = dirichletFactory2.CreateElement(CellType.Quad4, face[i]);
+                //model.SurfaceLoads.Add(dirichletElement);
 
-                model.SurfaceLoads.Add(dirichletElement);
-                //model.SurfaceLoads.Add(fluxElement);
+                var fluxElement = fluxFactory1.CreateElement(CellType.Quad4, face[i]);
+                model.SurfaceLoads.Add(fluxElement);
             }
 
-            foreach (int i in new int[] { 2 })
+            foreach (int i in new int[] { 1 })
             {
-                var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i - 1]);
-                var faceElement = new Element();
-                faceElement.ID = i;
-                faceElement.ElementType = Quad;
-                foreach (Node node in face[i - 1])
-                {
-                    faceElement.AddNode(node);
-                }
-                model.SubdomainsDictionary[0].Elements.Add(faceElement);
-                model.ElementsDictionary.Add(i, faceElement);
+                //var Quad = boundaryFactory3D.CreateElement(CellType.Quad4, face[i]);
+                //var faceElement = new Element();
+                //faceElement.ID = 2;
+                //faceElement.ElementType = Quad;
+                //foreach (Node node in face[i])
+                //{
+                //    faceElement.AddNode(node);
+                //}
+                //model.SubdomainsDictionary[0].Elements.Add(faceElement);
+                //model.ElementsDictionary.Add(2, faceElement);
 
-                var dirichletElement = dirichletFactory2.CreateElement(CellType.Quad4, face[i - 1]);
-                //var fluxElement = fluxFactory.CreateElement(CellType.Quad4, face[i - 1]);
+                //var dirichletElement = dirichletFactory2.CreateElement(CellType.Quad4, face[i]);
+                //model.SurfaceLoads.Add(dirichletElement);
 
-                model.SurfaceLoads.Add(dirichletElement);
-                //model.SurfaceLoads.Add(fluxElement);
+                var fluxElement = fluxFactory2.CreateElement(CellType.Quad4, face[i]);
+                model.SurfaceLoads.Add(fluxElement);
             }
 
             //constraints
@@ -240,11 +262,13 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static IVectorView SolveModel(Model model)
         {
-            SkylineSolver solver = (new SkylineSolver.Builder()).BuildSolver(model);
+            double[] temp0 = new double[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            Vector initialTemp = Vector.CreateFromArray(temp0);
+            DenseMatrixSolver solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
             var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider); // NonlinearAnalyzer
-            var parentAnalyzer = new ThermalDynamicAnalyzer(model, solver, provider, childAnalyzer, 0.5, .3, 5); // ThermalStaticAnalyzer
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-4, 2.5, initialTemp); // ConvectionDiffusionStaticAnalyzer
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
