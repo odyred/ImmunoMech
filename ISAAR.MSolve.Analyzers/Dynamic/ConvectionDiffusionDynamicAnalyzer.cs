@@ -278,18 +278,18 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 int id = linearSystem.Subdomain.ID;
                 //temperature[id].CopyFrom(linearSystem.Solution);
                 temperature[id].AddIntoThis(linearSystem.Solution);
-                if (timeStep % 1 == 0)
+                if (timeStep % 10 == 0)
                 {
-                    //string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                    string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
-                    string path2 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature7.txt";
-                    //var path = Path.Combine(path0, $"temperature{timeStep}.txt");
+                    string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
+                    //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    var path2 = Path.Combine(path0, $"temperature{timeStep}.txt");
                     var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                    //                    writer.WriteToFile(temperature[id], path);
+                    writer.WriteToFile(temperature[id], path2);
                     //writer.WriteToFile(temperature[id][0], path1);
 
-                    File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
-                    File.AppendAllLines(path2, new string[] { temperature[id][7].ToString() }, Encoding.UTF8);
+                    //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
+                    //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
                 }
             }
         }

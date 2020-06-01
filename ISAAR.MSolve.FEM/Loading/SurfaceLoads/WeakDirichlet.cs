@@ -79,9 +79,9 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 //Vector deformationX = deformation.GetRow(0);
                 //Vector deformationY = deformation.GetRow(1);
                 //Vector deformationZ = deformation.GetRow(2);
-                Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
-                    -_diffusionCoeff * deformationNormal.TensorProduct(shapeFunctionMatrix);
-                //Matrix partial = deformationNormal.TensorProduct(shapeFunctionMatrix);
+                //Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
+                //    -_diffusionCoeff * deformationNormal.TensorProduct(shapeFunctionMatrix);
+                Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);
                 //surfaceBasisVector1[0] = jacobianMatrix[0, 0];

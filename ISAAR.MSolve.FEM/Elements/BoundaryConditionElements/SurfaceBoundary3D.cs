@@ -148,7 +148,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 //Matrix partial = -2 * (shapeFunctionMatrix.TensorProduct(deformationNormal))
                 //    + kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
                 Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
-                    - (shapeFunctionMatrix.TensorProduct(deformationNormal));
+                    - 2* material.DiffusionCoeff*(shapeFunctionMatrix.TensorProduct(deformationNormal));
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);
                 //surfaceBasisVector1[0] = jacobianMatrix[0, 0];
@@ -163,7 +163,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                 //Vector surfaceBasisVector3 = surfaceBasisVector1.CrossProduct(surfaceBasisVector2);
 
                 double dA = jacdet * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                stiffness.AxpyIntoThis(partial, dA * material.DiffusionCoeff);
+                stiffness.AxpyIntoThis(partial, dA);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.

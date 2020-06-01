@@ -22,7 +22,10 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
         public IList<IList<Element>> elementDomains;
+        public IList<IList<IList<Node>>> quadBoundaries;
         public double diffusionCoeff;
+        public double convectionCoeff;
+        public double loadFromUnknownCoeff;
         enum Attributes
         {
             sdim = 1001,
@@ -52,10 +55,12 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            double U = -.0;
+            double U = 2.0;
             double k = 1.0;
             double L = .0;
             diffusionCoeff = k;
+            convectionCoeff = U;
+            loadFromUnknownCoeff = L;
             var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, L));
             var model = new Model();
@@ -69,10 +74,12 @@ namespace ISAAR.MSolve.FEM.Readers
             elementBoundaries = new List<IList<Element>>();
             elementDomains = new List<IList<Element>>();
             nodeBoundaries = new List<IList<Node>>();
+            quadBoundaries = new List<IList<IList<Node>>>();
             for (int i = 0; i < 10; i++)
             {
                 elementBoundaries.Add(new List<Element>());
                 nodeBoundaries.Add(new List<Node>());
+                quadBoundaries.Add(new List<IList<Node>>());
             }
             for (int i = 0; i < 2; i++)
             {
@@ -286,44 +293,49 @@ namespace ISAAR.MSolve.FEM.Readers
                         line = text[i].Split(delimeters);
                         NumberOfQuadElements = Int32.Parse(line[0]);
                         i++;
-                        IList<Node> quadNodesCollection = new List<Node>();
+                        IList<IList<Node>> quadNodesCollection = new List<IList<Node>>();
                         for (int QuadID = 0; QuadID < NumberOfQuadElements; QuadID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
 
-                            for (int j = 0; j < (line.Length - 1); j++)
-                            {
-                                quadNodesCollection.Add(model.NodesDictionary[Int32.Parse(line[j])]);
-                            }
 
-                            IReadOnlyList<Node> nodes = new List<Node>
+                            //IReadOnlyList<Node> nodes = new List<Node>
+                            //{
+                            //    model.NodesDictionary[Int32.Parse(line[1])], //0
+                            //    model.NodesDictionary[Int32.Parse(line[3])], //1
+                            //    model.NodesDictionary[Int32.Parse(line[2])], //2
+                            //    model.NodesDictionary[Int32.Parse(line[0])]  //3
+                            //};
+
+                            quadNodesCollection.Add(new List<Node>
                             {
                                 model.NodesDictionary[Int32.Parse(line[1])], //0
                                 model.NodesDictionary[Int32.Parse(line[3])], //1
                                 model.NodesDictionary[Int32.Parse(line[2])], //2
                                 model.NodesDictionary[Int32.Parse(line[0])]  //3
-                            };
-
-                            var Quad4 = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                            var element = new Element();
-                            element.ID = QuadID;
-                            element.ElementType = Quad4;
-                            model.SubdomainsDictionary[0].Elements.Add(element);
-                            model.ElementsDictionary.Add(QuadID, element);
-                            foreach (Node node in nodes)
-                            {
-                                element.AddNode(node);
-                            }
+                            });
+                            //var Quad4 = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                            //var element = new Element();
+                            //element.ID = QuadID;
+                            //element.ElementType = Quad4;
+                            //model.SubdomainsDictionary[0].Elements.Add(element);
+                            //model.ElementsDictionary.Add(QuadID, element);
+                            //foreach (Node node in nodes)
+                            //{
+                            //    element.AddNode(node);
+                            //}
                         }
                         i = i + 3;
                         for (int QuadID = 0; QuadID < NumberOfQuadElements; QuadID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
-                            int elementBoundaryID = Int32.Parse(line[0]);
+                            int boundaryID = Int32.Parse(line[0]);
+                            quadBoundaries[boundaryID].Add(quadNodesCollection[QuadID]);
+                            //int elementBoundaryID = Int32.Parse(line[0]);
 
-                            elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                            //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
                         }
                         break;
                     case Attributes.tet:

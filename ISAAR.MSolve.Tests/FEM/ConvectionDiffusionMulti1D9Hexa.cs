@@ -24,15 +24,16 @@ using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class TumorCellsConcentrationDynamic2
+    public class ConvectionDiffusionMulti1D9Hexa
     {
         private const int subdomainID = 0;
         [Fact]
         private static void RunTest()
         {
+            var models = 
             Model model = CreateModel().Item1;
             ComsolMeshReader2 modelReader = CreateModel().Item2;
-            IVectorView solution = SolveModel(model,modelReader);
+            IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
 
@@ -51,7 +52,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model,ComsolMeshReader2> CreateModel()
+        private static Tuple<Model, ComsolMeshReader2> CreateModel()
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename);
@@ -65,14 +66,14 @@ namespace ISAAR.MSolve.Tests.FEM
             var dir2 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 0);
             });
-            var weakDirichlet1 = new WeakDirichlet(dir1,modelReader.diffusionCoeff);
+            var weakDirichlet1 = new WeakDirichlet(dir1, modelReader.diffusionCoeff);
             var weakDirichlet2 = new WeakDirichlet(dir2, modelReader.diffusionCoeff);
 
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, 
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
                 new ConvectionDiffusionMaterial(modelReader.diffusionCoeff, 0, 0));
 
             //model.NodesDictionary[0].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
@@ -162,7 +163,7 @@ namespace ISAAR.MSolve.Tests.FEM
             //    }
             //}
 
-            return new Tuple<Model,ComsolMeshReader2>(model,modelReader);
+            return new Tuple<Model, ComsolMeshReader2>(model, modelReader);
         }
 
         private static IVectorView SolveModel(Model model, ComsolMeshReader2 modelReader)
@@ -192,6 +193,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
             }
             Vector initialTemp = Vector.CreateFromArray(temp0);
+            Vector[] initialTemps = new Vector[models.Length];
             var builder = new DenseMatrixSolver.Builder();
             //builder.IsMatrixPositiveDefinite = false;
             var solver = builder.BuildSolver(model);
@@ -204,7 +206,7 @@ namespace ISAAR.MSolve.Tests.FEM
             parentAnalyzer.Solve();
 
             return parentAnalyzer.temperature[subdomainID];
- //           return solver.LinearSystems[subdomainID].Solution;
+            //           return solver.LinearSystems[subdomainID].Solution;
         }
     }
 }
