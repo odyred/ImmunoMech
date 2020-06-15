@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
-using ISAAR.MSolve.LinearAlgebra.Output.Formatting;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Logging.Interfaces;
@@ -21,7 +19,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
     /// 
     /// Authors: Yannis Kalogeris
     /// </summary>
-    public class ConvectionDiffusionDynamicAnalyzerMultiModel : INonLinearParentAnalyzer //TODO: why is this non linear
+    public class ConvectionDiffusionDynamicAnalyzerMultiModel_Beta : INonLinearParentAnalyzer //TODO: why is this non linear
     {
         private readonly int maxStaggeredSteps;
         private readonly double timeStep, totalTime, tolerance;
@@ -38,10 +36,11 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] temperatureFromPreviousStaggeredStep;
         private readonly Dictionary<int, IVector>[] conductivityTimesTemperature;
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
+        private readonly Dictionary<int, IVector>[] dummyWeakImpositionTimesTemperature;
         private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
 
-        public ConvectionDiffusionDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, 
-            IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, 
+        public ConvectionDiffusionDynamicAnalyzerMultiModel_Beta(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator,
+            IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime,
             int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialTemperature = null)
         {
             this.CreateNewModel = modelCreator;
@@ -56,6 +55,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             temperatureFromPreviousStaggeredStep = new Dictionary<int, IVector>[solvers.Length];
             conductivityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
             stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
+            dummyWeakImpositionTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
             for (int i = 0; i < solvers.Length; i++)
             {
                 this.linearSystems[i] = solvers[i].LinearSystems;
@@ -66,6 +66,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 temperatureFromPreviousStaggeredStep[i] = new Dictionary<int, IVector>();
                 conductivityTimesTemperature[i] = new Dictionary<int, IVector>();
                 stabilizingConductivityTimesTemperature[i] = new Dictionary<int, IVector>();
+                dummyWeakImpositionTimesTemperature[i] = new Dictionary<int, IVector>();
             }
             this.solvers = solvers;
             //solver.PreventFromOverwrittingSystemMatrices(); //TODO: If the scheme is purely implicit we can overwrite the matrix.
@@ -76,9 +77,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             this.totalTime = totalTime;
             this.ChildAnalyzer.ParentAnalyzer = this;
             this.initialTemperature = initialTemperature;
-        }   
+        }
 
-    public Dictionary<int, IAnalyzerLog[]> Logs => null; //TODO: this can't be right
+        public Dictionary<int, IAnalyzerLog[]> Logs => null; //TODO: this can't be right
         public Dictionary<int, ImplicitIntegrationAnalyzerLog> ResultStorages { get; }
             = new Dictionary<int, ImplicitIntegrationAnalyzerLog>();
 
@@ -310,12 +311,18 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             //TODO: stabilizingRhs has not been implemented
 
             // result = -dt(conductuvity*temperature + rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
+            double[,] kappa = new double[models[modelNo].Nodes.Count, models[modelNo].Nodes.Count];
+            kappa[0, 0] = 1;
+            kappa[models[modelNo].Nodes.Count - 1, models[modelNo].Nodes.Count - 1] = 1;
+            IMatrix penalty = Matrix.CreateFromArray(kappa);
             int id = linearSystem.Subdomain.ID;
+            dummyWeakImpositionTimesTemperature[modelNo][id] = penalty.Multiply(temperature[modelNo][id]);
             conductivityTimesTemperature[modelNo][id] = providers[modelNo].ConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[modelNo][id]);
+            conductivityTimesTemperature[modelNo][id] = conductivityTimesTemperature[modelNo][id].LinearCombination(1, dummyWeakImpositionTimesTemperature[modelNo][id], 1);
             stabilizingConductivityTimesTemperature[modelNo][id] = providers[modelNo].StabilizingConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[modelNo][id]);
 
             IVector rhsResult = conductivityTimesTemperature[modelNo][id].Subtract(rhs[modelNo][id]);
-            var rhsResultnew = rhsResult.LinearCombination(1,stabilizingConductivityTimesTemperature[modelNo][id], -timeStep);
+            var rhsResultnew = rhsResult.LinearCombination(1, stabilizingConductivityTimesTemperature[modelNo][id], -timeStep);
             rhsResultnew.ScaleIntoThis(-timeStep);
 
             //rhsPrevious[id] = rhs[id];
@@ -331,12 +338,14 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 rhsPrevious[i].Clear();
                 conductivityTimesTemperature[i].Clear();
                 stabilizingConductivityTimesTemperature[i].Clear();
+                dummyWeakImpositionTimesTemperature[i].Clear();
 
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
                     int id = linearSystem.Subdomain.ID;
                     conductivityTimesTemperature[i].Add(id, linearSystem.CreateZeroVector());
                     stabilizingConductivityTimesTemperature[i].Add(id, linearSystem.CreateZeroVector());
+                    dummyWeakImpositionTimesTemperature[i].Add(id, linearSystem.CreateZeroVector());
                     //temperature.Add(id, linearSystem.CreateZeroVector());
                     rhs[i].Add(id, linearSystem.CreateZeroVector());
                     rhsPrevious[i].Add(id, linearSystem.CreateZeroVector());
@@ -387,19 +396,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     int id = linearSystem.Subdomain.ID;
                     //temperature[id].CopyFrom(linearSystem.Solution);
                     temperature[i][id].AddIntoThis(linearSystem.Solution);
-                    if ((timeStep+1) % 10 == 0)
-                    {
-                        string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
-                        //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
-                        var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                        writer.WriteToFile(temperature[i][id], path2);
-                        //writer.WriteToFile(temperature[id][0], path1);
-
-                        //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
-                        //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
-                    }
                 }
             }
         }

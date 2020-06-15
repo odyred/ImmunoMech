@@ -47,7 +47,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
             //    }
             //}
             //double kappa = _diffusionCoeff / dist.Min();
-            double kappa = _diffusionCoeff / 1;
+            double kappa = _diffusionCoeff / .01;
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
