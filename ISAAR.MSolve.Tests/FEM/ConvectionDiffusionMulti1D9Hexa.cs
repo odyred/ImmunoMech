@@ -34,8 +34,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            var models = new[] { CreateModel(1, 2, 3, 0, 0, 0, 0).Item1, CreateModel(1, 2, 3, 0, 0, 0, 0).Item1 };
-            var modelReaders = new[] { CreateModel(1, 2, 1,0,0,0,0).Item2, CreateModel(1, 2, 1, 0, 0, 0, 0).Item2 };
+            var models = new[] { CreateModel(1, 2, 0, 3, 0, 0, 0).Item1, CreateModel(1, 2, 0, 1, 0, 0, 0).Item1 };
+            var modelReaders = new[] { CreateModel(1, 2, 0, 1, 0, 0, 0).Item2, CreateModel(1, 2, 0, 1, 0, 0, 0).Item2 };
             IVectorView[] solutions = SolveModels(models, modelReaders);
             Assert.True(CompareResults(solutions[0]));
         }
@@ -190,7 +190,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
             }
 
-            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzerMultiModel(UpdateModels, models, solvers, providers, childAnalyzers, 2.5e-3, 5, initialTemperature: initialTemps);
+            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzerMultiModel(UpdateModels, models, solvers, providers, childAnalyzers, 2.5e-3, 10, initialTemperature: initialTemps);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

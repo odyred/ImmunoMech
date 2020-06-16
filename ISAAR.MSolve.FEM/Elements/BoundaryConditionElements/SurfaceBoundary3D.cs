@@ -111,7 +111,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             //    }
             //}
             //double kappa = material.DiffusionCoeff / dist.Min();
-            double kappa = material.DiffusionCoeff / .01;
+            double kappa = material.DiffusionCoeff / .051;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {

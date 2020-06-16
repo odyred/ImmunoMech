@@ -53,7 +53,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static Tuple<Model,ComsolMeshReader2> CreateModel(double k, double U, double L)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "48tet.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename,k,U,L);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
@@ -75,14 +75,6 @@ namespace ISAAR.MSolve.Tests.FEM
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, 
                 new ConvectionDiffusionMaterial(k, 0, 0));
 
-            //model.NodesDictionary[0].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[1].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[2].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[3].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[40].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[41].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[42].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[43].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
 
             int[] boundaryIDs = new int[] { 0, };
             //int numberOfQuadElements = 0; 
@@ -95,22 +87,21 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
                 {
-                    //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
-                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(fluxElement1);
-                    var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(dirichletElement1);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    var element = new Element();
-                    element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
-                    model.SubdomainsDictionary[0].Elements.Add(element);
-                    model.ElementsDictionary.Add(QuadID, element);
-                    foreach (Node node in nodes)
-                    {
-                        element.AddNode(node);
-                    }
-                    QuadID += 1;
+                    var fluxElement2 = fluxFactory2.CreateElement(CellType.Quad4, nodes);
+                    model.SurfaceLoads.Add(fluxElement2);
+                    //var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(dirichletElement1);
+                    //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    //var element = new Element();
+                    //element.ID = QuadID;
+                    //element.ElementType = SurfaceBoundaryElement;
+                    //model.SubdomainsDictionary[0].Elements.Add(element);
+                    //model.ElementsDictionary.Add(QuadID, element);
+                    //foreach (Node node in nodes)
+                    //{
+                    //    element.AddNode(node);
+                    //}
+                    //QuadID += 1;
                     // var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;
@@ -120,36 +111,36 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
             }
-            boundaryIDs = new int[] { 5 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-                {
-                    //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
-                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(fluxElement1);
-                    var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(dirichletElement2);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    var element = new Element();
-                    element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
-                    model.SubdomainsDictionary[0].Elements.Add(element);
-                    model.ElementsDictionary.Add(QuadID, element);
-                    foreach (Node node in nodes)
-                    {
-                        element.AddNode(node);
-                    }
-                    QuadID += 1;
-                    // var surfaceElement = new SurfaceLoadElement();
-                    //element.ID = TriID;
-                    //surfaceElement.ElementType = DirichletElement1;
-                    //model.SubdomainsDictionary[0].Elements.Add(dirichletElement1);
-                    //model.ElementsDictionary.Add(TriID, surfaceElement);
+            //boundaryIDs = new int[] { 5 };
+            //foreach (int boundaryID in boundaryIDs)
+            //{
+            //    foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+            //    {
+            //        //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
+            //        //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
+            //        //model.SurfaceLoads.Add(fluxElement1);
+            //        var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
+            //        model.SurfaceLoads.Add(dirichletElement2);
+            //        var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+            //        var element = new Element();
+            //        element.ID = QuadID;
+            //        element.ElementType = SurfaceBoundaryElement;
+            //        model.SubdomainsDictionary[0].Elements.Add(element);
+            //        model.ElementsDictionary.Add(QuadID, element);
+            //        foreach (Node node in nodes)
+            //        {
+            //            element.AddNode(node);
+            //        }
+            //        QuadID += 1;
+            //        // var surfaceElement = new SurfaceLoadElement();
+            //        //element.ID = TriID;
+            //        //surfaceElement.ElementType = DirichletElement1;
+            //        //model.SubdomainsDictionary[0].Elements.Add(dirichletElement1);
+            //        //model.ElementsDictionary.Add(TriID, surfaceElement);
 
-                    //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
-                }
-            }
+            //        //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
+            //    }
+            //}
 
             //boundaryIDs = new int[] { 1, 2, 3, 4 };
             //foreach (int boundaryID in boundaryIDs)
@@ -169,28 +160,28 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             //var initialTemp = Vector.CreateZero(model.Nodes.Count);
             double[] temp0 = new double[model.Nodes.Count];
-            int[] boundaryIDs = new int[] { 0 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-                {
-                    foreach (Node node in nodes)
-                    {
-                        temp0[node.ID] = 1;
-                    }
-                }
-            }
-            boundaryIDs = new int[] { 5 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-                {
-                    foreach (Node node in nodes)
-                    {
-                        temp0[node.ID] = 0;
-                    }
-                }
-            }
+            //int[] boundaryIDs = new int[] { 0 };
+            //foreach (int boundaryID in boundaryIDs)
+            //{
+            //    foreach (IList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+            //    {
+            //        foreach (Node node in nodes)
+            //        {
+            //            temp0[node.ID] = 1;
+            //        }
+            //    }
+            //}
+            //boundaryIDs = new int[] { 5 };
+            //foreach (int boundaryID in boundaryIDs)
+            //{
+            //    foreach (IList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+            //    {
+            //        foreach (Node node in nodes)
+            //        {
+            //            temp0[node.ID] = 0;
+            //        }
+            //    }
+            //}
             Vector initialTemp = Vector.CreateFromArray(temp0);
             var builder = new DenseMatrixSolver.Builder();
             //builder.IsMatrixPositiveDefinite = false;
