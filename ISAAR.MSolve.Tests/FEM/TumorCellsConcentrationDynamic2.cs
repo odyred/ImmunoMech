@@ -30,8 +30,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            Model model = CreateModel(1,2,0).Item1;
-            ComsolMeshReader2 modelReader = CreateModel(1,2,0).Item2;
+            Model model = CreateModel(1,new double[] {2,2,2},0).Item1;
+            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { 2, 2, 2 }, 0).Item2;
             IVectorView solution = SolveModel(model,modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -51,7 +51,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model,ComsolMeshReader2> CreateModel(double k, double U, double L)
+        private static Tuple<Model,ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename,k,U,L);
@@ -73,7 +73,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, 
-                new ConvectionDiffusionMaterial(k, 0, 0));
+                new ConvectionDiffusionMaterial(k, new double[]{0,0,0}, 0));
 
 
             int[] boundaryIDs = new int[] { 0, };

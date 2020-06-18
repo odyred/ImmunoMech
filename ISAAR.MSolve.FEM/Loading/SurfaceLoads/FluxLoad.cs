@@ -34,7 +34,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
 
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
-                Vector shapeFunctionMatrix =Vector.CreateFromArray(shapeFunctions[gp]);
+                Vector shapeFunctionVector =Vector.CreateFromArray(shapeFunctions[gp]);
                 Matrix jacobianMatrix = Matrix.CreateZero(2, 3);
                 for (int k = 0; k < nodes.Count; k++)
                 {
@@ -52,7 +52,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 var jacdet = normalVector.Norm2();
 
                 double dA = jacdet * integration.IntegrationPoints[gp].Weight;
-                stiffness.AxpyIntoThis(shapeFunctionMatrix, dA);
+                stiffness.AxpyIntoThis(shapeFunctionVector, dA);
             }
             var appliedDisplacements = Vector.CreateWithValue(nodes.Count, _flux);
             var fluxLoad = stiffness.DoEntrywise(appliedDisplacements, (stiffi, appi) => stiffi*appi);

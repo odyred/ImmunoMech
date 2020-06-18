@@ -48,7 +48,7 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            double U = 1.0;
+            double[] U = {1.0,1,1};
             double k = 1.0;
             double L = .0;
             diffusionCeoff = k;

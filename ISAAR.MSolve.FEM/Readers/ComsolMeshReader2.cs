@@ -25,7 +25,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<IList<Node>>> quadBoundaries;
         public IList<IList<IList<Node>>> triBoundaries;
         private readonly double diffusionCoeff;
-        private readonly double convectionCoeff;
+        private readonly double[] convectionCoeff;
         private readonly double loadFromUnknownCoeff;
         enum Attributes
         {
@@ -43,7 +43,7 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader2(string filename, double k, double U, double L)
+        public ComsolMeshReader2(string filename, double k, double[] U, double L)
         {
             Filename = filename;
             diffusionCoeff = k;
@@ -60,7 +60,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model CreateModelFromFile()
         {
             var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, 0, 0));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] {0,0,0}, 0));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material
@@ -251,7 +251,7 @@ namespace ISAAR.MSolve.FEM.Readers
                         line = text[i].Split(delimeters);
                         NumberOfTetElements = Int32.Parse(line[0]);
                         i++;
-                        for (int TetID = NumberOfTriElements; TetID < NumberOfTriElements + NumberOfTetElements; TetID++)
+                        for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
@@ -267,20 +267,31 @@ namespace ISAAR.MSolve.FEM.Readers
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
-                            double r4 = 0;
-                            foreach (Node node in nodes)
-                            {
-                                element.AddNode(node);
-                                r4 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
-                            }
+                            //double r4 = 0;
+                            //foreach (Node node in nodes)
+                            //{
+                            //    element.AddNode(node);
+                            //    r4 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
+                            //}
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
-                            if (r4 < 4 * 5e-4)
-                                elementDomains[0].Add(element);
-                            else
-                                elementDomains[1].Add(element);
+                            //if (r4 < 4 * 5e-4)
+                            //    elementDomains[0].Add(element);
+                            //else
+                            //    elementDomains[1].Add(element);
                         }
-                        name = null;
+                        i = i + 3;
+                        for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
+
+                        {
+                            i++;
+                            line = text[i].Split(delimeters);
+                            int elementDomainID = Int32.Parse(line[0]);
+                            elementDomains[elementDomainID-1].Add(model.ElementsDictionary[TetID]);
+                            //int elementBoundaryID = Int32.Parse(line[0]);
+
+                            //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
                         break;
                     case Attributes.hex:
                         do
@@ -292,7 +303,7 @@ namespace ISAAR.MSolve.FEM.Readers
                         line = text[i].Split(delimeters);
                         NumberOfHexElements = Int32.Parse(line[0]);
                         i++;
-                        for (int HexID = NumberOfQuadElements; HexID < NumberOfQuadElements + NumberOfHexElements; HexID++)
+                        for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
@@ -316,16 +327,18 @@ namespace ISAAR.MSolve.FEM.Readers
                             foreach (Node node in nodes)
                             {
                                 element.AddNode(node);
-                                //r4 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(HexID, element);
-                            //if (r4 < 4 * 5e-4)
-                            //    elementDomains[0].Add(element);
-                            //else
-                            //    elementDomains[1].Add(element);
                         }
-                        name = null;
+                        i = i + 3;
+                        for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
+                        {
+                            i++;
+                            line = text[i].Split(delimeters);
+                            int elementDomainID = Int32.Parse(line[0]);
+                            elementDomains[elementDomainID-1].Add(model.ElementsDictionary[HexID]);
+                        }
                         break;
                 }
             }

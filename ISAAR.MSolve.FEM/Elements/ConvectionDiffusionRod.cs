@@ -74,7 +74,7 @@ namespace ISAAR.MSolve.FEM.Elements
         public Matrix BuildMassTransportConductivityMatrix()
         {
 
-            double conA = material.ConvectionCoeff * CrossSectionArea / 2;
+            double conA = material.ConvectionCoeff[0] * CrossSectionArea / 2;
             double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }
@@ -88,13 +88,13 @@ namespace ISAAR.MSolve.FEM.Elements
         public Matrix BuildStabilizingConductivityMatrix()
         {
 
-            double cAoverL = -.5 * Math.Pow(material.ConvectionCoeff,2) * CrossSectionArea / Length;
+            double cAoverL = -.5 * Math.Pow(material.ConvectionCoeff[0],2) * CrossSectionArea / Length;
             double[,] conductivity = { { cAoverL, -cAoverL }, { -cAoverL, cAoverL } };
             return Matrix.CreateFromArray(conductivity);
         }
         public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
         {
-            double conA = -.5 * material.LoadFromUnknownCoeff * material.ConvectionCoeff * CrossSectionArea / 2;
+            double conA = -.5 * material.LoadFromUnknownCoeff * material.ConvectionCoeff[0] * CrossSectionArea / 2;
             double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }

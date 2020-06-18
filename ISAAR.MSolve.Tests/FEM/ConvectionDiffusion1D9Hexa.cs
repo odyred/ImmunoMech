@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
+using ISAAR.MSolve.FEM.Loading.BodyLoads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -30,8 +31,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            Model model = CreateModel(1, 2, 0).Item1;
-            ComsolMeshReader2 modelReader = CreateModel(1, 2, 0).Item2;
+            Model model = CreateModel(1, new double[]{2,2,2}, -1).Item1;
+            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { 2, 2, 2 }, -1).Item2;
             IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -51,12 +52,13 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double U, double L)
+        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
+            var bodyLoad = new ConvectionDiffusionDomainLoad(new ConvectionDiffusionMaterial(k,U,L), 1,ThermalDof.Temperature);
             var flux1 = new FluxLoad(1);
             var flux2 = new FluxLoad(10);
             var dir1 = new DirichletDistribution(list => {
@@ -68,28 +70,36 @@ namespace ISAAR.MSolve.Tests.FEM
             var weakDirichlet1 = new WeakDirichlet(dir1, k);
             var weakDirichlet2 = new WeakDirichlet(dir2, k);
 
+            var bodyLoadElementFactory = new BodyLoadElementFactory(bodyLoad, model);
             var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
             var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-                new ConvectionDiffusionMaterial(k, 0, 0));
+                new ConvectionDiffusionMaterial(k, new double[]{0,0,0}, 0));
 
-            //model.NodesDictionary[0].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[1].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[2].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[3].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 1 });
-            //model.NodesDictionary[40].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[41].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[42].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
-            //model.NodesDictionary[43].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+            int[] domainIDs = new int[] { 0, };
+            foreach (int domainID in domainIDs)
+            {
+                foreach (Element element in modelReader.elementDomains[domainID])
+                {
+                    //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
+                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(fluxElement1);
+                    var bodyLoadElementCellType = element.ElementType.CellType;
+                    var nodes = (IReadOnlyList<Node>) element.Nodes;
+                    var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
+                    model.BodyLoads.Add(bodyLoadElement);
+                    // var surfaceElement = new SurfaceLoadElement();
+                    //element.ID = TriID;
+                    //surfaceElement.ElementType = DirichletElement1;
+                    //model.SubdomainsDictionary[0].Elements.Add(dirichletElement1);
+                    //model.ElementsDictionary.Add(TriID, surfaceElement);
 
+                    //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
+                }
+            }
             int[] boundaryIDs = new int[] { 0, };
-            //int numberOfQuadElements = 0; 
-            //for ( int i = 0; i<boundaryIDs.Length; i++)
-            //{
-            //    numberOfQuadElements += modelReader.quadBoundaries[boundaryIDs[i]].Count;
-            //}
             int QuadID = model.ElementsDictionary.Count + 1;
             foreach (int boundaryID in boundaryIDs)
             {
@@ -100,10 +110,10 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.SurfaceLoads.Add(fluxElement1);
                     var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
                     model.SurfaceLoads.Add(dirichletElement1);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    var surfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
                     var element = new Element();
                     element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
+                    element.ElementType = surfaceBoundaryElement;
                     model.SubdomainsDictionary[0].Elements.Add(element);
                     model.ElementsDictionary.Add(QuadID, element);
                     foreach (Node node in nodes)
@@ -130,10 +140,10 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.SurfaceLoads.Add(fluxElement1);
                     var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
                     model.SurfaceLoads.Add(dirichletElement2);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    var surfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
                     var element = new Element();
                     element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
+                    element.ElementType = surfaceBoundaryElement;
                     model.SubdomainsDictionary[0].Elements.Add(element);
                     model.ElementsDictionary.Add(QuadID, element);
                     foreach (Node node in nodes)

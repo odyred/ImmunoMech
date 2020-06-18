@@ -88,7 +88,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Elements
             int numElements = 8;
-            var elementFactory = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, 0, 0));
+            var elementFactory = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
             var elements = new ConvectionDiffusionElement3D[8];
             elements[0] = elementFactory.CreateElement(CellType.Hexa8, new Node[] { nodes[13], nodes[4], nodes[3], nodes[12], nodes[10], nodes[1], nodes[0], nodes[9] });
             elements[1] = elementFactory.CreateElement(CellType.Hexa8, new Node[] { nodes[14], nodes[5], nodes[4], nodes[13], nodes[11], nodes[2], nodes[1], nodes[10] });

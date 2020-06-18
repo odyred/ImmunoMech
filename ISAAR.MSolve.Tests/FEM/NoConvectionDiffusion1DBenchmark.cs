@@ -50,7 +50,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Material
             double k = 0;
-            double U = 0;
+            double[] U = {0,0,0};
             double L = 1;
             double h = 1;
             double crossSectionArea = 1;

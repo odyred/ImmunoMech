@@ -96,11 +96,11 @@ namespace ISAAR.MSolve.FEM.Elements
                 Vector deformationX = deformation.GetRow(0);
                 Vector deformationY = deformation.GetRow(1);
                 Vector deformationZ = deformation.GetRow(2);
-                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) +
-                    shapeFunctionMatrix.TensorProduct(deformationY) +
-                    shapeFunctionMatrix.TensorProduct(deformationZ);
+                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) * material.ConvectionCoeff[0] +
+                    shapeFunctionMatrix.TensorProduct(deformationY) * material.ConvectionCoeff[1] +
+                    shapeFunctionMatrix.TensorProduct(deformationZ) * material.ConvectionCoeff[2];
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA * material.ConvectionCoeff);
+                convection.AxpyIntoThis(partialK, dA);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
@@ -145,11 +145,11 @@ namespace ISAAR.MSolve.FEM.Elements
                 Vector deformationX = deformation.GetRow(0);
                 Vector deformationY = deformation.GetRow(1);
                 Vector deformationZ = deformation.GetRow(2);
-                Matrix partialK = deformationX.TensorProduct(deformationY) +
-                    deformationX.TensorProduct(deformationZ) +
-                    deformationY.TensorProduct(deformationZ);
+                Matrix partialK = deformationX.TensorProduct(deformationY) * material.ConvectionCoeff[0] * material.ConvectionCoeff[1] +
+                    deformationX.TensorProduct(deformationZ) * material.ConvectionCoeff[0] * material.ConvectionCoeff[2] +
+                    deformationY.TensorProduct(deformationZ) * material.ConvectionCoeff[1] * material.ConvectionCoeff[2];
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA * -Math.Pow(material.ConvectionCoeff, 2));
+                convection.AxpyIntoThis(partialK, -dA);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
@@ -175,11 +175,11 @@ namespace ISAAR.MSolve.FEM.Elements
                 Vector deformationX = deformation.GetRow(0);
                 Vector deformationY = deformation.GetRow(1);
                 Vector deformationZ = deformation.GetRow(2);
-                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) +
-                    shapeFunctionMatrix.TensorProduct(deformationY) +
-                    shapeFunctionMatrix.TensorProduct(deformationZ);
+                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) * material.ConvectionCoeff[0] * material.LoadFromUnknownCoeff +
+                    shapeFunctionMatrix.TensorProduct(deformationY) * material.ConvectionCoeff[1] * material.LoadFromUnknownCoeff +
+                    shapeFunctionMatrix.TensorProduct(deformationZ) * material.ConvectionCoeff[2] * material.LoadFromUnknownCoeff;
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
-                convection.AxpyIntoThis(partialK, dA * -0.5 * material.ConvectionCoeff * material.LoadFromUnknownCoeff);
+                convection.AxpyIntoThis(partialK, -0.5 * dA );
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.

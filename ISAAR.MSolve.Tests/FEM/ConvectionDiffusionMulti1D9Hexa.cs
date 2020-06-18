@@ -34,8 +34,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            var models = new[] { CreateModel(1, 2, 0, 3, 0, 0, 0).Item1, CreateModel(1, 2, 0, 1, 0, 0, 0).Item1 };
-            var modelReaders = new[] { CreateModel(1, 2, 0, 1, 0, 0, 0).Item2, CreateModel(1, 2, 0, 1, 0, 0, 0).Item2 };
+            var models = new[] { CreateModel(1, new double[]{2,2,2}, 0, 3, 0, 0, 0).Item1, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1 };
+            var modelReaders = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2 };
             IVectorView[] solutions = SolveModels(models, modelReaders);
             Assert.True(CompareResults(solutions[0]));
         }
@@ -45,8 +45,8 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             double[] sol0 = solutions[0][0].CopyToArray();
             double[] sol1 = solutions[1][0].CopyToArray();
-            modelsToReplace[0] = CreateModel(1, 2, 0, 3*sol1[0] , sol1[sol1.Length-1],0,0).Item1;
-            modelsToReplace[1] = CreateModel(1, 2, 0, 1, 0, 0, 0).Item1;
+            modelsToReplace[0] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 3*sol1[0] , sol1[sol1.Length-1],0,0).Item1;
+            modelsToReplace[1] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1;
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
@@ -71,7 +71,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double U, double L, double b1, double b2, double f1, double f2)
+        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L, double b1, double b2, double f1, double f2)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename,k,U,L);
@@ -93,7 +93,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-                new ConvectionDiffusionMaterial(k, 0, 0));
+                new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
 
 
             int[] boundaryIDs = new int[] { 0, };

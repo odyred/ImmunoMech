@@ -52,7 +52,7 @@ namespace ISAAR.MSolve.Tests.FEM
             double density = 1.0;
             double c = 1.0;
             double k = 1.0;
-            double U = 1.0;
+            double[] U = {1.0,1,1};
             double h = .0;
             var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, 0));
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, 0));

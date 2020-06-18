@@ -27,7 +27,7 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            var models = new[] { CreateModel(1, 2, 0, 1), CreateModel(0, 2, 0, 1) };
+            var models = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1), CreateModel(0, new double[] { 2, 2, 2 }, 0, 1) };
             IVectorView[] solutions = SolveModels(models);
             Assert.True(CompareResults(solutions[0]));
         }
@@ -35,8 +35,8 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            modelsToReplace[0] = CreateModel(1, 2, 0, 1);
-            modelsToReplace[1] = CreateModel(0, 2, 0, 1);
+            modelsToReplace[0] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 1);
+            modelsToReplace[1] = CreateModel(0, new double[] { 2, 2, 2 }, 0, 1);
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
@@ -61,7 +61,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Model CreateModel(double k, double U, double L, double h)
+        private static Model CreateModel(double k, double[] U, double L, double h)
         {
             var model = new Model();
 

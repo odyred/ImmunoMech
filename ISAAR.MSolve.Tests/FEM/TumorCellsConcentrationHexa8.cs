@@ -53,7 +53,7 @@ namespace ISAAR.MSolve.Tests.FEM
             IList<IList<Node>> nodeBoundaries;
             IList<IList<Element>> elementBoundaries;
             double density = 1.0;
-            double U = 2.0;
+            double[] U = {2,2,2};
             double k = 1.0;
             double L = .0;
             var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));

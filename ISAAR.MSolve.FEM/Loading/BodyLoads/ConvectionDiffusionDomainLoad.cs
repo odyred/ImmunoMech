@@ -86,9 +86,9 @@ namespace ISAAR.MSolve.FEM.Loading.BodyLoads
 				Vector deformationX = deformation.GetRow(0);
 				Vector deformationY = deformation.GetRow(1);
 				Vector deformationZ = deformation.GetRow(2);
-				Vector partialK = deformationX.Scale(_material.ConvectionCoeff) +
-					deformationY.Scale(_material.ConvectionCoeff) +
-					deformationZ.Scale(_material.ConvectionCoeff);
+				Vector partialK = deformationX.Scale(_material.ConvectionCoeff[0]) +
+					deformationY.Scale(_material.ConvectionCoeff[1]) +
+					deformationZ.Scale(_material.ConvectionCoeff[2]);
 				//loadTable.AxpyIntoThis(partialK, dA);
 
 				var weightFactor = integration.IntegrationPoints[gp].Weight;
