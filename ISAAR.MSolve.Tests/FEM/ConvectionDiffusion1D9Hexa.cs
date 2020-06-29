@@ -31,8 +31,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            Model model = CreateModel(1, new double[]{2,2,2}, -1).Item1;
-            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { 2, 2, 2 }, -1).Item2;
+            Model model = CreateModel(1, new double[]{2,2,2}, 0).Item1;
+            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { 2, 2, 2 }, 0).Item2;
             IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -86,10 +86,10 @@ namespace ISAAR.MSolve.Tests.FEM
                     //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
-                    var bodyLoadElementCellType = element.ElementType.CellType;
-                    var nodes = (IReadOnlyList<Node>) element.Nodes;
-                    var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
-                    model.BodyLoads.Add(bodyLoadElement);
+                    //var bodyLoadElementCellType = element.ElementType.CellType;
+                    //var nodes = (IReadOnlyList<Node>) element.Nodes;
+                    //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
+                    //model.BodyLoads.Add(bodyLoadElement);
                     // var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;

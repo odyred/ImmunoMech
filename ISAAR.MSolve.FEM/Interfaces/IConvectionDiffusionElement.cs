@@ -5,5 +5,7 @@ namespace ISAAR.MSolve.FEM.Interfaces
 {
     public interface IConvectionDiffusionElement: IFiniteElement
     {
+        IMatrix MassTransportConductivityMatrix(IElement element);
+        IMatrix DiffusionConductivityMatrix(IElement element);
     }
 }

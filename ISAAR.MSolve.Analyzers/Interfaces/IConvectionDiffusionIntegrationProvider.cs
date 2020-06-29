@@ -9,7 +9,7 @@ namespace ISAAR.MSolve.Analyzers.Interfaces
     {
         //TODO: This should not exist at all. The provider should return the 0th order (stiffness), 1st order (damping) and 2nd
         //      order matrices (or some matrix representations that can be combined between them and multiplied with vectors).
-        IMatrixView LinearCombinationOfMatricesIntoStiffness(ISubdomain subdomain);
+        IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain);
 
         //TODO: Way too generic name. Probably needs refactoring as well.
         void ProcessRhs(ISubdomain subdomain, IVector rhs);
@@ -23,6 +23,8 @@ namespace ISAAR.MSolve.Analyzers.Interfaces
 
         //TODO: what about thermal? There is no mass matrix there. Define these as 1st order matrix coeff, 2nd order ...
         IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
+        IVector DiffusionConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
+        IVector MassTransportConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
         IVector StabilizingConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
         IVector StabilizingRhs(ISubdomain subdomain);
     }

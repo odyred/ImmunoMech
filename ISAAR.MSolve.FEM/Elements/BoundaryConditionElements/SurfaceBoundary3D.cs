@@ -18,7 +18,7 @@ using System.Text;
 
 namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
 {
-    public class SurfaceBoundary3D : IFiniteElement,  ICell<Node>
+    public class SurfaceBoundary3D : IConvectionDiffusionElement,  ICell<Node>
     {
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
         private readonly ConvectionDiffusionMaterial material;
@@ -111,7 +111,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             //    }
             //}
             //double kappa = material.DiffusionCoeff / dist.Min();
-            double kappa = material.DiffusionCoeff / .051;
+            double kappa = material.DiffusionCoeff / .5;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
@@ -247,6 +247,14 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         }
 
         public IMatrix StiffnessMatrix(IElement element)
+        {
+            return BuildDiffusionMatrix();//D*u
+        }
+        public IMatrix DiffusionConductivityMatrix(IElement element)
+        {
+            return BuildDiffusionMatrix();//D*u
+        }
+        public IMatrix MassTransportConductivityMatrix(IElement element)
         {
             return BuildDiffusionMatrix();//D*u
         }

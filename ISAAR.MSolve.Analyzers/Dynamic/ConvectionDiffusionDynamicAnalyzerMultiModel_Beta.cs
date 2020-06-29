@@ -90,13 +90,13 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             var coeffs = new ImplicitIntegrationCoefficients
             {
                 Mass = 1,
-                Stiffness = 1
+                Stiffness = 0
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
-                    linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(linearSystem.Subdomain);
+                    linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
                 }
             }
         }

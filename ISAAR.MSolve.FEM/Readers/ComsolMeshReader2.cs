@@ -267,18 +267,12 @@ namespace ISAAR.MSolve.FEM.Readers
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
-                            //double r4 = 0;
-                            //foreach (Node node in nodes)
-                            //{
-                            //    element.AddNode(node);
-                            //    r4 += Math.Sqrt(Math.Pow(node.X, 2) + Math.Pow(node.Y, 2) + Math.Pow(node.Z, 2));
-                            //}
+                            foreach (Node node in nodes)
+                            {
+                                element.AddNode(node);
+                            }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
-                            //if (r4 < 4 * 5e-4)
-                            //    elementDomains[0].Add(element);
-                            //else
-                            //    elementDomains[1].Add(element);
                         }
                         i = i + 3;
                         for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
@@ -323,7 +317,6 @@ namespace ISAAR.MSolve.FEM.Readers
                             var element = new Element();
                             element.ID = HexID;
                             element.ElementType = Hexa8;
-                            double r4 = 0;
                             foreach (Node node in nodes)
                             {
                                 element.AddNode(node);

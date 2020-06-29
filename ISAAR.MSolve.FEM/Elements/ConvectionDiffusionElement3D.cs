@@ -16,7 +16,7 @@ using ISAAR.MSolve.Materials;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
-    public class ConvectionDiffusionElement3D : IFiniteElement, ICell<Node>
+    public class ConvectionDiffusionElement3D : IConvectionDiffusionElement, ICell<Node>
     {
         private readonly static IDofType[] nodalDOFTypes = new IDofType[] { ThermalDof.Temperature };
         private readonly IDofType[][] dofTypes; //TODO: this should not be stored for each element. Instead store it once for each Quad4, Tri3, etc. Otherwise create it on the fly.
@@ -191,6 +191,14 @@ namespace ISAAR.MSolve.FEM.Elements
         {
             return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() +
                 BuildLoadFromUnknownConductivityMatrix();
+        }
+        public IMatrix DiffusionConductivityMatrix(IElement element)
+        {
+            return BuildDiffusionConductivityMatrix() + BuildLoadFromUnknownConductivityMatrix();
+        }
+        public IMatrix MassTransportConductivityMatrix(IElement element)
+        {
+            return BuildMassTransportConductivityMatrix();
         }
 
         public Matrix BuildDiffusionConductivityMatrix()

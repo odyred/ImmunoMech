@@ -13,16 +13,13 @@ using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Logging.Interfaces;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.LinearSystems;
+using Troschuetz.Random.Distributions.Continuous;
 
 //TODO: Optimization: I could avoid initialization and GC of some vectors by reusing existing ones.
 //TODO: Use a base class for implicit time integration methods (perhaps to together with explicit)
 namespace ISAAR.MSolve.Analyzers.Dynamic
 {
-    /// <summary>
-    /// 
-    /// Authors: Yannis Kalogeris
-    /// </summary>
-    public class ConvectionDiffusionDynamicAnalyzer : INonLinearParentAnalyzer //TODO: why is this non linear
+    public class ConvectionDiffusionImlicitDynamicAnalyzer : INonLinearParentAnalyzer //TODO: why is this non linear
     {
         private readonly double timeStep, totalTime;
         private readonly IStructuralModel model;
@@ -34,12 +31,11 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> stabilizingRhs = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
         private Dictionary<int, IVector> rhsPrevious = new Dictionary<int, IVector>();//TODO: at the moment domain loads are not implemented in this
         public Dictionary<int, IVector> temperature = new Dictionary<int, IVector>();
-        private Dictionary<int, IVector> conductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> diffusionConductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> massTransportConductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
 
-        public ConvectionDiffusionDynamicAnalyzer(IStructuralModel model, ISolver solver, IConvectionDiffusionIntegrationProvider provider,
+        public ConvectionDiffusionImlicitDynamicAnalyzer(IStructuralModel model, ISolver solver, IConvectionDiffusionIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, IVector initialTemperature = null)
         {
             this.model = model;
@@ -64,8 +60,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1,
-                Stiffness = 0
+                Mass = 1 / timeStep / timeStep,
+                Stiffness = 1 / 2 / timeStep
             };
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
@@ -206,14 +202,17 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             //TODO: what is the meaning of addRhs? Do we need this when solving dynamic thermal equations?
             //TODO: stabilizingRhs has not been implemented
 
-            // result = -dt(conductuvity*temperature - rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
+            // result = (capacity/dt^2 - massTransportConductivity/dt - diffusionConductivity/2*dt - stabilizingConductivity)*temperature
+            //-((rhsPrevious+rhsCurrent)/2*dt + StabilizingRhs/dt) 
             int id = linearSystem.Subdomain.ID;
-            conductivityTimesTemperature[id] = provider.ConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
-            //massTransportConductivityTimesTemperature[id] = provider.MassTransportConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
-            //var conductivityTimesTemperature = diffusionConductivityTimesTemperature[id].LinearCombination(1, massTransportConductivityTimesTemperature[id], 1);
+            double a0 = 1 / Math.Pow(timeStep, 2);
+            double a1 = 1 / (2 * timeStep);
+            double a2 = 1 / timeStep;
+            diffusionConductivityTimesTemperature[id] = provider.ConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
+            massTransportConductivityTimesTemperature[id] = provider.MassTransportConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
             stabilizingConductivityTimesTemperature[id] = provider.StabilizingConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
 
-            IVector rhsResult = conductivityTimesTemperature[id].Subtract(rhs[id]);
+            IVector rhsResult = diffusionConductivityTimesTemperature[id].Subtract(rhs[id]);
             var rhsResultnew = rhsResult.LinearCombination(1, stabilizingConductivityTimesTemperature[id], -timeStep);
             rhsResultnew.ScaleIntoThis(-timeStep);
 
@@ -227,15 +226,13 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             rhs.Clear();
             stabilizingRhs.Clear();
             rhsPrevious.Clear();
-            conductivityTimesTemperature.Clear();
-            //massTransportConductivityTimesTemperature.Clear();
+            diffusionConductivityTimesTemperature.Clear();
             stabilizingConductivityTimesTemperature.Clear();
 
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
                 int id = linearSystem.Subdomain.ID;
-                conductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
-                //massTransportConductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
+                diffusionConductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
                 stabilizingConductivityTimesTemperature.Add(id, linearSystem.CreateZeroVector());
                 //temperature.Add(id, linearSystem.CreateZeroVector());
                 rhs.Add(id, linearSystem.CreateZeroVector());
@@ -284,7 +281,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 int id = linearSystem.Subdomain.ID;
                 //temperature[id].CopyFrom(linearSystem.Solution);
                 temperature[id].AddIntoThis(linearSystem.Solution);
-                if ((timeStep+1) % 100 == 0)
+                if ((timeStep + 1) % 1 == 0)
                 {
                     string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
