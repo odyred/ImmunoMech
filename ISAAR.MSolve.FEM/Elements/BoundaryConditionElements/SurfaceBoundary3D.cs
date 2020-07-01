@@ -111,7 +111,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
             //    }
             //}
             //double kappa = material.DiffusionCoeff / dist.Min();
-            double kappa = material.DiffusionCoeff / .5;
+            double kappa = material.DiffusionCoeff / .005;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
@@ -256,7 +256,7 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         }
         public IMatrix MassTransportConductivityMatrix(IElement element)
         {
-            return BuildDiffusionMatrix();//D*u
+            return BuildZeroMatrix();
         }
 
         //public IMatrix RHSFLuxMatrix(IElement element)

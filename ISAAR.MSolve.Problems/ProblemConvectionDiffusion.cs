@@ -13,7 +13,6 @@ using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.LinearSystems;
 using ISAAR.MSolve.FEM.Loading.Providers;
-using ISAAR.MSolve.FEM.Providers;
 
 //TODO: Usually the LinearSystem is passed in, but for GetRHSFromHistoryLoad() it is stored as a field. Decide on one method.
 //TODO: I am not too fond of the provider storing global sized matrices.
@@ -21,10 +20,9 @@ namespace ISAAR.MSolve.Problems
 {
     public class ProblemConvectionDiffusion : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
     {
-        private Dictionary<int, IMatrix> capacity, conductivityFreeFree, massTransportConductivityFreeFree, stabilizingConductivity;
+        private Dictionary<int, IMatrix> capacity, conductivityFreeFree, stabilizingConductivity;
         private Dictionary<int, IVector> stabilizingDomainLoad;
-        private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr,
-            massTransportConductivityFreeConstr, massTransportConductivityConstrFree, massTransportConductivityConstrConstr;
+        private Dictionary<int, IMatrixView> conductivityFreeConstr, conductivityConstrFree, conductivityConstrConstr;
         private readonly Model model;
         private readonly ISolver solver;
         private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
@@ -37,6 +35,7 @@ namespace ISAAR.MSolve.Problems
             this.model = model;
             this.linearSystems = solver.LinearSystems;
             this.solver = solver;
+            //this.DirichletLoadsAssembler = new DirichletEquivalentLoadsStructural(conductivityProvider);
         }
 
         public IDirichletEquivalentLoadsAssembler DirichletLoadsAssembler { get; }
@@ -98,7 +97,6 @@ namespace ISAAR.MSolve.Problems
             }
         }
 
-
         private void RebuildConductivityFreeFree()
         {
             //TODO: This will rebuild all the stiffnesses of all subdomains, if even one subdomain has MaterialsModified = true.
@@ -150,11 +148,10 @@ namespace ISAAR.MSolve.Problems
 
         #region IImplicitIntegrationProvider Members
 
-        public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients, 
-            ISubdomain subdomain)
+        public IMatrixView LinearCombinationOfMatricesIntoStiffness(ImplicitIntegrationCoefficients coefficients, ISubdomain subdomain)
         {
             int id = subdomain.ID;
-            return Conductivity[id].LinearCombination(coefficients.Stiffness, Capacity[id], coefficients.Mass);
+            return Capacity[id];
         }
 
         public void ProcessRhs(ISubdomain subdomain, IVector rhs)
@@ -207,12 +204,12 @@ namespace ISAAR.MSolve.Problems
             IMatrixView matrixConstrConstr) CalculateSubMatrices(ISubdomain subdomain)
         {
             int id = subdomain.ID;
-            if ((conductivityFreeFree == null) || (conductivityFreeConstr == null) 
+            if ((conductivityFreeFree == null) || (conductivityFreeConstr == null)
                 || (conductivityConstrFree == null) || (conductivityConstrConstr == null))
             {
                 BuildConductivitySubmatrices();
             }
-            return (conductivityFreeFree[id], conductivityFreeConstr[id], 
+            return (conductivityFreeFree[id], conductivityFreeConstr[id],
                 conductivityConstrFree[id], conductivityConstrConstr[id]);
         }
         #endregion
@@ -222,7 +219,6 @@ namespace ISAAR.MSolve.Problems
         public double CalculateRhsNorm(IVectorView rhs) => rhs.Norm2();
 
         public void ProcessInternalRhs(ISubdomain subdomain, IVectorView solution, IVector rhs) { }
-
         public IVector MassTransportConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
         {
             throw new NotImplementedException();
@@ -232,6 +228,7 @@ namespace ISAAR.MSolve.Problems
         {
             throw new NotImplementedException();
         }
+
 
         #endregion
     }

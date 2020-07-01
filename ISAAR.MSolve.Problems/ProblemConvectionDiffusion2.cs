@@ -238,9 +238,10 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces.Copy());
             return rhsVectors;
         }
-
         public IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
-            => this.DiffusionConductivity[subdomain.ID].Multiply(vector);
+        {
+            throw new NotImplementedException();
+        }
         public IVector DiffusionConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.DiffusionConductivity[subdomain.ID].Multiply(vector);
         public IVector MassTransportConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
@@ -259,7 +260,8 @@ namespace ISAAR.MSolve.Problems
         public IMatrixView CalculateMatrix(ISubdomain subdomain)
         {
             if (diffusionConductivityFreeFree == null) BuildDiffusionConductivityFreeFree();
-            return diffusionConductivityFreeFree[subdomain.ID];
+            if (massTransportConductivityFreeFree == null) BuildMassTransportConductivityFreeFree();
+            return diffusionConductivityFreeFree[subdomain.ID].LinearCombination(1,massTransportConductivityFreeFree[subdomain.ID],1);
         }
 
         public (IMatrixView matrixFreeFree, IMatrixView matrixFreeConstr, IMatrixView matrixConstrFree,
@@ -271,8 +273,16 @@ namespace ISAAR.MSolve.Problems
             {
                 BuildDiffusionConductivitySubmatrices();
             }
-            return (diffusionConductivityFreeFree[id], diffusionConductivityFreeConstr[id],
-                diffusionConductivityConstrFree[id], diffusionConductivityConstrConstr[id]);
+            if ((massTransportConductivityFreeFree == null) || (massTransportConductivityFreeConstr == null)
+                || (massTransportConductivityConstrFree == null) || (massTransportConductivityConstrConstr == null))
+            {
+                BuildMassTransportConductivitySubmatrices();
+            }
+            var cff = diffusionConductivityFreeFree[id].LinearCombination(1, massTransportConductivityFreeFree[id], 1);
+            var cfc = diffusionConductivityFreeConstr[id].LinearCombination(1, massTransportConductivityFreeConstr[id], 1);
+            var ccf = diffusionConductivityConstrFree[id].LinearCombination(1, massTransportConductivityConstrFree[id], 1);
+            var ccc = diffusionConductivityConstrConstr[id].LinearCombination(1, massTransportConductivityConstrConstr[id], 1);
+            return (cff, cfc, ccf, ccc);
         }
         #endregion
 

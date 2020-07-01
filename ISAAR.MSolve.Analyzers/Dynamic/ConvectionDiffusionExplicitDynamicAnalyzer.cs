@@ -20,9 +20,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 {
     /// <summary>
     /// 
-    /// Authors: Yannis Kalogeris
+    /// Authors: Odysseas Kokkinos
     /// </summary>
-    public class ConvectionDiffusionDynamicAnalyzer : INonLinearParentAnalyzer //TODO: why is this non linear
+    public class ConvectionDiffusionExplicitDynamicAnalyzer : INonLinearParentAnalyzer //TODO: why is this non linear
     {
         private readonly double timeStep, totalTime;
         private readonly IStructuralModel model;
@@ -39,7 +39,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> massTransportConductivityTimesTemperature = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>();
 
-        public ConvectionDiffusionDynamicAnalyzer(IStructuralModel model, ISolver solver, IConvectionDiffusionIntegrationProvider provider,
+        public ConvectionDiffusionExplicitDynamicAnalyzer(IStructuralModel model, ISolver solver, IConvectionDiffusionIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, IVector initialTemperature = null)
         {
             this.model = model;
@@ -214,7 +214,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             stabilizingConductivityTimesTemperature[id] = provider.StabilizingConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
 
             IVector rhsResult = conductivityTimesTemperature[id].Subtract(rhs[id]);
-            var rhsResultnew = rhsResult.LinearCombination(1, stabilizingConductivityTimesTemperature[id], -timeStep);
+            var rhsResultnew = stabilizingConductivityTimesTemperature[id].Add(stabilizingRhs[id]);
+            rhsResultnew = rhsResult.LinearCombination(1, rhsResultnew, -timeStep);
             rhsResultnew.ScaleIntoThis(-timeStep);
 
             //rhsPrevious[id] = rhs[id];

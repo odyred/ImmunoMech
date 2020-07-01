@@ -191,7 +191,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer(model, solver, provider, childAnalyzer, 9e-6, 9e-5, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 9e-6, 9e-5, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
