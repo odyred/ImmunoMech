@@ -25,7 +25,7 @@ using ISAAR.MSolve.FEM.Loading.BodyLoads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class ConvectionDiffusion1D9Hexa
+    public class ConvectionDiffusion1D9HexaBDF
     {
         private const int subdomainID = 0;
         [Fact]
@@ -208,12 +208,12 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemConvectionDiffusion2(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 10, initialTemp);
+            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, 1, 10, 4, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
 
-            return parentAnalyzer.temperature[subdomainID];
+            return parentAnalyzer.temperature[4][subdomainID];
             //           return solver.LinearSystems[subdomainID].Solution;
         }
     }

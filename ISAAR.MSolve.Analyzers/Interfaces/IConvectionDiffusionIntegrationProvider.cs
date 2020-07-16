@@ -23,6 +23,7 @@ namespace ISAAR.MSolve.Analyzers.Interfaces
 
         //TODO: what about thermal? There is no mass matrix there. Define these as 1st order matrix coeff, 2nd order ...
         IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
+        IVector CapacityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
         IVector DiffusionConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
         IVector MassTransportConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);
         IVector StabilizingConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector);

@@ -71,8 +71,8 @@ namespace ISAAR.MSolve.FEM.Entities
             var globalNodalLoads = new Table<INode, IDofType, double>();
             foreach (var loadElement in BodyLoads)
             {
-                var surfaceLoadTable = loadElement.CalculateBodyLoad();
-                foreach ((INode node, IDofType dof, double load) tuple in surfaceLoadTable)
+                var loadTable = loadElement.CalculateBodyLoad();
+                foreach ((INode node, IDofType dof, double load) tuple in loadTable)
                 {
                     if (globalNodalLoads.Contains(tuple.node, tuple.dof))
                     {
@@ -96,8 +96,8 @@ namespace ISAAR.MSolve.FEM.Entities
             var globalNodalLoads = new Table<INode, IDofType, double>();
             foreach (var loadElement in BodyLoads)
             {
-                var surfaceLoadTable = loadElement.CalculateStabilizingBodyLoad();
-                foreach ((INode node, IDofType dof, double load) tuple in surfaceLoadTable)
+                var loadTable = loadElement.CalculateStabilizingBodyLoad();
+                foreach ((INode node, IDofType dof, double load) tuple in loadTable)
                 {
                     if (globalNodalLoads.Contains(tuple.node, tuple.dof))
                     {

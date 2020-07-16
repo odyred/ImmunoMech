@@ -18,7 +18,7 @@ namespace ISAAR.MSolve.FEM.Elements
     /// account geometric non-linearities.
     /// Authors: Serafeim Bakalakos
     /// </summary>
-    public class ConvectionDiffusionRod : IFiniteElement, IEmbeddedElement
+    public class ConvectionDiffusionRod : IConvectionDiffusionElement, IEmbeddedElement
     {
         private const int numNodes = 2;
         private const int numDofs = 2;
@@ -165,6 +165,16 @@ namespace ISAAR.MSolve.FEM.Elements
         public double[] GetLocalDOFValues(Element hostElement, double[] hostDOFValues)
         {
             return DofEnumerator.GetTransformedDisplacementsVector(hostDOFValues);
+        }
+
+        public IMatrix MassTransportConductivityMatrix(IElement element)
+        {
+            return DofEnumerator.GetTransformedMatrix(BuildMassTransportConductivityMatrix());
+        }
+
+        public IMatrix DiffusionConductivityMatrix(IElement element)
+        {
+            return DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix());
         }
     }
 }

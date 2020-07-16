@@ -180,6 +180,8 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces.Copy());
             return rhsVectors;
         }
+        public IVector CapacityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+            => this.Capacity[subdomain.ID].Multiply(vector);
 
         public IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.Conductivity[subdomain.ID].Multiply(vector);

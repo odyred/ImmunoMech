@@ -19,7 +19,7 @@ using ISAAR.MSolve.FEM.Providers;
 //TODO: I am not too fond of the provider storing global sized matrices.
 namespace ISAAR.MSolve.Problems
 {
-    public class ProblemConvectionDiffusion2 : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
+    public class ProblemConvectionDiffusion3 : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
     {
         private Dictionary<int, IMatrix> capacity, diffusionConductivityFreeFree, massTransportConductivityFreeFree, stabilizingConductivity;
         private Dictionary<int, IVector> stabilizingDomainLoad;
@@ -34,7 +34,7 @@ namespace ISAAR.MSolve.Problems
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
         private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
 
-        public ProblemConvectionDiffusion2(Model model, ISolver solver)
+        public ProblemConvectionDiffusion3(Model model, ISolver solver)
         {
             this.model = model;
             this.linearSystems = solver.LinearSystems;
@@ -89,8 +89,19 @@ namespace ISAAR.MSolve.Problems
             }
         }
 
-        private void BuildDiffusionConductivityFreeFree() => diffusionConductivityFreeFree = solver.BuildGlobalMatrices(diffusionConductivityProvider);
-
+        private void BuildDiffusionConductivityFreeFree()
+        {
+            double[,] kappa = new double[model.Nodes.Count, model.Nodes.Count];
+            kappa[0, 0] = 1;
+            kappa[model.Nodes.Count - 1, model.Nodes.Count - 1] = 1;
+            IMatrix penalty = Matrix.CreateFromArray(kappa);
+            diffusionConductivityFreeFree = solver.BuildGlobalMatrices(diffusionConductivityProvider);
+            foreach (ISubdomain subdomain in model.Subdomains)
+            {
+                int id = subdomain.ID;
+                diffusionConductivityFreeFree[id].AddIntoThis(penalty);
+            }
+        }
         private void BuildDiffusionConductivitySubmatrices()
         {
             Dictionary<int, (IMatrix Cff, IMatrixView Cfc, IMatrixView Ccf, IMatrixView Ccc)> matrices =
@@ -209,11 +220,11 @@ namespace ISAAR.MSolve.Problems
             ISubdomain subdomain)
         {
             int id = subdomain.ID;
-            var conductivityTimesCoeff = DiffusionConductivity[id].Add(MassTransportConductivity[id]);
-            conductivityTimesCoeff.ScaleIntoThis(coefficients.Stiffness);
+            var conductivity = DiffusionConductivity[id].Add(MassTransportConductivity[id]);
+            conductivity.ScaleIntoThis(coefficients.Stiffness);
             var capacityTimesCoeff = Capacity[id].Scale(coefficients.Mass);
-            capacityTimesCoeff.AddIntoThis(conductivityTimesCoeff);
-            return capacityTimesCoeff.LinearCombination(1, StabilizingConductivity[id], coefficients.Damping);
+            capacityTimesCoeff.AddIntoThis(conductivity);
+            return capacityTimesCoeff.LinearCombination(1,StabilizingConductivity[id],coefficients.Damping);
         }
 
         public void ProcessRhs(ISubdomain subdomain, IVector rhs)

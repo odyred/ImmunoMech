@@ -59,7 +59,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
             // Material
             double k = 1.0;
-            double[] U = {0};
+            double[] U = {2,2,2};
             double L = 0;
             double h = 1;
             double crossSectionArea = 1;
@@ -109,18 +109,21 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             double[] temp0 = new double[] { 1,0,0,0,0,0,0,0,0,0 };
             Vector initialTemp = Vector.CreateFromArray(temp0);
-            var solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
+            var builder = new DenseMatrixSolver.Builder();
+            builder.IsMatrixPositiveDefinite = false;
+            var solver = builder.BuildSolver(model);
+            //var solver = new DenseMatrixSolver.Builder().BuildSolver(model);
             //Gmres solver = (new DenseMatrixSolver.Builder()).BuildSolver(model);
-            var provider = new ProblemConvectionDiffusion(model, solver);
+            var provider = new ProblemConvectionDiffusion3(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionDynamicAnalyzer_Beta(model, solver, provider, childAnalyzer, 0.05, 5, initialTemp);
+            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, 1, 5, 6, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
 
             //return solver.LinearSystems[subdomainID].Solution;
-            return parentAnalyzer.temperature[subdomainID];
+            return parentAnalyzer.temperature[5][subdomainID];
         }
     }
 }
