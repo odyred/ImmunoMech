@@ -30,6 +30,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
 
         public Table<INode, IDofType, double> CalculateSurfaceLoad(IIsoparametricInterpolation2D interpolation, IQuadrature2D integration, IReadOnlyList<Node> nodes)
         {
+            //nodes[0].ElementsDictionary.Values.ToList<>
             int numDofs = nodes.Count;
             var stiffness = Matrix.CreateZero(numDofs, numDofs);
             IReadOnlyList<double[]> shapeFunctions =
@@ -47,7 +48,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
             //    }
             //}
             //double kappa = _diffusionCoeff / dist.Min();
-            double kappa = _diffusionCoeff / .5;
+            double kappa = _diffusionCoeff / 1;
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);

@@ -288,7 +288,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 int id = linearSystem.Subdomain.ID;
                 temperature[id].CopyFrom(linearSystem.Solution);
                 //temperature[id].AddIntoThis(linearSystem.Solution);
-                if ((timeStep + 1) % 100 == 0)
+                if ((timeStep + 1) % 1 == 0)
                 {
                     string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";

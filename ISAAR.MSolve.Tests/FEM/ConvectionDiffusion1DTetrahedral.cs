@@ -184,17 +184,19 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             Vector initialTemp = Vector.CreateFromArray(temp0);
             var builder = new DenseMatrixSolver.Builder();
-            //builder.IsMatrixPositiveDefinite = false;
+            builder.IsMatrixPositiveDefinite = false;
             var solver = builder.BuildSolver(model);
             var provider = new ProblemConvectionDiffusion2(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 10, initialTemp);
+            //var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, 1, 10, 1, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, .5, 10, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
 
             return parentAnalyzer.temperature[subdomainID];
+            //return parentAnalyzer.temperature[1][subdomainID];
             //           return solver.LinearSystems[subdomainID].Solution;
         }
     }
