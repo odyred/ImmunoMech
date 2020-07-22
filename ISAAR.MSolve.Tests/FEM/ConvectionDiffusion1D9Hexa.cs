@@ -205,10 +205,10 @@ namespace ISAAR.MSolve.Tests.FEM
             var builder = new DenseMatrixSolver.Builder();
             builder.IsMatrixPositiveDefinite = false;
             var solver = builder.BuildSolver(model);
-            var provider = new ProblemConvectionDiffusion2(model, solver);
+            var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, .1, 10, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 10, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
