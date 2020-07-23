@@ -88,9 +88,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1/ timeStep / timeStep,
+                Mass = 1 / timeStep / timeStep,
                 Damping = -1,
-                Stiffness = 1/ timeStep
+                Stiffness = 1 / timeStep
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {
@@ -249,7 +249,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 var error = 1d;
                 do
                 {
-                    Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                     previousTemperatureNorm = temperatureNorm;
 
                     for (int i = 0; i < linearSystems.Length; i++)
@@ -285,6 +284,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                         }
                     }
                     error = temperatureNorm != 0 ? Math.Abs(temperatureNorm - previousTemperatureNorm) / temperatureNorm : 0;
+                    Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
+                    staggeredStep++;
 
                     CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
                 }
@@ -328,7 +329,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             for (int i = 0; i < linearSystems.Length; i++)
             {
-                temperature[i].Clear();
+                //temperature[i].Clear();
                 stabilizingRhs[i].Clear();
                 rhs[i].Clear();
                 rhsPrevious[i].Clear();
@@ -345,10 +346,13 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     rhs[i].Add(id, linearSystem.CreateZeroVector());
                     rhsPrevious[i].Add(id, linearSystem.CreateZeroVector());
 
-                    // Account for initial conditions coming from a previous solution. 
-                    //TODO: This doesn't work as intended. The solver (previously the LinearSystem) initializes the solution to zero.
-                    if (linearSystem.Solution != null) temperature[i].Add(id, linearSystem.Solution.Copy());
-                    else temperature[i].Add(id, initialTemperature[i].Copy());
+                    if (temperature[i].ContainsKey(id) == false)
+                        temperature[i].Add(id, initialTemperature[i].Copy());
+
+                    //// Account for initial conditions coming from a previous solution. 
+                    ////TODO: This doesn't work as intended. The solver (previously the LinearSystem) initializes the solution to zero.
+                    //if (linearSystem.Solution != null) temperature[i].Add(id, linearSystem.Solution.Copy());
+                    //else temperature[i].Add(id, initialTemperature[i].Copy());
                 }
             }
         }
@@ -392,7 +396,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     int id = linearSystem.Subdomain.ID;
                     temperature[i][id].CopyFrom(linearSystem.Solution);
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
-                    if ((timeStep + 1) % 100 == 0)
+                    if ((timeStep + 1) % 1 == 0)
                     {
                         string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                         //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
