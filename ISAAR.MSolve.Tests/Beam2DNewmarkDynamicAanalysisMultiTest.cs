@@ -44,7 +44,7 @@ namespace ISAAR.MSolve.Tests
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
-                providersToReplace[i].
+                //providersToReplace[i].
                 solversToReplace[i] = builder.BuildSolver(modelsToReplace[i]);
                 providersToReplace[i] = new ProblemStructural((Model)modelsToReplace[i], solversToReplace[i]);
                 childAnalyzersToReplace[i] = new LinearAnalyzer(modelsToReplace[i], solversToReplace[i], providersToReplace[i]);

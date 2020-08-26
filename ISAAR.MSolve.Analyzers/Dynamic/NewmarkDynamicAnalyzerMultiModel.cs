@@ -32,7 +32,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly IImplicitIntegrationProvider[] providers;
         private readonly Dictionary<int, IVector>[] rhs;
         private readonly Dictionary<int, IVector>[] rhsPrevious;//TODO: at the moment domain loads are not implemented in this
-        private readonly Dictionary<int, IVector>[] temperature;
         private readonly Dictionary<int, IVector>[] uFromPreviousStaggeredStep;
         private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
         private readonly double beta, gamma;
@@ -319,8 +318,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     error = uNorm != 0 ? Math.Abs(uNorm - previousUNorm) / uNorm : 0;
                     Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                     staggeredStep++;
-
-                    CreateNewModel(v, models, solvers, providers, childAnalyzers);
+                    if (staggeredStep < maxStaggeredSteps && error > tolerance)
+                        CreateNewModel(v, models, solvers, providers, childAnalyzers);
                 }
                 while (staggeredStep < maxStaggeredSteps && error > tolerance);
 
@@ -376,9 +375,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 uc[i].Clear();
                 ucc[i].Clear();
                 u[i].Clear();
-                v[i].Clear();
-                v1[i].Clear();
-                v2[i].Clear();
+                //v[i].Clear();
+                //v1[i].Clear();
+                //v2[i].Clear();
 
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
@@ -391,11 +390,18 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     ucc[i].Add(id, linearSystem.CreateZeroVector());
                     u[i].Add(id, linearSystem.CreateZeroVector());
                     //v.Add(id, linearSystem.CreateZeroVector());
-                    v1[i].Add(id, linearSystem.CreateZeroVector());
-                    v2[i].Add(id, linearSystem.CreateZeroVector());
+                    //v1[i].Add(id, linearSystem.CreateZeroVector());
+                    //v2[i].Add(id, linearSystem.CreateZeroVector());
 
-                    if (v[i].ContainsKey(id) == false) v[i].Add(id, linearSystem.CreateZeroVector());
-                    //else v[i][id] = linearSystem.Solution.Copy();
+                    if (v[i].ContainsKey(id) == false)
+                        v[i].Add(id, linearSystem.CreateZeroVector());
+                    if (v1[i].ContainsKey(id) == false)
+                        v1[i].Add(id, linearSystem.CreateZeroVector());
+                    if (v2[i].ContainsKey(id) == false)
+                        v2[i].Add(id, linearSystem.CreateZeroVector());
+
+                    //if (linearSystem.Solution != null) v[i][id] = linearSystem.Solution.Copy();
+                    //    else v[i].Add(id, linearSystem.CreateZeroVector());
 
                     //// Account for initial conditions coming from a previous solution. 
                     ////TODO: This doesn't work as intended. The solver (previously the LinearSystem) initializes the solution to zero.
@@ -444,7 +450,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 //{
                 //    linearSystem.Reset(); // Necessary to define the linear system's size 
                 //}
-                providers[i].
+                //providers[i].
                 var externalVelocities = providers[i].GetVelocitiesOfTimeStep(timeStep);
                 var externalAccelerations = providers[i].GetAccelerationsOfTimeStep(timeStep);
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)

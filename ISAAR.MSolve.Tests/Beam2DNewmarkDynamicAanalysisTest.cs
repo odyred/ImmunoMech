@@ -5,6 +5,7 @@ using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.FEM.Entities;
+using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers;
@@ -15,7 +16,13 @@ namespace ISAAR.MSolve.Tests
 {
     public class Beam2DNewmarkDynamicAanalysisTest
     {
-        public void LinearElasticBeam2DNewmarkDynamicAnalysisTest()
+        [Fact]
+        private static void RunTest()
+        {
+            Assert.Equal(2.2840249264795207, LinearElasticBeam2DNewmarkDynamicAnalysisTest(), 8);
+
+        }
+        private static double LinearElasticBeam2DNewmarkDynamicAnalysisTest()
         {
             double youngModulus = 21000;
             double poissonRatio = 0.3;
@@ -101,7 +108,8 @@ namespace ISAAR.MSolve.Tests
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
 
-            Assert.Equal(2.2840249264795207, solver.LinearSystems[1].Solution[1], 8);
+            //Assert.Equal(2.2840249264795207, solver.LinearSystems[1].Solution[1], 8);
+            return solver.LinearSystems[1].Solution[1];
         }
     }
 }

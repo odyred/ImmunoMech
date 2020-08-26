@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using ISAAR.MSolve.Analyzers;
+using ISAAR.MSolve.Analyzers.Dynamic;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.Commons;
@@ -110,7 +111,11 @@ namespace ISAAR.MSolve.Tests.FEM
             childAnalyzerBuilder.NumIterationsForMatrixRebuild = 1;
             //childAnalyzerBuilder.SubdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) }; // This is the default
             LoadControlAnalyzer childAnalyzer = childAnalyzerBuilder.Build();
-            var parentAnalyzer = new StaticAnalyzer(model, solver, provider, childAnalyzer);
+            var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 0.28, 3.36);
+            parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration(); // Not necessary. This is the default
+            NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+
+            //var parentAnalyzer = new StaticAnalyzer(model, solver, provider, childAnalyzer);
 
             var watchDofs = new Dictionary<int, int[]>();
             watchDofs.Add(subdomainID, new int[2] { 0, 5 }); //[12] { 0, 1,2,3,4,5,6,7,8,9,10,11});

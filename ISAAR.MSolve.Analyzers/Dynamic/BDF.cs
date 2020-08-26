@@ -265,7 +265,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 //stabilizingConductivityTimesTemperature[id] = provider.StabilizingConductivityMatrixVectorProduct(linearSystem.Subdomain, temperature[id]);
                 var rhsLoads = rhs[id].LinearCombination(a2, stabilizingRhs[id], 1);
                 rhsLoads.ScaleIntoThis(BDFcoeff[BDForder - 1, BDForder + 1]);
-                var rhsResult = capacityTimesTemperature[id].LinearCombination(1, rhsLoads, 1);
+                var rhsResult = capacityTimesTemperature[id].Add(rhsLoads);
                 return rhsResult;
             }
         }
