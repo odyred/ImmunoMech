@@ -88,9 +88,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1 / timeStep / timeStep,
+                Mass = 1/ timeStep / timeStep,
                 Damping = -1,
-                Stiffness = 1 / timeStep
+                Stiffness = 1/ timeStep
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {
@@ -235,66 +235,71 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             }
         }
 
+        public void SolveTimestep(int t)
+        {
+            DateTime start = DateTime.Now;
+            Debug.WriteLine("Newmark step: {0}", t);
+
+            int staggeredStep = 0;
+            var temperatureNorm = 0d;
+            var previousTemperatureNorm = 0d;
+            var error = 1d;
+            do
+            {
+                previousTemperatureNorm = temperatureNorm;
+
+                for (int i = 0; i < linearSystems.Length; i++)
+                {
+                    temperatureFromPreviousStaggeredStep[i].Clear();
+                    foreach (var linearSystem in linearSystems[i].Values)
+                    {
+                        if (linearSystem.Solution != null)
+                        {
+                            temperatureFromPreviousStaggeredStep[i].Add(linearSystem.Subdomain.ID, linearSystem.Solution.Copy());
+                        }
+                        this.linearSystems[i] = solvers[i].LinearSystems;
+                    }
+                }
+
+                InitializeInternal();
+                for (int i = 0; i < linearSystems.Length; i++)
+                {
+                    IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
+                    foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
+                    InitializeRhs(i);
+                    CalculateRhsImplicit(i);
+
+                    childAnalyzers[i].Solve();
+                }
+
+                temperatureNorm = 0;
+                for (int i = 0; i < linearSystems.Length; i++)
+                {
+                    foreach (var linearSystem in linearSystems[i].Values)
+                    {
+                        temperatureNorm += linearSystem.Solution.Norm2();
+                    }
+                }
+                error = temperatureNorm != 0 ? Math.Abs(temperatureNorm - previousTemperatureNorm) / temperatureNorm : 0;
+                Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
+                staggeredStep++;
+
+                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
+            }
+            while (staggeredStep < maxStaggeredSteps && error > tolerance);
+
+            DateTime end = DateTime.Now;
+            UpdateTemperature(t);
+            UpdateResultStorages(start, end);
+            Debug.WriteLine("-------------");
+        }
+
         public void Solve()
         {
             int numTimeSteps = (int)(totalTime / timeStep);
             for (int t = 0; t < numTimeSteps; ++t)
             {
-                DateTime start = DateTime.Now;
-                Debug.WriteLine("Newmark step: {0}", t);
-
-                int staggeredStep = 0;
-                var temperatureNorm = 0d;
-                var previousTemperatureNorm = 0d;
-                var error = 1d;
-                do
-                {
-                    previousTemperatureNorm = temperatureNorm;
-
-                    for (int i = 0; i < linearSystems.Length; i++)
-                    {
-                        temperatureFromPreviousStaggeredStep[i].Clear();
-                        foreach (var linearSystem in linearSystems[i].Values)
-                        {
-                            if (linearSystem.Solution != null)
-                            {
-                                temperatureFromPreviousStaggeredStep[i].Add(linearSystem.Subdomain.ID, linearSystem.Solution.Copy());
-                            }
-                            this.linearSystems[i] = solvers[i].LinearSystems;
-                        }
-                    }
-
-                    InitializeInternal();
-                    for (int i = 0; i < linearSystems.Length; i++)
-                    {
-                        IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
-                        foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
-                        InitializeRhs(i);
-                        CalculateRhsImplicit(i);
-
-                        childAnalyzers[i].Solve();
-                    }
-
-                    temperatureNorm = 0;
-                    for (int i = 0; i < linearSystems.Length; i++)
-                    {
-                        foreach (var linearSystem in linearSystems[i].Values)
-                        {
-                            temperatureNorm += linearSystem.Solution.Norm2();
-                        }
-                    }
-                    error = temperatureNorm != 0 ? Math.Abs(temperatureNorm - previousTemperatureNorm) / temperatureNorm : 0;
-                    Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
-                    staggeredStep++;
-
-                    CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
-                }
-                while (staggeredStep < maxStaggeredSteps && error > tolerance);
-
-                DateTime end = DateTime.Now;
-                UpdateTemperature(t);
-                UpdateResultStorages(start, end);
-                Debug.WriteLine("-------------");
+                SolveTimestep(t);
             }
         }
 
@@ -396,7 +401,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     int id = linearSystem.Subdomain.ID;
                     temperature[i][id].CopyFrom(linearSystem.Solution);
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
-                    if ((timeStep + 1) % 1 == 0)
+                    if ((timeStep + 1) % 100 == 0)
                     {
                         string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                         //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";

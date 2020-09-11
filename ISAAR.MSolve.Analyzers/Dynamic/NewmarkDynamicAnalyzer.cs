@@ -18,10 +18,10 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
     {
         private readonly double beta, gamma, timeStep, totalTime;
         private readonly double a0, a1, a2, a3, a4, a5, a6, a7;
-        private readonly IStructuralModel model;
+        private IStructuralModel model;
         private readonly IReadOnlyDictionary<int, ILinearSystem> linearSystems;
-        private readonly ISolver solver;
-        private readonly IImplicitIntegrationProvider provider;
+        private ISolver solver;
+        private IImplicitIntegrationProvider provider;
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> uu = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> uum = new Dictionary<int, IVector>();
@@ -31,6 +31,44 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> v = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> v1 = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> v2 = new Dictionary<int, IVector>();
+        private readonly Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
+        IStructuralModel[] modelsForReplacement = new IStructuralModel[1];
+        ISolver[] solversForReplacement = new ISolver[1];
+        IImplicitIntegrationProvider[] providersForReplacement = new IImplicitIntegrationProvider[1];
+        IChildAnalyzer[] childAnalyzersForReplacement = new IChildAnalyzer[1];
+
+        public NewmarkDynamicAnalyzer(Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator, 
+            IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
+            IChildAnalyzer childAnalyzer, double timeStep, double totalTime, double alpha, double delta)
+        {
+            this.CreateNewModel = modelCreator;
+            this.model = model;
+            this.linearSystems = solver.LinearSystems;
+            this.solver = solver;
+            this.provider = provider;
+            this.ChildAnalyzer = childAnalyzer;
+            this.beta = alpha;
+            this.gamma = delta;
+            this.timeStep = timeStep;
+            this.totalTime = totalTime;
+            this.ChildAnalyzer.ParentAnalyzer = this;
+
+            modelsForReplacement[0] = model;
+            solversForReplacement[0] = solver;
+            providersForReplacement[0] = provider;
+            childAnalyzersForReplacement[0] = childAnalyzer;
+
+            // Initialize coefficients. It would make sense for them to be initialized in a different function, if they could 
+            // change during the analysis
+            a0 = 1 / (alpha * timeStep * timeStep);
+            a1 = delta / (alpha * timeStep);
+            a2 = 1 / (alpha * timeStep);
+            a3 = 1 / (2 * alpha) - 1;
+            a4 = delta / alpha - 1;
+            a5 = timeStep * 0.5 * (delta / alpha - 2);
+            a6 = timeStep * (1 - delta);
+            a7 = delta * timeStep;
+        }
 
         private NewmarkDynamicAnalyzer(IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, double alpha, double delta)
@@ -62,7 +100,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         public Dictionary<int, ImplicitIntegrationAnalyzerLog> ResultStorages { get; }
             = new Dictionary<int, ImplicitIntegrationAnalyzerLog>();
 
-        public IChildAnalyzer ChildAnalyzer { get; }
+        public IChildAnalyzer ChildAnalyzer { get; set; }
 
         public void BuildMatrices()
         {
@@ -181,24 +219,40 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             ChildAnalyzer.Initialize(isFirstAnalysis);
         }
 
+        public void SolveTimestep(int i)
+        {
+            Debug.WriteLine("Newmark step: {0}", i);
+
+            IDictionary<int, IVector> rhsVectors = provider.GetRhsFromHistoryLoad(i);
+            foreach (var l in linearSystems.Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
+            InitializeRhs();
+            CalculateRhsImplicit();
+
+            DateTime start = DateTime.Now;
+            ChildAnalyzer.Solve();
+            DateTime end = DateTime.Now;
+
+            UpdateVelocityAndAcceleration(i);
+            UpdateResultStorages(start, end);
+
+            if (CreateNewModel != null)
+            {
+                CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+                model = modelsForReplacement[0];
+                solver = solversForReplacement[0];
+                provider = providersForReplacement[0];
+                ChildAnalyzer = childAnalyzersForReplacement[0];
+
+                Initialize(true);
+            }
+        }
+
         public void Solve()
         {
             int numTimeSteps = (int)(totalTime / timeStep);
             for (int i = 0; i < numTimeSteps; ++i)
             {
-                Debug.WriteLine("Newmark step: {0}", i);
-
-                IDictionary<int, IVector> rhsVectors = provider.GetRhsFromHistoryLoad(i);
-                foreach (var l in linearSystems.Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
-                InitializeRhs();
-                CalculateRhsImplicit();
-
-                DateTime start = DateTime.Now;
-                ChildAnalyzer.Solve();
-                DateTime end = DateTime.Now;
-
-                UpdateVelocityAndAcceleration(i);
-                UpdateResultStorages(start, end);
+                SolveTimestep(i);
             }
         }
 
