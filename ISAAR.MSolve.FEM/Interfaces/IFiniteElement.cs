@@ -9,15 +9,5 @@ namespace ISAAR.MSolve.FEM.Interfaces
     {
         int ID { get; }
         ElementDimensions ElementDimensions { get; }
-        bool MaterialModified { get; }
-        void ResetMaterialModified();
-        Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements, double[] localdDisplacements);
-        double[] CalculateForces(Element element, double[] localDisplacements, double[] localdDisplacements);
-        double[] CalculateForcesForLogging(Element element, double[] localDisplacements);
-        double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads);
-        void SaveMaterialState();
-        void ClearMaterialState();
-
-        void ClearMaterialStresses(); //TODO this is only for structural problems.
     }
 }

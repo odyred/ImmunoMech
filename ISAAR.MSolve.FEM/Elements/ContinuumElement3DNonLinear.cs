@@ -13,7 +13,8 @@ using ISAAR.MSolve.FEM.Interpolation.Jacobians;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
-
+using ISAAR.MSolve.Materials;
+using ISAAR.MSolve.FEM.Interpolation.GaussPointExtrapolation;
 
 namespace ISAAR.MSolve.FEM.Elements
 {

@@ -4,6 +4,7 @@ using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.Discretization.Mesh;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+//using ISAAR.MSolve.FEM.Entities;
 
 namespace ISAAR.MSolve.Discretization.Interfaces
 {

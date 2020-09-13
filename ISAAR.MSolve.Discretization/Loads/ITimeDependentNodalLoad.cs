@@ -1,4 +1,7 @@
-namespace MGroup.MSolve.Discretization.Loads
+using ISAAR.MSolve.Discretization.FreedomDegrees;
+using ISAAR.MSolve.Discretization.Interfaces;
+
+namespace ISSAR.MSolve.Discretization.Loads
 {
 	public interface ITimeDependentNodalLoad
 	{

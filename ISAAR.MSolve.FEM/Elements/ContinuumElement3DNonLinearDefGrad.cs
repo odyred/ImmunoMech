@@ -716,6 +716,11 @@ namespace ISAAR.MSolve.FEM.Elements
         {
             throw new NotImplementedException();
         }
+
+        public double[] CalculateAccelerationForces(IElement element, IList<MGroup.MSolve.Discretization.Loads.MassAccelerationLoad> loads)
+        {
+            throw new NotImplementedException();
+        }
         #endregion
 
 

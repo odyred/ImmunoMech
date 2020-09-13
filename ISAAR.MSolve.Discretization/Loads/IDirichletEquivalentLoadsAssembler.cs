@@ -1,6 +1,7 @@
-using MGroup.LinearAlgebra.Vectors;
+using ISAAR.MSolve.Discretization.Interfaces;
+using ISAAR.MSolve.LinearAlgebra.Vectors;
 
-namespace MGroup.MSolve.Discretization.Loads
+namespace ISSAR.MSolve.Discretization.Loads
 {
 	public interface IDirichletEquivalentLoadsAssembler
 	{
