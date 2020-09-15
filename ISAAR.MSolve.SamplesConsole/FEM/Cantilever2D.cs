@@ -17,6 +17,7 @@ using ISAAR.MSolve.Materials.VonMisesStress;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.SamplesConsole.FEM
 {

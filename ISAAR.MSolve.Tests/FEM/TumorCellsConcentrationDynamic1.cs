@@ -29,8 +29,8 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void RunTest()
         {
             Model model = CreateModel().Item1;
-            ComsolMeshReader1 modelReader = CreateModel().Item2;
-            IVectorView solution = SolveModel(model,modelReader);
+            ComsolMeshReader modelReader = CreateModel().Item2;
+            IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
 
@@ -49,10 +49,10 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model,ComsolMeshReader1> CreateModel()
+        private static Tuple<Model,ComsolMeshReader> CreateModel()
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh1.mphtxt");
-            ComsolMeshReader1 modelReader = new ComsolMeshReader1(filename);
+            ComsolMeshReader modelReader = new ComsolMeshReader(filename);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var flux = new FluxLoad(10);
@@ -97,10 +97,10 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
             }
 
-            return new Tuple<Model,ComsolMeshReader1>(model,modelReader);
+            return new Tuple<Model,ComsolMeshReader>(model,modelReader);
         }
 
-        private static IVectorView SolveModel(Model model, ComsolMeshReader1 modelReader)
+        private static IVectorView SolveModel(Model model, ComsolMeshReader modelReader)
         {
             double[] temp0 = new double[model.Nodes.Count];
             int[] boundaryIDs = new int[] {2, 7, 8, 9 };

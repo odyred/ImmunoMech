@@ -140,9 +140,14 @@ namespace ISAAR.MSolve.FEM.Elements
 		}
 
 		public ContinuumElement3DNonLinear CreateNonLinearElement(CellType cellType, IReadOnlyList<Node> nodes,
-			IContinuumMaterial3D commonMaterial, DynamicMaterial commonDynamicProperties)
+			IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
 		{
 			return new ContinuumElement3DNonLinear(nodes, commonMaterial, integrationsForStiffness[cellType], interpolations[cellType]);
+		}
+		public ContinuumElement3DNonLinearDefGrad CreateNonLinearDefGradElement(CellType cellType, IReadOnlyList<Node> nodes,
+			IContinuumMaterial3DDefGrad commonMaterial, IDynamicMaterial commonDynamicProperties)
+		{
+			return new ContinuumElement3DNonLinearDefGrad(nodes, commonMaterial, integrationsForStiffness[cellType], interpolations[cellType]);
 		}
 
 		private ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes,

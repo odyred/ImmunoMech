@@ -15,6 +15,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices.Builders;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.LinearSystems;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Problems
 {

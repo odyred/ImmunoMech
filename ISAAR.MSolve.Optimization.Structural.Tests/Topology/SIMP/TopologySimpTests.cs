@@ -21,6 +21,7 @@ using ISAAR.MSolve.Optimization.Structural.Topology.SIMP.Analysis;
 using ISAAR.MSolve.Optimization.Structural.Topology.SIMP.Filtering;
 using ISAAR.MSolve.Optimization.Structural.Topology.SIMP.MaterialInterpolation;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 using Xunit;
 
 namespace ISAAR.MSolve.Optimization.Structural.Tests.Topology.SIMP
@@ -53,7 +54,7 @@ namespace ISAAR.MSolve.Optimization.Structural.Tests.Topology.SIMP
             {
                 YoungModulus = youngModulus, PoissonRatio = 0.3
             };
-            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
 
             // Model with 1 subdomain
             var model = new Model();
@@ -199,7 +200,7 @@ namespace ISAAR.MSolve.Optimization.Structural.Tests.Topology.SIMP
             {
                 YoungModulus = youngModulus, PoissonRatio = 0.3
             };
-            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
 
             // Model with 1 subdomain
             var model = new Model();

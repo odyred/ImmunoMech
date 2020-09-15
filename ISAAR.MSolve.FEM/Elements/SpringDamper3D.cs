@@ -8,6 +8,7 @@ using ISAAR.MSolve.FEM.Entities;
 using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
@@ -126,20 +127,20 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public void ResetMaterialModified() { }
 
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements, 
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localDisplacements, 
             double[] localdDisplacements)
             => new Tuple<double[], double[]>(new double[6], new double[6]);
 
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements)
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements)
             => CalculateForces(element, localDisplacements, new double[localDisplacements.Length]);
 
-        public double[] CalculateForces(Element element, double[] localDisplacements, double[] localdDisplacements)
+        public double[] CalculateForces(IElement element, double[] localDisplacements, double[] localdDisplacements)
         {
             IMatrix stiffnessMatrix = StiffnessMatrix(element);
             return stiffnessMatrix.Multiply(localDisplacements);
         }
 
-        public double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads) => new double[6];
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads) => new double[6];
 
         public void ClearMaterialState() { }
         public void SaveMaterialState() { }

@@ -12,6 +12,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.IGA.Problems.Structural.Elements
 {
@@ -69,17 +70,17 @@ namespace ISAAR.MSolve.IGA.Problems.Structural.Elements
             throw new NotImplementedException();
         }
 
-        public double[] CalculateForces(Element element, double[] localDisplacements, double[] localdDisplacements)
+        public double[] CalculateForces(IElement element, double[] localDisplacements, double[] localdDisplacements)
         {
             throw new NotImplementedException();
         }
 
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements)
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements)
         {
             throw new NotImplementedException();
         }
 
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements, double[] localdDisplacements)
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localDisplacements, double[] localdDisplacements)
         {
             throw new NotImplementedException();
         }
@@ -291,5 +292,20 @@ namespace ISAAR.MSolve.IGA.Problems.Structural.Elements
 
 			return knotDisplacements;
 		}
-	}
+
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveMaterialState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearMaterialStresses()
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

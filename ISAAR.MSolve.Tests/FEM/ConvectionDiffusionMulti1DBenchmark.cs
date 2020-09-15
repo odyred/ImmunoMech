@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using System.Linq;
 using ISAAR.MSolve.Solvers;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {

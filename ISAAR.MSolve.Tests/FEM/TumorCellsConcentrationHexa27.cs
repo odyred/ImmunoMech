@@ -15,6 +15,7 @@ using ISAAR.MSolve.Solvers.Direct;
 using Xunit;
 using System.IO;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {

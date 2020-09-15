@@ -6,4 +6,4 @@
 		double RayleighCoeffMass { get; }
 		double RayleighCoeffStiffness { get; }
 	}
-}}
+}

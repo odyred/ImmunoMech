@@ -14,6 +14,7 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.SamplesConsole
 {
@@ -922,7 +923,7 @@ namespace ISAAR.MSolve.SamplesConsole
                 PoissonRatio = poissonRatio
             };
 
-            var dynamicMaterial = new DynamicMaterial(25, 0.05, 0.05);
+            var dynamicMaterial = new DynamicMaterial(25, 0.05, 0.05, true);
 
             // Subdomains
             var model = new Model();

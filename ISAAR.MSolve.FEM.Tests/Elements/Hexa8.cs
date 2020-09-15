@@ -25,8 +25,8 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
             PoissonRatio = 0.3
         };
 
-        private static readonly DynamicMaterial DynamicMaterial0= new DynamicMaterial(1,0,0);
-        private static readonly DynamicMaterial DynamicMaterial1= new DynamicMaterial(78.5,0,0);
+        private static readonly DynamicMaterial DynamicMaterial0= new DynamicMaterial(1,0,0,true);
+        private static readonly DynamicMaterial DynamicMaterial1= new DynamicMaterial(78.5,0,0,true);
 
         // The nodes in the order of the Abaqus Hexa8 element
         private static readonly IReadOnlyList<Node> NodeSet0= new Node[]

@@ -86,7 +86,7 @@ namespace ISAAR.MSolve.SamplesConsole.FEM
                 YoungModulus = youngModulus,
                 PoissonRatio = poissonRatio
             };
-            DynamicMaterial dynamicProperties = new DynamicMaterial(density, 0.05, 0.05);
+            DynamicMaterial dynamicProperties = new DynamicMaterial(density, 0.05, 0.05, true);
 
             // Mesh
             model.AddMesh2D(nodes, elements, material, dynamicProperties);

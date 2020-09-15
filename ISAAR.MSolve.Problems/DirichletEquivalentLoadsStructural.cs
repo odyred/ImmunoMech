@@ -3,6 +3,7 @@ using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: time logging must be refactored
 //TODO: perhaps this belongs to Solvers.Assemblers, since the vector type depends on the solver. In that case, the 

@@ -11,6 +11,7 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers.Iterative;
 using Xunit;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Tests
 {

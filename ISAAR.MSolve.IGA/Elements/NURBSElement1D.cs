@@ -9,6 +9,7 @@ using ISAAR.MSolve.IGA.Entities.Loads;
 using ISAAR.MSolve.IGA.Interfaces;
 using ISAAR.MSolve.IGA.Problems.SupportiveClasses;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.IGA.Elements
 {
@@ -27,16 +28,6 @@ namespace ISAAR.MSolve.IGA.Elements
         public IElementDofEnumerator DofEnumerator { get { return dofEnumerator; } set { this.dofEnumerator = value; } }
 
         public bool MaterialModified => throw new NotImplementedException();
-
-        public double[] CalculateForces(Element element, double[] localDisplacements, double[] localdDisplacements)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements)
-        {
-            throw new NotImplementedException();
-        }
 
         public Dictionary<int, double> CalculateLoadingCondition(Element element,Edge edge, NeumannBoundaryCondition neumann)
         {
@@ -256,7 +247,7 @@ namespace ISAAR.MSolve.IGA.Elements
 
         
 
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements, double[] localdDisplacements)
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localDisplacements, double[] localdDisplacements)
         {
             throw new NotImplementedException();
         }
@@ -330,6 +321,31 @@ namespace ISAAR.MSolve.IGA.Elements
 		{
 			throw new NotImplementedException();
 		}
-		#endregion
-	}
+
+        public double[] CalculateForces(IElement element, double[] localDisplacements, double[] localdDisplacements)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveMaterialState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearMaterialStresses()
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+    }
 }

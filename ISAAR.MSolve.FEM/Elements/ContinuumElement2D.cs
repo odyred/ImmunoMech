@@ -14,6 +14,7 @@ using ISAAR.MSolve.Geometry.Coordinates;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: Damping matrix calculation needs redesign for all of MSolve. For this class, see DampingMatrix().
 //TODO: Materials also need redesign. Some properties are the same for all instances of a material class, some are the same for
@@ -164,7 +165,7 @@ namespace ISAAR.MSolve.FEM.Elements
         //      mass matrix, once at the start of the dynamic analysis. The resulting vectors for each direction of the ground 
         //      motion should be stored. Then at each timestep they only need to be scaled and added to the rhs vector. The mass 
         //      matrix doesn't change, so there is not reason to recompute it at each time step.
-        public double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads)
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
         {
             int numDofs = 2 * Nodes.Count;
             var accelerations = new double[numDofs];
@@ -202,19 +203,19 @@ namespace ISAAR.MSolve.FEM.Elements
             return area;
         }
 
-        public double[] CalculateForces(Element element, double[] localTotalDisplacements, double[] localdDisplacements)
+        public double[] CalculateForces(IElement element, double[] localTotalDisplacements, double[] localdDisplacements)
         {
             throw new NotImplementedException();
         }
 
         //TODO: this method is probably not necessary at all
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements)
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements)
         {
             return CalculateForces(element, localDisplacements, new double[localDisplacements.Length]);
         }
 
         //TODO: this method must be changed. It should calculates strains, stresses at GPs or nodes.
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements,
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localDisplacements,
             double[] localdDisplacements)
         {
             throw new NotImplementedException();

@@ -9,6 +9,7 @@ using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.FEM.Loading.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: find what is going on with the dynamic loads and refactor them. That 564000000 in AssignMassAccelerationHistoryLoads()
 //      cannot be correct.

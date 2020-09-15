@@ -36,7 +36,7 @@ namespace ISAAR.MSolve.SamplesConsole.Solvers
                 YoungModulus = 2.1E7,
                 PoissonRatio = 0.3
             };
-            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
 
             // Generate mesh
             double domainLength = 2.0;
@@ -102,7 +102,7 @@ namespace ISAAR.MSolve.SamplesConsole.Solvers
                 YoungModulus = 2.1E7,
                 PoissonRatio = 0.3
             };
-            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
 
             // Generate mesh
             double lengthX = 2.0;

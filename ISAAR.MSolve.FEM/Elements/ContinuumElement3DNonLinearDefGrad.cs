@@ -13,6 +13,8 @@ using ISAAR.MSolve.FEM.Interpolation.Jacobians;
 using ISAAR.MSolve.LinearAlgebra;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
+using ISAAR.MSolve.FEM.Interpolation.GaussPointExtrapolation;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
@@ -24,6 +26,7 @@ namespace ISAAR.MSolve.FEM.Elements
     {
         protected readonly IDofType[] nodalDOFTypes = new IDofType[] { StructuralDof.TranslationX, StructuralDof.TranslationY, StructuralDof.TranslationZ };
         protected readonly IDofType[][] dofTypes;
+        private readonly IDynamicMaterial dynamicProperties;
         protected readonly IContinuumMaterial3DDefGrad[] materialsAtGaussPoints;
         protected IElementDofEnumerator dofEnumerator = new GenericDofEnumerator();
 
@@ -64,8 +67,44 @@ namespace ISAAR.MSolve.FEM.Elements
             }
         }
 
+        public ContinuumElement3DNonLinearDefGrad(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
+            IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
+            IGaussPointExtrapolation3D gaussPointExtrapolation,
+            IContinuumMaterial3DDefGrad materialAtGaussPoints, IDynamicMaterial dynamicProperties)
+        {
+            this.dynamicProperties = dynamicProperties;
+            //this.materialsAtGaussPoints[] = materialsAtGaussPoints;
+            //this.GaussPointExtrapolation = gaussPointExtrapolation;
+            //this.Nodes = nodes;
+            this.Interpolation = interpolation;
+            this.QuadratureForConsistentMass = quadratureForMass;
+            this.QuadratureForStiffness = quadratureForStiffness;
+
+            materialsAtGaussPoints = new IContinuumMaterial3DDefGrad[nGaussPoints];
+            for (int i = 0; i < nGaussPoints; i++)
+                materialsAtGaussPoints[i] = (IContinuumMaterial3DDefGrad)materialAtGaussPoints.Clone();
+
+            dofTypes = new IDofType[nodes.Count][];
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                dofTypes[i] = new IDofType[]
+                {
+                    StructuralDof.TranslationX, StructuralDof.TranslationY, StructuralDof.TranslationZ
+                };
+            }
+
+            //strainsVec = new double[nGaussPoints][];
+            //strainsVecLastConverged = new double[nGaussPoints][];
+            //for (int gpoint = 0; gpoint < materialsAtGaussPoints.Count; gpoint++)
+            //{
+            //    strainsVec[gpoint] = new double[6];
+            //    strainsVecLastConverged[gpoint] = new double[6];
+            //}
+        }
+
         public IIsoparametricInterpolation3D Interpolation { get; }
         public IQuadrature3D QuadratureForStiffness { get; }
+        public IQuadrature3D QuadratureForConsistentMass { get; }
 
         public int ID => 13;
         public CellType CellType => Interpolation.CellType;
@@ -708,16 +747,6 @@ namespace ISAAR.MSolve.FEM.Elements
         }
 
         public double[] CalculateForcesForLogging(Element element, double[] localDisplacements)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads)
-        {
-            throw new NotImplementedException();
-        }
-
-        public double[] CalculateAccelerationForces(IElement element, IList<MGroup.MSolve.Discretization.Loads.MassAccelerationLoad> loads)
         {
             throw new NotImplementedException();
         }

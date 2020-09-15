@@ -12,6 +12,7 @@ using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.FEM.Interpolation;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: current nodal coordinates should be managed by the analyzer, instead of each element calculting and storing them independently. The same applies for direction vectors of shells. 
 //TODO: direction vectors creation and update could be handled by a dedicated class that will be composed into this element. Which element would update them then?
@@ -643,7 +644,7 @@ namespace ISAAR.MSolve.FEM.Elements
             return k_element_coh2;
         }
 
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localTotalDisplacementsSuperElement, double[] localdDisplacementsSuperElement)
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localTotalDisplacementsSuperElement, double[] localdDisplacementsSuperElement)
         {
             double[][] Delta = new double[nGaussPoints][];
             double[] localTotalDisplacements = dofEnumerator.GetTransformedDisplacementsVector(localTotalDisplacementsSuperElement); // embedding
@@ -657,7 +658,7 @@ namespace ISAAR.MSolve.FEM.Elements
             return new Tuple<double[], double[]>(Delta[materialsAtGaussPoints.Length - 1], materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Tractions);             
         }
 
-        public double[] CalculateForces(Element element, double[] localTotalDisplacementsSuperElement, double[] localdDisplacementsSuperelement)
+        public double[] CalculateForces(IElement element, double[] localTotalDisplacementsSuperElement, double[] localdDisplacementsSuperelement)
         {
             double[] fxk2_coh = new double[64];
             Tuple<Matrix[], double[]> RtN3AndIntegrationCoeffs;
@@ -667,11 +668,11 @@ namespace ISAAR.MSolve.FEM.Elements
             double[] integrationCoeffs; 
             integrationCoeffs = RtN3AndIntegrationCoeffs.Item2;
 
-            fxk2_coh = this.UpdateForces(element,RtN3,integrationCoeffs); 
+            fxk2_coh = this.UpdateForces((Element)element,RtN3,integrationCoeffs); 
             return dofEnumerator.GetTransformedForcesVector(fxk2_coh);// embedding
         }
 
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements) 
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements) 
             => CalculateForces(element, localDisplacements, new double[localDisplacements.Length]);
 
         public virtual IMatrix StiffnessMatrix(IElement element) 
@@ -728,7 +729,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public virtual IReadOnlyList<IReadOnlyList<IDofType>> GetElementDofTypes(IElement element) => dofTypes;
 
-        public double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads)
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
         {
             return new double[64];
         }

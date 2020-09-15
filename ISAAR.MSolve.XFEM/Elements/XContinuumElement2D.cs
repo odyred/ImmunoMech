@@ -19,6 +19,7 @@ using ISAAR.MSolve.XFEM.FreedomDegrees;
 using ISAAR.MSolve.XFEM.Integration;
 using ISAAR.MSolve.XFEM.Materials;
 using ISAAR.MSolve.XFEM.Utilities;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: Enumerating artificial dofs may be needed to be done by this class. (e.g if structural FE introduce more 
 //      artificial dofs than continuum FE)
@@ -119,6 +120,8 @@ namespace ISAAR.MSolve.XFEM.Elements
 
         ISubdomain IElement.Subdomain => this.Subdomain;
         public XSubdomain Subdomain { get; set; }
+
+        public bool MaterialModified => throw new NotImplementedException();
 
         //TODO: In some cases this could use a the Gauss points of standard quadrature to save time.
         public Matrix BuildStandardStiffnessMatrix()
@@ -662,6 +665,46 @@ namespace ISAAR.MSolve.XFEM.Elements
                 }
             }
             return (standardElementDisplacements, enrichedElementDisplacements);
+        }
+
+        public void ResetMaterialModified()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localDisplacements, double[] localdDisplacements)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[] CalculateForces(IElement element, double[] localDisplacements, double[] localdDisplacements)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements)
+        {
+            throw new NotImplementedException();
+        }
+
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SaveMaterialState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearMaterialState()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ClearMaterialStresses()
+        {
+            throw new NotImplementedException();
         }
     }
 }

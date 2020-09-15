@@ -11,7 +11,7 @@ using ISAAR.MSolve.Discretization;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Elements;
-using ISAAR.MSolve.Materials;
+using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 
 namespace ISAAR.MSolve.FEM.Readers
@@ -24,9 +24,10 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Element>> elementDomains;
         public IList<IList<IList<Node>>> quadBoundaries;
         public IList<IList<IList<Node>>> triBoundaries;
-        private readonly double diffusionCoeff;
-        private readonly double[] convectionCoeff;
+        private readonly double C1;
+        private readonly double C2;
         private readonly double loadFromUnknownCoeff;
+        private IDynamicMaterial CommonDynamicProperties;
         enum Attributes
         {
             sdim = 1001,
@@ -43,12 +44,12 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader1(string filename, double k, double[] U, double L)
+        public ComsolMeshReader1(string filename, double C1, double C2, IDynamicMaterial commonDynamicProperties)
         {
             Filename = filename;
-            diffusionCoeff = k;
-            convectionCoeff = U;
-            loadFromUnknownCoeff = L;
+            this.C1 = C1;
+            this.C2 = C2;
+            CommonDynamicProperties = commonDynamicProperties;
         }
 
         int NumberOfNodes;
@@ -59,9 +60,11 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            var elementFactory3D = new ContinuumElement3DFactory(new HyperElasticMaterial3DDefGrad() { C1 = 0.035, C2 = 0.057, k_cons = 1 });
-            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
+            var hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() { C1 = C1, C2 = C2, k_cons = 1 }; 
+            var elementFactory3D = new ContinuumElement3DFactory(hyperElasticMaterial, 
+                CommonDynamicProperties);
+            //var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
+            //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material
@@ -264,7 +267,7 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[1])],
                                 model.NodesDictionary[Int32.Parse(line[0])]
                             };
-                            var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodes);
+                            var Tet4 = elementFactory3D.CreateNonLinearDefGradElement(CellType.Tet4, nodes, hyperElasticMaterial, CommonDynamicProperties);
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
@@ -314,7 +317,7 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
                             };
-                            var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodes);
+                            var Hexa8 = elementFactory3D.CreateNonLinearDefGradElement(CellType.Hexa8, nodes, hyperElasticMaterial, CommonDynamicProperties);
                             var element = new Element();
                             element.ID = HexID;
                             element.ElementType = Hexa8;

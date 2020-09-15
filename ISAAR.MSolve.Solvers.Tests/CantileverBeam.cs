@@ -10,6 +10,7 @@ using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.FEM.Entities;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Materials;
+using ISSAR.MSolve.Discretization.Loads;
 
 // Geometry:
 //             | 
@@ -116,7 +117,7 @@ namespace ISAAR.MSolve.Solvers.Tests
                     YoungModulus = this.YoungModulus,
                     PoissonRatio = this.PoissonRatio
                 };
-                var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+                var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
 
                 // Model with 1 subdomain
                 var model = new Model();

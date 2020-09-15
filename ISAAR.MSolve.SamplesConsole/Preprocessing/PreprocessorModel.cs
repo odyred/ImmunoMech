@@ -9,6 +9,7 @@ using ISAAR.MSolve.FEM.Entities;
 using ISAAR.MSolve.FEM.Interfaces;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.SamplesConsole.Preprocessing
 {

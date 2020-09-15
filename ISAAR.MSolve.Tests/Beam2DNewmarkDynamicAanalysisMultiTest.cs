@@ -14,6 +14,7 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 using Xunit;
 
 namespace ISAAR.MSolve.Tests

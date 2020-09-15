@@ -1,4 +1,6 @@
 ﻿using ISAAR.MSolve.Discretization.FreedomDegrees;
+using ISAAR.MSolve.Discretization.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: This is probably covered by Load.cs
 namespace ISAAR.MSolve.FEM.Entities
@@ -15,7 +17,7 @@ namespace ISAAR.MSolve.FEM.Entities
             this.constantloadAmount = constantloadAmount;
         }
 
-        public Node Node { get; set; }
+        public INode Node { get; set; }
         public IDofType DOF { get; set; }
 
         public double GetLoadAmount(int timeStep)

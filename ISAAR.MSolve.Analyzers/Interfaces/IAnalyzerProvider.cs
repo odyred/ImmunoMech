@@ -1,4 +1,6 @@
-﻿namespace ISAAR.MSolve.Analyzers.Interfaces
+﻿using ISSAR.MSolve.Discretization.Loads;
+
+namespace ISAAR.MSolve.Analyzers.Interfaces
 {
     public interface IAnalyzerProvider
     {

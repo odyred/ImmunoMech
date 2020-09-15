@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using ISAAR.MSolve.Discretization.FreedomDegrees;
-using ISAAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.Discretization.Mesh;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
-//using ISAAR.MSolve.FEM.Entities;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Discretization.Interfaces
 {
@@ -31,6 +30,7 @@ namespace ISAAR.MSolve.Discretization.Interfaces
         double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads);
         void SaveMaterialState();
         void ClearMaterialState();
+        void ClearMaterialStresses();
 
         IReadOnlyList<IReadOnlyList<IDofType>> GetElementDofTypes(IElement element);
     }

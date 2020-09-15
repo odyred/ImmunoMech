@@ -14,6 +14,7 @@ using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.SamplesConsole
 {

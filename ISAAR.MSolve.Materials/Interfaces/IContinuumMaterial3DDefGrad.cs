@@ -3,11 +3,11 @@
 
 namespace ISAAR.MSolve.Materials.Interfaces
 {
-    public interface IContinuumMaterial3DDefGrad : IFiniteElementMaterial
+    public interface IContinuumMaterial3DDefGrad : IContinuumMaterial3D//, IFiniteElementMaterial
     {
-        double[] Stresses { get; }
-        IMatrixView ConstitutiveMatrix { get; }
-        void UpdateMaterial(double[] strains);
+        //double[] Stresses { get; }
+        //IMatrixView ConstitutiveMatrix { get; }
+        //void UpdateMaterial(double[] strains);
         void ClearState();
         void SaveState();
         void ClearStresses();

@@ -16,6 +16,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
@@ -181,10 +182,6 @@ namespace ISAAR.MSolve.FEM.Elements
 
 			return massMatrix.Multiply(accelerations);
 		}
-		public double[] CalculateAccelerationForces(IElement element, IList<MGroup.MSolve.Discretization.Loads.MassAccelerationLoad> loads)
-		{
-			throw new NotImplementedException();
-		}
 
 		public double[] CalculateForces(IElement element, double[] localTotalDisplacements, double[] localDisplacements)
 		{
@@ -304,7 +301,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
 		public IMatrix MassMatrix(IElement element)
 		{
-			return BuildLumpedMassMatrix();
+			return ((DynamicMaterial)dynamicProperties).UseConsistentMass ? BuildConsistentMassMatrix() : BuildLumpedMassMatrix();
 		}
 
 		public void ResetMaterialModified()

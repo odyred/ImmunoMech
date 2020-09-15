@@ -10,6 +10,7 @@ using ISAAR.MSolve.Logging;
 using ISAAR.MSolve.Optimization.Problems;
 using ISAAR.MSolve.Problems;
 using ISAAR.MSolve.Solvers.Direct;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Optimization.Structural.Benchmarks
 {

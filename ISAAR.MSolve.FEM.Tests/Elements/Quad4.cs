@@ -30,7 +30,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
             PoissonRatio = 0.3
         };
 
-        private static readonly DynamicMaterial dynamicMaterial = new DynamicMaterial(78.5, 0, 0);
+        private static readonly DynamicMaterial dynamicMaterial = new DynamicMaterial(78.5, 0, 0, true);
 
         /// <summary>
         /// Random shape, not too distorted.

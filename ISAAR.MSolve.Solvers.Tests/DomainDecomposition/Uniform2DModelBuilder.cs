@@ -10,6 +10,7 @@ using ISAAR.MSolve.Discretization.Mesh.Generation.Custom;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.FEM.Entities;
 using ISAAR.MSolve.Materials;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Solvers.Tests.DomainDecomposition
 {
@@ -97,7 +98,7 @@ namespace ISAAR.MSolve.Solvers.Tests.DomainDecomposition
                 }
             }
             double thickness = 1.0;
-            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0);
+            var dynamicProperties = new DynamicMaterial(1.0, 0.0, 0.0, true);
             ElasticMaterial2D[] materials = youngModuli.Select(
                 E => new ElasticMaterial2D(StressState2D.PlaneStress) { YoungModulus = E, PoissonRatio = 0.3 }).ToArray();
 

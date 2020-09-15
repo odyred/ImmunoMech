@@ -12,6 +12,7 @@ using ISAAR.MSolve.FEM.Interpolation;
 using ISAAR.MSolve.FEM.Interpolation.Jacobians;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
+using ISSAR.MSolve.Discretization.Loads;
 
 //TODO: move stuff to Shell8DirectionVectorUtilities
 namespace ISAAR.MSolve.FEM.Elements
@@ -711,9 +712,9 @@ namespace ISAAR.MSolve.FEM.Elements
             foreach (IShellMaterial material in materialsAtGaussPoints) material.ResetModified();
         }
 
-        public Tuple<double[], double[]> CalculateStresses(Element element, double[] localTotalDisplacements, double[] localdDisplacements)
+        public Tuple<double[], double[]> CalculateStresses(IElement element, double[] localTotalDisplacements, double[] localdDisplacements)
         {
-            this.UpdateCoordinateData(localTotalDisplacements, element, out double[][] tx_i);
+            this.UpdateCoordinateData(localTotalDisplacements, (Element)element, out double[][] tx_i);
             this.CalculateStrains(element, tx_i);
             for (int npoint = 0; npoint < materialsAtGaussPoints.Length; npoint++)
             {
@@ -724,7 +725,7 @@ namespace ISAAR.MSolve.FEM.Elements
         }
 
         //Istructural: dynamic
-        public double[] CalculateAccelerationForces(Element element, IList<MassAccelerationLoad> loads)
+        public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
         {
             return new double[123];
         }
@@ -739,7 +740,7 @@ namespace ISAAR.MSolve.FEM.Elements
             throw new NotImplementedException();
         }        
 
-        public double[] CalculateForces(Element element, double[] localTotalDisplacements, double[] localdDisplacements)
+        public double[] CalculateForces(IElement element, double[] localTotalDisplacements, double[] localdDisplacements)
         {
             double[] Fxk;
             Fxk =this.UpdateForces(element);
@@ -773,7 +774,7 @@ namespace ISAAR.MSolve.FEM.Elements
             }
         }
 
-        public double[] CalculateForcesForLogging(Element element, double[] localDisplacements) 
+        public double[] CalculateForcesForLogging(IElement element, double[] localDisplacements) 
             => CalculateForces(element, localDisplacements, new double[localDisplacements.Length]);
     }
 }

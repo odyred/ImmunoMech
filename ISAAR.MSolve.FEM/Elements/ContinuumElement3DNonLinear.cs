@@ -15,6 +15,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Interpolation.GaussPointExtrapolation;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.FEM.Elements
 {

@@ -20,7 +20,7 @@ namespace ISAAR.MSolve.FEM.Tests.Elements
 			PoissonRatio = 1.0 / 3.0
 		};
 
-		private static readonly DynamicMaterial DynamicMaterial0 = new DynamicMaterial(1,0,0);
+		private static readonly DynamicMaterial DynamicMaterial0 = new DynamicMaterial(1,0,0, true);
 
 		private static readonly IReadOnlyList<Node> NodeSet0 = new Node[]
 		{
