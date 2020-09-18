@@ -15,17 +15,17 @@ namespace ISAAR.MSolve.FEM.Elements
 	/// It is also very convenient when the material properties are the same throughout the whole domain or a region.
 	/// Authors: Dimitris Tsapetis
 	/// </summary>
-	public class ContinuumElement3DFactory
+	public class ContinuumElement3DNonLinearDefGradFactory
 	{
 		private static readonly IReadOnlyDictionary<CellType, IGaussPointExtrapolation3D> extrapolations;
 		private static readonly IReadOnlyDictionary<CellType, IQuadrature3D> integrationsForStiffness;
 		private static readonly IReadOnlyDictionary<CellType, IQuadrature3D> integrationsForMass;
 		private static readonly IReadOnlyDictionary<CellType, IIsoparametricInterpolation3D> interpolations;
 
-		private readonly IContinuumMaterial3D commonMaterial;
+		private readonly IContinuumMaterial3DDefGrad commonMaterial;
 		private readonly IDynamicMaterial commonDynamicProperties;
 
-		static ContinuumElement3DFactory()
+		static ContinuumElement3DNonLinearDefGradFactory()
 		{
 			var interpolations = new Dictionary<CellType, IIsoparametricInterpolation3D>();
 			var integrationsForStiffness = new Dictionary<CellType, IQuadrature3D>();
@@ -113,42 +113,33 @@ namespace ISAAR.MSolve.FEM.Elements
 			integrationsForMass.Add(CellType.Pyra14, PyramidQuadrature.Points6);
 			extrapolations.Add(CellType.Pyra14, null);
 
-			ContinuumElement3DFactory.interpolations = interpolations;
-			ContinuumElement3DFactory.integrationsForStiffness = integrationsForStiffness;
-			ContinuumElement3DFactory.integrationsForMass = integrationsForMass;
-			ContinuumElement3DFactory.extrapolations = extrapolations;
+			ContinuumElement3DNonLinearDefGradFactory.interpolations = interpolations;
+			ContinuumElement3DNonLinearDefGradFactory.integrationsForStiffness = integrationsForStiffness;
+			ContinuumElement3DNonLinearDefGradFactory.integrationsForMass = integrationsForMass;
+			ContinuumElement3DNonLinearDefGradFactory.extrapolations = extrapolations;
 		}
 
-		public ContinuumElement3DFactory(IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
+		public ContinuumElement3DNonLinearDefGradFactory(IContinuumMaterial3DDefGrad commonMaterial, IDynamicMaterial commonDynamicProperties)
 		{
 			this.commonDynamicProperties = commonDynamicProperties;
 			this.commonMaterial = commonMaterial;
 		}
 
-		public ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes)
+		public ContinuumElement3DNonLinearDefGrad CreateElement(CellType cellType, IReadOnlyList<Node> nodes)
 		{
 			return CreateElement(cellType, nodes, commonMaterial, commonDynamicProperties);
 		}
 
-		private ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
-			IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
+		private ContinuumElement3DNonLinearDefGrad CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
+			IContinuumMaterial3DDefGrad material, IDynamicMaterial commonDynamicProperties)
 		{
 			int numGPs = integrationsForStiffness[cellType].IntegrationPoints.Count;
-			var materialsAtGaussPoints = new IContinuumMaterial3D[numGPs];
-			for (int gp = 0; gp < numGPs; ++gp) materialsAtGaussPoints[gp] = (IContinuumMaterial3D)commonMaterial.Clone();
-			return CreateElement(cellType, nodes, materialsAtGaussPoints, commonDynamicProperties);
+			var materialsAtGaussPoints = new IContinuumMaterial3DDefGrad[numGPs];
+			for (int gp = 0; gp < numGPs; ++gp) materialsAtGaussPoints[gp] = (IContinuumMaterial3DDefGrad)commonMaterial.Clone();
+			return new ContinuumElement3DNonLinearDefGrad(nodes, interpolations[cellType],
+				integrationsForStiffness[cellType], integrationsForMass[cellType], extrapolations[cellType],
+				material, commonDynamicProperties);
 		}
 
-		private ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
-			IReadOnlyList<IContinuumMaterial3D> materialsAtGaussPoints, IDynamicMaterial commonDynamicProperties)
-		{
-			//TODO: check if nodes - interpolation and Gauss points - materials match
-#if DEBUG
-			interpolations[cellType].CheckElementNodes(nodes);
-#endif
-			return new ContinuumElement3D(nodes, interpolations[cellType],
-				integrationsForStiffness[cellType], integrationsForMass[cellType], extrapolations[cellType],
-				materialsAtGaussPoints, commonDynamicProperties);
-		}
 	}
 }

@@ -27,6 +27,7 @@ namespace ISAAR.MSolve.FEM.Elements
     {
         protected readonly IDofType[] nodalDOFTypes = new IDofType[] { StructuralDof.TranslationX, StructuralDof.TranslationY, StructuralDof.TranslationZ };
         protected readonly IDofType[][] dofTypes;
+        private readonly IDynamicMaterial dynamicProperties;
         protected readonly IContinuumMaterial3D[] materialsAtGaussPoints;
         protected IElementDofEnumerator dofEnumerator = new GenericDofEnumerator();
 
@@ -50,7 +51,32 @@ namespace ISAAR.MSolve.FEM.Elements
             this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
             this.QuadratureForStiffness = quadratureForStiffness;
             this.Interpolation = interpolation;
+            this.Nodes = nodes;
 
+            materialsAtGaussPoints = new IContinuumMaterial3D[nGaussPoints];
+            for (int i = 0; i < nGaussPoints; i++)
+                materialsAtGaussPoints[i] = (IContinuumMaterial3D)material.Clone();
+
+            dofTypes = new IDofType[nodes.Count][];
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                dofTypes[i] = new IDofType[]
+                {
+                    StructuralDof.TranslationX, StructuralDof.TranslationY, StructuralDof.TranslationZ
+                };
+            }
+        }
+        public ContinuumElement3DNonLinear(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
+            IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
+            IGaussPointExtrapolation3D gaussPointExtrapolation,
+             IContinuumMaterial3D material, IDynamicMaterial dynamicProperties)
+        {
+            this.dynamicProperties = dynamicProperties;
+            this.Interpolation = interpolation;
+            this.QuadratureForConsistentMass = quadratureForMass;
+            this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
+            this.QuadratureForStiffness = quadratureForStiffness;
+            this.Nodes = nodes;
 
             materialsAtGaussPoints = new IContinuumMaterial3D[nGaussPoints];
             for (int i = 0; i < nGaussPoints; i++)
@@ -68,6 +94,8 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IIsoparametricInterpolation3D Interpolation { get; }
         public IQuadrature3D QuadratureForStiffness { get; }
+        public IQuadrature3D QuadratureForConsistentMass { get; }
+        public IReadOnlyList<Node> Nodes { get; }
 
         public int ID => 13;
         public CellType CellType => Interpolation.CellType;
@@ -697,12 +725,72 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public virtual IMatrix MassMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return ((DynamicMaterial)dynamicProperties).UseConsistentMass ? BuildConsistentMassMatrix() : BuildLumpedMassMatrix();
+        }
+        public Matrix BuildConsistentMassMatrix()
+        {
+            int numberOfDofs = 3 * Nodes.Count;
+            var mass = Matrix.CreateZero(numberOfDofs, numberOfDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.MultiplyRight(shapeFunctionMatrix, true, false);
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                mass.AxpyIntoThis(partial, dA);
+            }
+
+            mass.ScaleIntoThis(dynamicProperties.Density);
+            return mass;
+        }
+
+        public Matrix BuildLumpedMassMatrix()
+        {
+            int numberOfDofs = 3 * Nodes.Count;
+            var lumpedMass = Matrix.CreateZero(numberOfDofs, numberOfDofs);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            double area = 0;
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                area += jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+            }
+
+            double nodalMass = area * dynamicProperties.Density / Nodes.Count;
+            for (int i = 0; i < numberOfDofs; i++)
+            {
+                lumpedMass[i, i] = nodalMass;
+            }
+
+            return lumpedMass;
+        }
+        private Matrix BuildShapeFunctionMatrix(double[] shapeFunctions)
+        {
+            var shapeFunctionMatrix = Matrix.CreateZero(3, 3 * shapeFunctions.Length);
+            for (int i = 0; i < shapeFunctions.Length; i++)
+            {
+                shapeFunctionMatrix[0, 3 * i] = shapeFunctions[i];
+                shapeFunctionMatrix[1, (3 * i) + 1] = shapeFunctions[i];
+                shapeFunctionMatrix[2, (3 * i) + 2] = shapeFunctions[i];
+            }
+
+            return shapeFunctionMatrix;
         }
 
         public virtual IMatrix DampingMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            IMatrix damping = StiffnessMatrix(element);
+            damping.ScaleIntoThis(dynamicProperties.RayleighCoeffStiffness);
+            damping.AxpyIntoThis(MassMatrix(element), dynamicProperties.RayleighCoeffMass);
+            //IMatrix damping = null;
+            return damping;
         }
         #endregion
 

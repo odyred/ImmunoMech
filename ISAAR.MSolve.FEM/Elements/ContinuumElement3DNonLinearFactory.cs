@@ -8,14 +8,14 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.Materials.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Elements
-{
+{ 
 	/// <summary>
 	/// Creates isoparametric continuum 3D elements. Abstracts the interpolations, integrations,
 	/// extrapolations and any other strategies that differentiate the elements(e.g. Hexa8, Hexa20)
 	/// It is also very convenient when the material properties are the same throughout the whole domain or a region.
 	/// Authors: Dimitris Tsapetis
 	/// </summary>
-	public class ContinuumElement3DFactory
+public class ContinuumElement3DNonLinearFactory
 	{
 		private static readonly IReadOnlyDictionary<CellType, IGaussPointExtrapolation3D> extrapolations;
 		private static readonly IReadOnlyDictionary<CellType, IQuadrature3D> integrationsForStiffness;
@@ -25,7 +25,7 @@ namespace ISAAR.MSolve.FEM.Elements
 		private readonly IContinuumMaterial3D commonMaterial;
 		private readonly IDynamicMaterial commonDynamicProperties;
 
-		static ContinuumElement3DFactory()
+		static ContinuumElement3DNonLinearFactory()
 		{
 			var interpolations = new Dictionary<CellType, IIsoparametricInterpolation3D>();
 			var integrationsForStiffness = new Dictionary<CellType, IQuadrature3D>();
@@ -47,16 +47,11 @@ namespace ISAAR.MSolve.FEM.Elements
 			extrapolations.Add(CellType.Tet10, null);
 
 			//// Hexa8
-			//interpolations.Add(CellType.Hexa8, InterpolationHexa8.UniqueInstance);
-			//integrationsForStiffness.Add(CellType.Hexa8, GaussLegendre3D.GetQuadratureWithOrder(2, 2, 2));
-			//integrationsForMass.Add(CellType.Hexa8, GaussLegendre3D.GetQuadratureWithOrder(2, 2, 2));
-			//extrapolations.Add(CellType.Hexa8, ExtrapolationGaussLegendre2x2x2.UniqueInstance);
-
-			// Hexa8inv
-			interpolations.Add(CellType.Hexa8, ISAAR.MSolve.FEM.Interpolation.InterpolationHexa8.UniqueInstance);
+			interpolations.Add(CellType.Hexa8, InterpolationHexa8.UniqueInstance);
 			integrationsForStiffness.Add(CellType.Hexa8, GaussLegendre3D.GetQuadratureWithOrder(2, 2, 2));
 			integrationsForMass.Add(CellType.Hexa8, GaussLegendre3D.GetQuadratureWithOrder(2, 2, 2));
 			extrapolations.Add(CellType.Hexa8, ExtrapolationGaussLegendre2x2x2.UniqueInstance);
+
 			// Hexa20
 			// TODO: extrapolations for Hexa20
 			interpolations.Add(CellType.Hexa20, InterpolationHexa20.UniqueInstance);
@@ -113,42 +108,32 @@ namespace ISAAR.MSolve.FEM.Elements
 			integrationsForMass.Add(CellType.Pyra14, PyramidQuadrature.Points6);
 			extrapolations.Add(CellType.Pyra14, null);
 
-			ContinuumElement3DFactory.interpolations = interpolations;
-			ContinuumElement3DFactory.integrationsForStiffness = integrationsForStiffness;
-			ContinuumElement3DFactory.integrationsForMass = integrationsForMass;
-			ContinuumElement3DFactory.extrapolations = extrapolations;
+			ContinuumElement3DNonLinearFactory.interpolations = interpolations;
+			ContinuumElement3DNonLinearFactory.integrationsForStiffness = integrationsForStiffness;
+			ContinuumElement3DNonLinearFactory.integrationsForMass = integrationsForMass;
+			ContinuumElement3DNonLinearFactory.extrapolations = extrapolations;
 		}
 
-		public ContinuumElement3DFactory(IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
+		public ContinuumElement3DNonLinearFactory(IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
 		{
 			this.commonDynamicProperties = commonDynamicProperties;
 			this.commonMaterial = commonMaterial;
 		}
 
-		public ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes)
+		public ContinuumElement3DNonLinear CreateElement(CellType cellType, IReadOnlyList<Node> nodes)
 		{
 			return CreateElement(cellType, nodes, commonMaterial, commonDynamicProperties);
 		}
 
-		private ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
-			IContinuumMaterial3D commonMaterial, IDynamicMaterial commonDynamicProperties)
+		private ContinuumElement3DNonLinear CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
+			IContinuumMaterial3D material, IDynamicMaterial commonDynamicProperties)
 		{
 			int numGPs = integrationsForStiffness[cellType].IntegrationPoints.Count;
 			var materialsAtGaussPoints = new IContinuumMaterial3D[numGPs];
 			for (int gp = 0; gp < numGPs; ++gp) materialsAtGaussPoints[gp] = (IContinuumMaterial3D)commonMaterial.Clone();
-			return CreateElement(cellType, nodes, materialsAtGaussPoints, commonDynamicProperties);
-		}
-
-		private ContinuumElement3D CreateElement(CellType cellType, IReadOnlyList<Node> nodes,
-			IReadOnlyList<IContinuumMaterial3D> materialsAtGaussPoints, IDynamicMaterial commonDynamicProperties)
-		{
-			//TODO: check if nodes - interpolation and Gauss points - materials match
-#if DEBUG
-			interpolations[cellType].CheckElementNodes(nodes);
-#endif
-			return new ContinuumElement3D(nodes, interpolations[cellType],
+			return new ContinuumElement3DNonLinear(nodes, interpolations[cellType],
 				integrationsForStiffness[cellType], integrationsForMass[cellType], extrapolations[cellType],
-				materialsAtGaussPoints, commonDynamicProperties);
+				material, commonDynamicProperties);
 		}
 	}
 }

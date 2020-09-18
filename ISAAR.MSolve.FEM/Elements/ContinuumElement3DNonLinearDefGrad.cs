@@ -15,6 +15,7 @@ using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.Materials.Interfaces;
 using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.FEM.Interpolation.GaussPointExtrapolation;
+using ISAAR.MSolve.Materials;
 
 namespace ISAAR.MSolve.FEM.Elements
 {
@@ -70,19 +71,20 @@ namespace ISAAR.MSolve.FEM.Elements
         public ContinuumElement3DNonLinearDefGrad(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
             IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
             IGaussPointExtrapolation3D gaussPointExtrapolation,
-            IContinuumMaterial3DDefGrad materialAtGaussPoints, IDynamicMaterial dynamicProperties)
+            IContinuumMaterial3DDefGrad material, IDynamicMaterial dynamicProperties)
         {
             this.dynamicProperties = dynamicProperties;
             //this.materialsAtGaussPoints[] = materialsAtGaussPoints;
             //this.GaussPointExtrapolation = gaussPointExtrapolation;
-            //this.Nodes = nodes;
+            this.Nodes = nodes;
             this.Interpolation = interpolation;
+            this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
             this.QuadratureForConsistentMass = quadratureForMass;
             this.QuadratureForStiffness = quadratureForStiffness;
 
             materialsAtGaussPoints = new IContinuumMaterial3DDefGrad[nGaussPoints];
             for (int i = 0; i < nGaussPoints; i++)
-                materialsAtGaussPoints[i] = (IContinuumMaterial3DDefGrad)materialAtGaussPoints.Clone();
+                materialsAtGaussPoints[i] = (IContinuumMaterial3DDefGrad)material.Clone();
 
             dofTypes = new IDofType[nodes.Count][];
             for (int i = 0; i < nodes.Count; i++)
@@ -105,6 +107,7 @@ namespace ISAAR.MSolve.FEM.Elements
         public IIsoparametricInterpolation3D Interpolation { get; }
         public IQuadrature3D QuadratureForStiffness { get; }
         public IQuadrature3D QuadratureForConsistentMass { get; }
+        public IReadOnlyList<Node> Nodes { get; }
 
         public int ID => 13;
         public CellType CellType => Interpolation.CellType;
@@ -719,6 +722,67 @@ namespace ISAAR.MSolve.FEM.Elements
         }
 
         public virtual IReadOnlyList<IReadOnlyList<IDofType>> GetElementDofTypes(IElement element) => dofTypes;
+        public virtual IMatrix MassMatrix(IElement element)
+        {
+            return ((DynamicMaterial)dynamicProperties).UseConsistentMass ? BuildConsistentMassMatrix() : BuildLumpedMassMatrix();
+        }
+
+        public Matrix BuildConsistentMassMatrix()
+        {
+            int numberOfDofs = 3 * Nodes.Count;
+            var mass = Matrix.CreateZero(numberOfDofs, numberOfDofs);
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForConsistentMass);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                Matrix shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                Matrix partial = shapeFunctionMatrix.MultiplyRight(shapeFunctionMatrix, true, false);
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+                mass.AxpyIntoThis(partial, dA);
+            }
+
+            mass.ScaleIntoThis(dynamicProperties.Density);
+            return mass;
+        }
+
+        public Matrix BuildLumpedMassMatrix()
+        {
+            int numberOfDofs = 3 * Nodes.Count;
+            var lumpedMass = Matrix.CreateZero(numberOfDofs, numberOfDofs);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForConsistentMass);
+
+            double area = 0;
+            for (int gp = 0; gp < QuadratureForConsistentMass.IntegrationPoints.Count; ++gp)
+            {
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                area += jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
+            }
+
+            double nodalMass = area * dynamicProperties.Density / Nodes.Count;
+            for (int i = 0; i < numberOfDofs; i++)
+            {
+                lumpedMass[i, i] = nodalMass;
+            }
+
+            return lumpedMass;
+        }
+        private Matrix BuildShapeFunctionMatrix(double[] shapeFunctions)
+        {
+            var shapeFunctionMatrix = Matrix.CreateZero(3, 3 * shapeFunctions.Length);
+            for (int i = 0; i < shapeFunctions.Length; i++)
+            {
+                shapeFunctionMatrix[0, 3 * i] = shapeFunctions[i];
+                shapeFunctionMatrix[1, (3 * i) + 1] = shapeFunctions[i];
+                shapeFunctionMatrix[2, (3 * i) + 2] = shapeFunctions[i];
+            }
+
+            return shapeFunctionMatrix;
+        }
 
         #region not implemented
         public double[] CalculateAccelerationForces(IElement element, IList<MassAccelerationLoad> loads)
@@ -726,14 +790,14 @@ namespace ISAAR.MSolve.FEM.Elements
             throw new NotImplementedException();
         }
 
-        public virtual IMatrix MassMatrix(IElement element)
-        {
-            throw new NotImplementedException();
-        }
 
         public virtual IMatrix DampingMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            IMatrix damping = StiffnessMatrix(element);
+            damping.ScaleIntoThis(dynamicProperties.RayleighCoeffStiffness);
+            damping.AxpyIntoThis(MassMatrix(element), dynamicProperties.RayleighCoeffMass);
+            //IMatrix damping = null;
+            return damping;
         }
 
         public Tuple<double[], double[]> CalculateStresses(Element element, double[] localDisplacements, double[] localdDisplacements)

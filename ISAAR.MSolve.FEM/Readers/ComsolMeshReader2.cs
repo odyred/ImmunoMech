@@ -13,17 +13,18 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
+using ISAAR.MSolve.FEM.Readers.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader2
+    public class ComsolMeshReader2:IModelReader
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
         public IList<IList<Element>> elementDomains;
-        public IList<IList<IList<Node>>> quadBoundaries;
-        public IList<IList<IList<Node>>> triBoundaries;
+        public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
+        public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         private readonly double diffusionCoeff;
         private readonly double[] convectionCoeff;
         private readonly double loadFromUnknownCoeff;

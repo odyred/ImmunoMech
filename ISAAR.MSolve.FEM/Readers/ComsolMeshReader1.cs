@@ -13,20 +13,20 @@ using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
+using ISAAR.MSolve.FEM.Readers.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader1
+    public class ComsolMeshReader1:IModelReader
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
         public IList<IList<Element>> elementDomains;
-        public IList<IList<IList<Node>>> quadBoundaries;
-        public IList<IList<IList<Node>>> triBoundaries;
+        public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
+        public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         private readonly double C1;
         private readonly double C2;
-        private readonly double loadFromUnknownCoeff;
         private IDynamicMaterial CommonDynamicProperties;
         enum Attributes
         {
@@ -61,7 +61,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model CreateModelFromFile()
         {
             var hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() { C1 = C1, C2 = C2, k_cons = 1 }; 
-            var elementFactory3D = new ContinuumElement3DFactory(hyperElasticMaterial, 
+            var elementFactory3D = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial, 
                 CommonDynamicProperties);
             //var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
@@ -267,7 +267,7 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[1])],
                                 model.NodesDictionary[Int32.Parse(line[0])]
                             };
-                            var Tet4 = elementFactory3D.CreateNonLinearDefGradElement(CellType.Tet4, nodes, hyperElasticMaterial, CommonDynamicProperties);
+                            var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodes);
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
@@ -317,7 +317,7 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
                             };
-                            var Hexa8 = elementFactory3D.CreateNonLinearDefGradElement(CellType.Hexa8, nodes, hyperElasticMaterial, CommonDynamicProperties);
+                            var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodes);
                             var element = new Element();
                             element.ID = HexID;
                             element.ElementType = Hexa8;

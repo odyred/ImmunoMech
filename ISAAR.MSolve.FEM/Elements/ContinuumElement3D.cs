@@ -50,7 +50,12 @@ namespace ISAAR.MSolve.FEM.Elements
 			this.Nodes = nodes;
 			this.Interpolation = interpolation;
 			this.QuadratureForConsistentMass = quadratureForMass;
+			//this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
 			this.QuadratureForStiffness = quadratureForStiffness;
+
+			//materialsAtGaussPoints = new IContinuumMaterial3D[nGaussPoints];
+			//for (int i = 0; i < nGaussPoints; i++)
+			//	materialsAtGaussPoints[i] = (IContinuumMaterial3D)material.Clone();
 
 			dofTypes = new IDofType[nodes.Count][];
 			for (int i = 0; i < nodes.Count; i++)
