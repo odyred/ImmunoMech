@@ -16,7 +16,21 @@ namespace ISAAR.MSolve.Analyzers
         private readonly IStructuralModel model;
         private readonly IAnalyzerProvider provider;
         private readonly ISolver solver;
+        public Dictionary<int, IVector> Responses
+        {
+            get
+            {
+                var solutionsDictionary = new Dictionary<int, IVector>();
+                foreach (var linearSystem in linearSystems)
+                {
+                    solutionsDictionary.Add(linearSystem.Key, linearSystem.Value.Solution as IVector);
+                }
 
+                return solutionsDictionary;
+            }
+
+            set { }
+        }
         public LinearAnalyzer(IStructuralModel model, ISolver solver, IAnalyzerProvider provider)
         {
             this.model = model;

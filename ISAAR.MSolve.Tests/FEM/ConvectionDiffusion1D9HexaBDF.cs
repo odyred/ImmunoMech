@@ -22,6 +22,7 @@ using System.Runtime.CompilerServices;
 using System;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -86,10 +87,10 @@ namespace ISAAR.MSolve.Tests.FEM
                     //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
-                    //var bodyLoadElementCellType = element.ElementType.CellType;
-                    //var nodes = (IReadOnlyList<Node>) element.Nodes;
-                    //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
-                    //model.BodyLoads.Add(bodyLoadElement);
+                    var bodyLoadElementCellType = element.ElementType.CellType;
+                    var nodes = (IReadOnlyList<Node>)element.Nodes;
+                    var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
+                    model.BodyLoads.Add(bodyLoadElement);
                     // var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;
@@ -99,6 +100,12 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
             }
+
+            //foreach (Node node in model.Nodes)
+            //{
+            //    model.Loads.Add(new Load() { Amount = .25, Node = node, DOF = ThermalDof.Temperature });
+            //}
+
             int[] boundaryIDs = new int[] { 0, };
             int QuadID = model.ElementsDictionary.Count + 1;
             foreach (int boundaryID in boundaryIDs)
@@ -208,7 +215,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemConvectionDiffusion2(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, 1, 10, 4, initialTemp);
+            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, .0025, 10, 1, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

@@ -182,9 +182,18 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
                             triBoundaries[boundaryID].Add(triNodesCollection[TriID]);
+                            foreach (Node node in triNodesCollection[TriID])
+                            {
+                                nodeBoundaries[boundaryID].Add(node);
+                            }
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+
+                        for (int boundaryID = 0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        {
+                            nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
                         break;
                     case Attributes.quad:
@@ -237,9 +246,19 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
                             quadBoundaries[boundaryID].Add(quadNodesCollection[QuadID]);
+                            foreach (Node node in quadNodesCollection[QuadID])
+                            { 
+                                nodeBoundaries[boundaryID].Add(node); 
+                            }
+                            
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+
+                        for (int boundaryID=0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        {
+                            nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
                         break;
                     case Attributes.tet:

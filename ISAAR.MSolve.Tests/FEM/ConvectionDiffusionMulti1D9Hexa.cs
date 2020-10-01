@@ -24,6 +24,7 @@ using static ISAAR.MSolve.FEM.Loading.SurfaceLoads.WeakDirichlet;
 using ISAAR.MSolve.FEM.Loading;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using System;
+using ISSAR.MSolve.Discretization.Loads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -38,9 +39,11 @@ namespace ISAAR.MSolve.Tests.FEM
             //var models = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1 };
             //var modelReaders = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2 };
 
-            var modelTuples = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0), CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0) };
-            var models = new[] { modelTuples[0].Item1, modelTuples[1].Item1 };
-            var modelReaders = new[] { modelTuples[0].Item2, modelTuples[1].Item2 };
+            var modelTuple1 = CreateModel(1, new double[] { 2, 2, 2 }, 1, 0, 0, 0, 0, new double[40] );
+            var bodyLoad = new double[modelTuple1.Item1.Nodes.Count];
+            var modelTuple2 = CreateModel(1, new double[] { 0, 0, 0 }, 0, 0, 0, 0, 0, bodyLoad);
+            var models = new[] { modelTuple1.Item1, modelTuple2.Item1 };
+            var modelReaders = new[] { modelTuple1.Item2, modelTuple2.Item2 };
             IVectorView[] solutions = SolveModels(models, modelReaders);
             Assert.True(CompareResults(solutions[0]));
         }
@@ -50,8 +53,8 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             double[] sol0 = solutions[0][0].CopyToArray();
             double[] sol1 = solutions[1][0].CopyToArray();
-            modelsToReplace[0] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1;
-            modelsToReplace[1] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1;
+            modelsToReplace[0] = CreateModel(1, new double[] { 2, 2, 2 }, 0, 0, 1, 0, 0, new double[40]).Item1;
+            modelsToReplace[1] = CreateModel(1, new double[] { 0, 0, 0 }, 0, 0, 0, 0, 0, sol0).Item1;
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
@@ -76,7 +79,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L, double b1, double b2, double f1, double f2)
+        private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L, double b1, double b2, double f1, double f2, double[] bl)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
@@ -99,6 +102,11 @@ namespace ISAAR.MSolve.Tests.FEM
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
                 new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
+
+            foreach (Node node in model.Nodes)
+            {
+                model.Loads.Add(new Load() { Amount = bl[node.ID], Node = node, DOF = ThermalDof.Temperature });
+            }
 
 
             int[] boundaryIDs = new int[] { 0, };
@@ -166,8 +174,8 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     foreach (Node node in nodes)
                     {
-                        temp0[0][node.ID] = 1;
-                        temp0[1][node.ID] = 1;
+                        temp0[0][node.ID] = 0;
+                        temp0[1][node.ID] = 0;
                     }
                 }
             }
@@ -178,8 +186,8 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     foreach (Node node in nodes)
                     {
-                        temp0[0][node.ID] = 0;
-                        temp0[1][node.ID] = 0;
+                        temp0[0][node.ID] = 1;
+                        //temp0[1][node.ID] = 0;
                     }
                 }
             }
@@ -197,7 +205,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
             }
 
-            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers, providers, childAnalyzers, 1, 10, initialTemperature: initialTemps);
+            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers, providers, childAnalyzers, .25, 5, initialTemperature: initialTemps);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

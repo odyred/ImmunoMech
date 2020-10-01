@@ -31,8 +31,8 @@ namespace ISAAR.MSolve.Tests.FEM
         [Fact]
         private static void RunTest()
         {
-            Model model = CreateModel(1, new double[]{2,2,2}, 0).Item1;
-            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { 2, 2, 2 }, 0).Item2;
+            Model model = CreateModel(1, new double[]{ -2, -2, -2 }, 0).Item1;
+            ComsolMeshReader2 modelReader = CreateModel(1, new double[] { -2, -2, -2 }, 0).Item2;
             IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -62,7 +62,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var flux1 = new FluxLoad(1);
             var flux2 = new FluxLoad(10);
             var dir1 = new DirichletDistribution(list => {
-                return Vector.CreateWithValue(list.Count, 1);
+                return Vector.CreateWithValue(list.Count, 0);
             });
             var dir2 = new DirichletDistribution(list => {
                 return Vector.CreateWithValue(list.Count, 0);
@@ -87,7 +87,7 @@ namespace ISAAR.MSolve.Tests.FEM
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
                     //var bodyLoadElementCellType = element.ElementType.CellType;
-                    //var nodes = (IReadOnlyList<Node>) element.Nodes;
+                    //var nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
                     //model.BodyLoads.Add(bodyLoadElement);
                     // var surfaceElement = new SurfaceLoadElement();
@@ -127,8 +127,11 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.SubdomainsDictionary[0].Elements.Add(dirichletElement1);
                     //model.ElementsDictionary.Add(TriID, surfaceElement);
 
-                    //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
+                //foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                //{
+                //    model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0});
+                //}
             }
             boundaryIDs = new int[] { 5 };
             foreach (int boundaryID in boundaryIDs)
@@ -136,29 +139,32 @@ namespace ISAAR.MSolve.Tests.FEM
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
                 {
                     //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
-                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(fluxElement1);
-                    var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(dirichletElement2);
-                    var surfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    var element = new Element();
-                    element.ID = QuadID;
-                    element.ElementType = surfaceBoundaryElement;
-                    model.SubdomainsDictionary[0].Elements.Add(element);
-                    model.ElementsDictionary.Add(QuadID, element);
-                    foreach (Node node in nodes)
-                    {
-                        element.AddNode(node);
-                    }
-                    QuadID += 1;
+                    var fluxElement2 = fluxFactory2.CreateElement(CellType.Quad4, nodes);
+                    model.SurfaceLoads.Add(fluxElement2);
+                    //var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(dirichletElement2);
+                    //var surfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    //var element = new Element();
+                    //element.ID = QuadID;
+                    //element.ElementType = surfaceBoundaryElement;
+                    //model.SubdomainsDictionary[0].Elements.Add(element);
+                    //model.ElementsDictionary.Add(QuadID, element);
+                    //foreach (Node node in nodes)
+                    //{
+                    //    element.AddNode(node);
+                    //}
+                    //QuadID += 1;
                     // var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;
                     //model.SubdomainsDictionary[0].Elements.Add(dirichletElement1);
                     //model.ElementsDictionary.Add(TriID, surfaceElement);
 
-                    //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
                 }
+                //foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                //{
+                //    model.NodesDictionary[node.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 0 });
+                //}
             }
 
             //boundaryIDs = new int[] { 1, 2, 3, 4 };
@@ -186,7 +192,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     foreach (Node node in nodes)
                     {
-                        temp0[node.ID] = 1;
+                        temp0[node.ID] = 0;
                     }
                 }
             }
@@ -208,7 +214,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 10, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 5, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

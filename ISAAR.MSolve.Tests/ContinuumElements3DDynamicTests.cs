@@ -32,233 +32,233 @@
 		private const double plasticModulus = 0.1;
 		private const double density = 0.001;
 		private const double hardeningRation = plasticModulus / youngModulus;
-		private const int monitorDof = 4;
+		private const int monitorDof = 11;
 
-		// Linear Geometry Examples
-		//[Fact]
-		//public void ContinuumElement3DElasticMaterialDynamicConsistent()
-		//{
-		//	IList<Node> nodes = new List<Node>();
+        //Linear Geometry Examples
+       [Fact]
+        public void ContinuumElement3DElasticMaterialDynamicConsistent()
+        {
+            IList<Node> nodes = new List<Node>();
 
-		//	// Create Model
-		//	var model = new Model();
+            // Create Model
+            var model = new Model();
 
-		//	// Create Subdomain
-		//	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+            // Create Subdomain
+            model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
 
-		//	// Create Elastic Material
-		//	var solidMaterial = new ElasticMaterial3D()
-		//	{
-		//		YoungModulus = youngModulus,
-		//		PoissonRatio = poissonRatio,
-		//	};
+            // Create Elastic Material
+            var solidMaterial = new ElasticMaterial3D()
+            {
+                YoungModulus = youngModulus,
+                PoissonRatio = poissonRatio,
+            };
 
-		//	// Create Dynamic Material
-		//	var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
+            // Create Dynamic Material
+            var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
 
-		//	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
+            DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
 
-		//	BoundaryConditions(model);
+            BoundaryConditions(model);
 
-		//	// Choose linear equation system solver
-		//	var solverBuilder = new SkylineSolver.Builder();
-		//	SkylineSolver solver = solverBuilder.BuildSolver(model);
+            // Choose linear equation system solver
+            var solverBuilder = new SkylineSolver.Builder();
+            SkylineSolver solver = solverBuilder.BuildSolver(model);
 
-		//	// Choose the provider of the problem -> here a structural problem
-		//	var provider = new ProblemStructural(model, solver);
+            // Choose the provider of the problem -> here a structural problem
+            var provider = new ProblemStructural(model, solver);
 
-		//	// Choose child analyzer -> Linear
-		//	var childAnalyzer = new LinearAnalyzer(model, solver, provider);
+            // Choose child analyzer -> Linear
+            var childAnalyzer = new LinearAnalyzer(model, solver, provider);
 
-		//	// Choose parent analyzer -> Parent: Static
-		//	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
-		//	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
-		//	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+            // Choose parent analyzer -> Parent: Static
+            var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+            parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+            NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
 
-		//	// Request output
-		//	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+            // Request output
+            childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
 
-		//	// Run the analysis
-		//	parentAnalyzer.Initialize();
-		//	parentAnalyzer.Solve();
+            // Run the analysis
+            parentAnalyzer.Initialize();
+            parentAnalyzer.Solve();
 
-		//	// Check output
-		//	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
-		//	double computedValue = log.DOFValues[monitorDof];
-		//	double expectedValue = 0.531178; // consistent: 0.531178 // lumped: 0.894201
-		//	Assert.Equal(expectedValue, computedValue, 3);
-		//}
+            // Check output
+            DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+            double computedValue = log.DOFValues[monitorDof];
+            double expectedValue = 0.531178; // consistent: 0.531178 // lumped: 0.894201
+            Assert.Equal(expectedValue, computedValue, 3);
+        }
 
-		//[Fact]
-		//public void ContinuumElement3DElasticMaterialDynamicLumped()
-		//{
-		//	IList<Node> nodes = new List<Node>();
+        //[Fact]
+        //public void ContinuumElement3DElasticMaterialDynamicLumped()
+        //{
+        //	IList<Node> nodes = new List<Node>();
 
-		//	// Create Model
-		//	var model = new Model();
+        //	// Create Model
+        //	var model = new Model();
 
-		//	// Create Subdomain
-		//	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+        //	// Create Subdomain
+        //	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
 
-		//	// Create Elastic Material
-		//	var solidMaterial = new ElasticMaterial3D()
-		//	{
-		//		YoungModulus = youngModulus,
-		//		PoissonRatio = poissonRatio,
-		//	};
+        //	// Create Elastic Material
+        //	var solidMaterial = new ElasticMaterial3D()
+        //	{
+        //		YoungModulus = youngModulus,
+        //		PoissonRatio = poissonRatio,
+        //	};
 
-		//	// Create Dynamic Material
-		//	var dynamicMaterial = new DynamicMaterial(density, 0, 0, false);
+        //	// Create Dynamic Material
+        //	var dynamicMaterial = new DynamicMaterial(density, 0, 0, false);
 
-		//	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
+        //	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
 
-		//	BoundaryConditions(model);
+        //	BoundaryConditions(model);
 
-		//	// Choose linear equation system solver
-		//	var solverBuilder = new SkylineSolver.Builder();
-		//	SkylineSolver solver = solverBuilder.BuildSolver(model);
+        //	// Choose linear equation system solver
+        //	var solverBuilder = new SkylineSolver.Builder();
+        //	SkylineSolver solver = solverBuilder.BuildSolver(model);
 
-		//	// Choose the provider of the problem -> here a structural problem
-		//	var provider = new ProblemStructural(model, solver);
+        //	// Choose the provider of the problem -> here a structural problem
+        //	var provider = new ProblemStructural(model, solver);
 
-		//	// Choose child analyzer -> Linear
-		//	var childAnalyzer = new LinearAnalyzer(model, solver, provider);
+        //	// Choose child analyzer -> Linear
+        //	var childAnalyzer = new LinearAnalyzer(model, solver, provider);
 
-		//	// Choose parent analyzer -> Parent: Static
-		//	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
-		//	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
-		//	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+        //	// Choose parent analyzer -> Parent: Static
+        //	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+        //	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+        //	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
 
-		//	// Request output
-		//	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+        //	// Request output
+        //	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
 
-		//	// Run the analysis
-		//	parentAnalyzer.Initialize();
-		//	parentAnalyzer.Solve();
+        //	// Run the analysis
+        //	parentAnalyzer.Initialize();
+        //	parentAnalyzer.Solve();
 
-		//	// Check output
-		//	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
-		//	double computedValue = log.DOFValues[monitorDof];
-		//	double expectedValue = 0.894201;
-		//	Assert.Equal(expectedValue, computedValue, 3);
-		//}
+        //	// Check output
+        //	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+        //	double computedValue = log.DOFValues[monitorDof];
+        //	double expectedValue = 0.894201;
+        //	Assert.Equal(expectedValue, computedValue, 3);
+        //}
 
-		//[Fact]
-		//public void ContinuumElement3DVonMisesMaterialDynamicConsistent()
-		//{
-		//	IList<Node> nodes = new List<Node>();
+        [Fact]
+        public void ContinuumElement3DVonMisesMaterialDynamicConsistent()
+        {
+            IList<Node> nodes = new List<Node>();
 
-		//	// Create Model
-		//	var model = new Model();
+            // Create Model
+            var model = new Model();
 
-		//	// Create Subdomain
-		//	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+            // Create Subdomain
+            model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
 
-		//	// Create von Mises Plastic Material
-		//	var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
+            // Create von Mises Plastic Material
+            var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
 
-		//	// Create Dynamic Material
-		//	var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
+            // Create Dynamic Material
+            var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
 
-		//	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
+            DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
 
-		//	BoundaryConditionsNLM(model);
+            BoundaryConditionsNLM(model);
 
-		//	// Choose linear equation system solver
-		//	var solverBuilder = new SkylineSolver.Builder();
-		//	SkylineSolver solver = solverBuilder.BuildSolver(model);
+            // Choose linear equation system solver
+            var solverBuilder = new SkylineSolver.Builder();
+            SkylineSolver solver = solverBuilder.BuildSolver(model);
 
-		//	// Choose the provider of the problem -> here a structural problem
-		//	var provider = new ProblemStructural(model, solver);
+            // Choose the provider of the problem -> here a structural problem
+            var provider = new ProblemStructural(model, solver);
 
-		//	// Choose child analyzer -> Child: NewtonRaphson - LoadControl
-		//	var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
-		//	var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, increments)
-		//	{
-		//		MaxIterationsPerIncrement = 50,
-		//		NumIterationsForMatrixRebuild = 1,
-		//		ResidualTolerance = 1E-06,
-		//	};
-		//	var childAnalyzer = childAnalyzerBuilder.Build();
+            // Choose child analyzer -> Child: NewtonRaphson - LoadControl
+            var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
+            var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, increments)
+            {
+                MaxIterationsPerIncrement = 50,
+                NumIterationsForMatrixRebuild = 1,
+                ResidualTolerance = 1E-06,
+            };
+            var childAnalyzer = childAnalyzerBuilder.Build();
 
-		//	// Choose parent analyzer -> Parent: Static
-		//	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
-		//	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
-		//	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+            // Choose parent analyzer -> Parent: Static
+            var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+            parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+            NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
 
-		//	// Request output
-		//	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+            // Request output
+            childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
 
-		//	// Run the analysis
-		//	parentAnalyzer.Initialize();
-		//	parentAnalyzer.Solve();
+            // Run the analysis
+            parentAnalyzer.Initialize();
+            parentAnalyzer.Solve();
 
-		//	// Check output
-		//	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
-		//	double computedValue = log.DOFValues[monitorDof];
-		//	double expectedValue = 3.47644;
-		//	Assert.Equal(expectedValue, computedValue, 2);
-		//}
+            // Check output
+            DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+            double computedValue = log.DOFValues[monitorDof];
+            double expectedValue = 3.47644;
+            Assert.Equal(expectedValue, computedValue, 2);
+        }
 
-		//[Fact]
-		//public void ContinuumElement3DVonMisesMaterialDynamicLumped()
-		//{
-		//	IList<Node> nodes = new List<Node>();
+        //[Fact]
+        //public void ContinuumElement3DVonMisesMaterialDynamicLumped()
+        //{
+        //	IList<Node> nodes = new List<Node>();
 
-		//	// Create Model
-		//	var model = new Model();
+        //	// Create Model
+        //	var model = new Model();
 
-		//	// Create Subdomain
-		//	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+        //	// Create Subdomain
+        //	model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
 
-		//	// Create von Mises Plastic Material
-		//	var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
+        //	// Create von Mises Plastic Material
+        //	var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
 
-		//	// Create Dynamic Material
-		//	var dynamicMaterial = new DynamicMaterial(density, 0, 0, false);
+        //	// Create Dynamic Material
+        //	var dynamicMaterial = new DynamicMaterial(density, 0, 0, false);
 
-		//	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
+        //	DefineContinuumElement3DLinear(model, solidMaterial, dynamicMaterial);
 
-		//	BoundaryConditionsNLM(model);
+        //	BoundaryConditionsNLM(model);
 
-		//	// Choose linear equation system solver
-		//	var solverBuilder = new SkylineSolver.Builder();
-		//	SkylineSolver solver = solverBuilder.BuildSolver(model);
+        //	// Choose linear equation system solver
+        //	var solverBuilder = new SkylineSolver.Builder();
+        //	SkylineSolver solver = solverBuilder.BuildSolver(model);
 
-		//	// Choose the provider of the problem -> here a structural problem
-		//	var provider = new ProblemStructural(model, solver);
+        //	// Choose the provider of the problem -> here a structural problem
+        //	var provider = new ProblemStructural(model, solver);
 
-		//	// Choose child analyzer -> Child: NewtonRaphson - LoadControl
-		//	var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
-		//	var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, increments)
-		//	{
-		//		MaxIterationsPerIncrement = 50,
-		//		NumIterationsForMatrixRebuild = 1,
-		//		ResidualTolerance = 1E-06,
-		//	};
-		//	var childAnalyzer = childAnalyzerBuilder.Build();
+        //	// Choose child analyzer -> Child: NewtonRaphson - LoadControl
+        //	var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
+        //	var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, increments)
+        //	{
+        //		MaxIterationsPerIncrement = 50,
+        //		NumIterationsForMatrixRebuild = 1,
+        //		ResidualTolerance = 1E-06,
+        //	};
+        //	var childAnalyzer = childAnalyzerBuilder.Build();
 
-		//	// Choose parent analyzer -> Parent: Dynamic
-		//	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
-		//	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
-		//	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+        //	// Choose parent analyzer -> Parent: Dynamic
+        //	var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+        //	parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+        //	NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
 
-		//	// Request output
-		//	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+        //	// Request output
+        //	childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
 
-		//	// Run the analysis
-		//	parentAnalyzer.Initialize();
-		//	parentAnalyzer.Solve();
+        //	// Run the analysis
+        //	parentAnalyzer.Initialize();
+        //	parentAnalyzer.Solve();
 
-		//	// Check output
-		//	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
-		//	double computedValue = log.DOFValues[monitorDof];
-		//	double expectedValue = 3.78687;
-		//	Assert.Equal(expectedValue, computedValue, 3);
-		//}
+        //	// Check output
+        //	DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+        //	double computedValue = log.DOFValues[monitorDof];
+        //	double expectedValue = 3.78687;
+        //	Assert.Equal(expectedValue, computedValue, 3);
+        //}
 
-		// NonLinear Geometry Examples
-		[Fact]
+        // NonLinear Geometry Examples
+        [Fact]
 		public void ContinuumElement3DNonLinearElasticMaterialDynamicConsistent()
 		{
 			IList<Node> nodes = new List<Node>();
@@ -379,8 +379,121 @@
 			double expectedValue = 2.97084;
 			Assert.Equal(expectedValue, computedValue, 3);
 		}
+		[Fact]
+		public void ContinuumElement3DNonLinearVonMisesMaterialDynamicConsistent()
+		{
+			IList<Node> nodes = new List<Node>();
 
+			// Create Model
+			var model = new Model();
 
+			// Create Subdomain
+			model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+
+			// Create von Mises Plastic Material
+			var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
+
+			// Create Dynamic Material
+			var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
+
+			DefineContinuumElement3DNonLinear(model, solidMaterial, dynamicMaterial);
+
+			BoundaryConditionsNLM(model);
+
+			// Choose linear equation system solver
+			var solverBuilder = new SkylineSolver.Builder();
+			SkylineSolver solver = solverBuilder.BuildSolver(model);
+
+			// Choose the provider of the problem -> here a structural problem
+			var provider = new ProblemStructural(model, solver);
+
+			// Choose child analyzer -> Child: NewtonRaphson - LoadControl
+			var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
+			var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, increments)
+			{
+				MaxIterationsPerIncrement = 50,
+				NumIterationsForMatrixRebuild = 1,
+				ResidualTolerance = 1E-06,
+			};
+			var childAnalyzer = childAnalyzerBuilder.Build();
+
+			// Choose parent analyzer -> Parent: Static
+			var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+			parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+			NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+
+			// Request output
+			childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+
+			// Run the analysis
+			parentAnalyzer.Initialize();
+			parentAnalyzer.Solve();
+
+			// Check output
+			DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+			double computedValue = log.DOFValues[monitorDof];
+			double expectedValue = 1.93737;
+			Assert.Equal(expectedValue, computedValue, 2);
+		}
+
+		[Fact]
+		public void ContinuumElement3DNonLinearDefGradDynamicConsistent()
+		{
+			IList<Node> nodes = new List<Node>();
+
+			// Create Model
+			var model = new Model();
+
+			// Create Subdomain
+			model.SubdomainsDictionary.Add(subdomainID, new Subdomain(subdomainID));
+
+			// Create von Mises Plastic Material
+			//var solidMaterial = new VonMisesMaterial3D(youngModulus, poissonRatio, yieldStress, plasticModulus);
+			var solidMaterial = new HyperElasticMaterial3DDefGrad() { C1 = 1, C2 = 1, k_cons = 1 };
+
+			// Create Dynamic Material
+			var dynamicMaterial = new DynamicMaterial(density, 0, 0, true);
+
+			//DefineContinuumElement3DNonLinear(model, solidMaterial, dynamicMaterial);
+			DefineContinuumElement3DNonLinearDefGrad(model, solidMaterial, dynamicMaterial);
+
+			BoundaryConditionsNLM(model);
+
+			// Choose linear equation system solver
+			var solverBuilder = new SkylineSolver.Builder();
+			SkylineSolver solver = solverBuilder.BuildSolver(model);
+
+			// Choose the provider of the problem -> here a structural problem
+			var provider = new ProblemStructural(model, solver);
+
+			// Choose child analyzer -> Child: NewtonRaphson - LoadControl
+			var subdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) };
+			var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(model, solver, provider, 2)
+			{
+				MaxIterationsPerIncrement = 50,
+				NumIterationsForMatrixRebuild = 1,
+				ResidualTolerance = 1E-06,
+			};
+			var childAnalyzer = childAnalyzerBuilder.Build();
+
+			// Choose parent analyzer -> Parent: Static
+			var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, 1.0, 100.0);
+			parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+			NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+
+			// Request output
+			childAnalyzer.LogFactories[subdomainID] = new LinearAnalyzerLogFactory(new int[] { monitorDof });
+
+			// Run the analysis
+			parentAnalyzer.Initialize();
+			parentAnalyzer.Solve();
+
+			// Check output
+			DOFSLog log = (DOFSLog)childAnalyzer.Logs[subdomainID][0];
+			double computedValue = log.DOFValues[monitorDof];
+			double expectedValue = 2.32803;
+			Assert.Equal(expectedValue, computedValue, 2);
+		}
 		// DEFINE ELEMENTS AND BOUNDARY CONDITIONS
 		internal static int DefineContinuumElement3DLinear(Model model, IIsotropicContinuumMaterial3D material3D, IDynamicMaterial dynamicMaterial)
 		{
@@ -414,7 +527,7 @@
 			}
 
 			int[][] connectivityMatrix = new int[8][];
-			connectivityMatrix[0] = new int[] { 1, 8, 7, 5, 6, 4, 3, 1, 2 };
+			connectivityMatrix[0] = new int[] { 1, 1, 2, 4, 3, 5, 6, 8, 7 };
 
 			var factory = new ContinuumElement3DFactory(material3D, dynamicMaterial);
 
@@ -506,6 +619,67 @@
 			return numberOfNodes;
 		}
 
+		internal static int DefineContinuumElement3DNonLinearDefGrad(Model model, IContinuumMaterial3DDefGrad material3D, IDynamicMaterial dynamicMaterial)
+		{
+			// Node creation
+			var node1 = new Node(id: 1, x: 0.0, y: 0.0, z: 0.0);
+			var node2 = new Node(id: 2, x: 100.0, y: 0.0, z: 0.0);
+			var node3 = new Node(id: 3, x: 0.0, y: 100.0, z: 0.0);
+			var node4 = new Node(id: 4, x: 100.0, y: 100.0, z: 0.0);
+			var node5 = new Node(id: 5, x: 0.0, y: 0.0, z: 100.0);
+			var node6 = new Node(id: 6, x: 100.0, y: 0.0, z: 100.0);
+			var node7 = new Node(id: 7, x: 0.0, y: 100.0, z: 100.0);
+			var node8 = new Node(id: 8, x: 100.0, y: 100.0, z: 100.0);
+
+			// Create List of nodes
+			IList<Node> nodes = new List<Node>();
+			nodes.Add(node1);
+			nodes.Add(node2);
+			nodes.Add(node3);
+			nodes.Add(node4);
+			nodes.Add(node5);
+			nodes.Add(node6);
+			nodes.Add(node7);
+			nodes.Add(node8);
+
+			numberOfNodes = nodes.Count;
+
+			// Add nodes to the nodes dictonary of the model
+			for (int i = 0; i < numberOfNodes; ++i)
+			{
+				model.NodesDictionary.Add(i, nodes[i]);
+			}
+
+			int[][] connectivityMatrix = new int[8][];
+			connectivityMatrix[0] = new int[] { 1, 1, 2, 4, 3, 5, 6, 8, 7 };
+
+			var factory = new ContinuumElement3DNonLinearDefGradFactory(material3D, dynamicMaterial);
+
+			for (int i = 0; i < 1; i++)
+			{
+				List<Node> elementNodeSet = new List<Node>(8);
+				for (int j = 1; j < 9; j++)
+				{
+					elementNodeSet.Add((Node)model.NodesDictionary[connectivityMatrix[i][j] - 1]);
+				}
+
+				var hexa8element = new Element()
+				{
+					ID = connectivityMatrix[i][0],
+					ElementType = factory.CreateElement(CellType.Hexa8, elementNodeSet),
+				};
+
+				for (int j = 1; j < 9; j++)
+				{
+					hexa8element.AddNode(model.NodesDictionary[connectivityMatrix[i][j] - 1]);
+				}
+
+				model.ElementsDictionary.Add(hexa8element.ID, hexa8element);
+				model.SubdomainsDictionary[0].Elements.Add(hexa8element);
+			}
+
+			return numberOfNodes;
+		}
 		internal static void BoundaryConditions(Model model)
 		{
 			// Boundary Condtitions - Rolled Left-Face

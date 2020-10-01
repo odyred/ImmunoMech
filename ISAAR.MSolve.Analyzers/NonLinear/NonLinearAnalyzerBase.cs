@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Vectors;
@@ -61,6 +62,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
             get => parentAnalyzer;
             set => parentAnalyzer = (INonLinearParentAnalyzer)value; //TODO: remove this cast. Now it only serves as a check
         }
+        public Dictionary<int, IVector> Responses { get; set; } = new Dictionary<int, IVector>();
 
         public void BuildMatrices()
         {
@@ -106,6 +108,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                 //Vector<double> internalRhs = (Vector<double>)subdomain.GetRhsFromSolution(u[subdomain.ID], du[subdomain.ID]);
 
                 //TODO: remove cast
+                Responses = uPlusdu.ToDictionary(x => x.Key, x => x.Value); // TODO: Check if this copies by reference
                 IVector internalRhs = subdomainUpdaters[id].GetRhsFromSolution(uPlusdu[id], du[id]);//TODOMaria this calculates the internal forces
                 provider.ProcessInternalRhs(linearSystem.Subdomain, uPlusdu[id], internalRhs);//TODOMaria this does nothing
                 //(new Vector<double>(u[subdomain.ID] + du[subdomain.ID])).Data);

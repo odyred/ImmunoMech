@@ -46,7 +46,21 @@ namespace ISAAR.MSolve.Analyzers.Multiscale
         private Vector globalRhs;
         private readonly Dictionary<int, LinearAnalyzerLogFactory> logFactories = new Dictionary<int, LinearAnalyzerLogFactory>();
         private readonly Dictionary<int, IAnalyzerLog[]> logs = new Dictionary<int, IAnalyzerLog[]>();
+        public Dictionary<int, IVector> Responses
+        {
+            get
+            {
+                var solutionsDictionary = new Dictionary<int, IVector>();
+                foreach (var linearSystem in linearSystems)
+                {
+                    solutionsDictionary.Add(linearSystem.Key, linearSystem.Value.Solution as IVector);
+                }
 
+                return solutionsDictionary;
+            }
+
+            set { }
+        }
         public MicrostructureBvpNRNLAnalyzer(IStructuralModel model, ISolver solver, Dictionary<int, NonLinearSubdomainUpdaterWithInitialConditions> subdomainUpdaters,
             INonLinearProvider provider, int increments, Dictionary<int, IVector> uInitialFreeDOFDisplacementsPerSubdomain,
             Dictionary<int, Node> boundaryNodes, Dictionary<int, Dictionary<IDofType, double>> initialConvergedBoundaryDisplacements, Dictionary<int, Dictionary<IDofType, double>> totalBoundaryDisplacements,

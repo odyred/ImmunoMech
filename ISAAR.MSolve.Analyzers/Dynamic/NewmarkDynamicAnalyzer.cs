@@ -19,7 +19,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly double beta, gamma, timeStep, totalTime;
         private readonly double a0, a1, a2, a3, a4, a5, a6, a7;
         private IStructuralModel model;
-        private readonly IReadOnlyDictionary<int, ILinearSystem> linearSystems;
+        private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
         private ISolver solver;
         private IImplicitIntegrationProvider provider;
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();
@@ -234,12 +234,21 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
             UpdateVelocityAndAcceleration(i);
             UpdateResultStorages(start, end);
-
+            // Print output results in *.txt file
+            using (var fileName = new System.IO.StreamWriter(@"C:\Users\Ody\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
+            {
+                double currentTime = ((i + 1) * timeStep);
+                string strTimeStep = currentTime.ToString();
+                var totalSolution = ChildAnalyzer.Responses[0][11];
+                string strTotalSolution = totalSolution.ToString();
+                fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+            }
             if (CreateNewModel != null)
             {
                 CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
                 model = modelsForReplacement[0];
                 solver = solversForReplacement[0];
+                linearSystems = solver.LinearSystems;
                 provider = providersForReplacement[0];
                 ChildAnalyzer = childAnalyzersForReplacement[0];
 
@@ -405,8 +414,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 int id = linearSystem.Subdomain.ID;
                 u[id].CopyFrom(v[id]); //TODO: this copy can be avoided by pointing to v[id] and then v[id] = null;
-                v[id].CopyFrom(linearSystem.Solution);
-
+                //v[id].CopyFrom(linearSystem.Solution);
+                v[id].CopyFrom(ChildAnalyzer.Responses[id]);
                 IVector vv = v2[id].Add(externalAccelerations[id]);
 
                 // v2 = a0 * (v - u) - a2 * v1 - a3 * vv
