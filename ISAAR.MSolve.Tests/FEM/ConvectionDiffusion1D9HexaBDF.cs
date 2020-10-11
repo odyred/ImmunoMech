@@ -55,7 +55,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "48tet.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
@@ -87,10 +87,10 @@ namespace ISAAR.MSolve.Tests.FEM
                     //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
-                    var bodyLoadElementCellType = element.ElementType.CellType;
-                    var nodes = (IReadOnlyList<Node>)element.Nodes;
-                    var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
-                    model.BodyLoads.Add(bodyLoadElement);
+                    //var bodyLoadElementCellType = element.ElementType.CellType;
+                    //var nodes = (IReadOnlyList<Node>)element.Nodes;
+                    //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
+                    //model.BodyLoads.Add(bodyLoadElement);
                     // var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;
@@ -143,8 +143,8 @@ namespace ISAAR.MSolve.Tests.FEM
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
                 {
                     //IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
-                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(fluxElement1);
+                    //var fluxElement2 = fluxFactory2.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(fluxElement2);
                     var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
                     model.SurfaceLoads.Add(dirichletElement2);
                     var surfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
@@ -215,7 +215,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var provider = new ProblemConvectionDiffusion2(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
-            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, .0025, 10, 1, initialTemp);
+            var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, .1, 2, 1, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();

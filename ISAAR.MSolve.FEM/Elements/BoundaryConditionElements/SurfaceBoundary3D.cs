@@ -97,21 +97,31 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
         public Matrix BuildDiffusionMatrix()
         {
             int numDofs = Nodes.Count;
+            double kappaCoef;
+            if (numDofs == 4) kappaCoef = 100;
+            else kappaCoef = 1;
             var stiffness = Matrix.CreateZero(numDofs, numDofs);
             IReadOnlyList<double[]> shapeFunctions =
                 Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
             IReadOnlyList<Matrix> shapeGradientsNatural =
                 Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
             double[] dist = new double[Nodes.Count];
-            //for (int i = 0; i < Nodes.Count-1; i++) 
-            //{
-            //    for (int j = i+1; j < Nodes.Count; j++) 
-            //    {
-            //        dist[i+j-1] = Math.Sqrt(Math.Pow(Nodes[i].X - Nodes[j].X,2) +
-            //            Math.Pow(Nodes[i].Y - Nodes[j].Y,2) + Math.Pow(Nodes[i].Z - Nodes[j].Z, 2));
-            //    }
-            //}
-            //double kappa = material.DiffusionCoeff / dist.Min();
+            List<INode> neighborNodes = new List<INode>();
+            for (int i = 0; i < Nodes.Count; i++)
+            {
+                neighborNodes.Clear();
+                foreach (var element in Nodes[i].ElementsDictionary.Values)
+                {
+                    neighborNodes.AddRange(element.Nodes);
+                }
+                neighborNodes = neighborNodes.Distinct().ToList();
+                neighborNodes.Remove(Nodes[i]);
+                var minDist = neighborNodes.Select(x => Math.Sqrt(
+                      Math.Pow(Nodes[i].X - x.X, 2) +
+                              Math.Pow(Nodes[i].Y - x.Y, 2) + Math.Pow(Nodes[i].Z - x.Z, 2))).Min();
+                dist[i] = minDist;
+            }
+            //double kappa = kappaCoef * material.DiffusionCoeff/ dist.Min();
             double kappa = material.DiffusionCoeff / .05;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)

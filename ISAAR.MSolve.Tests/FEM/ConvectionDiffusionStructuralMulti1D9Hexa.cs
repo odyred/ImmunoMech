@@ -26,6 +26,7 @@ using System;
 using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISSAR.MSolve.Discretization.Loads;
+using ISAAR.MSolve.FEM.Loading.BodyLoads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -52,6 +53,88 @@ namespace ISAAR.MSolve.Tests.FEM
             var modelReaders = new[] { modelTuple1.Item2, modelTuple2.Item2};
             //IVectorView[] solutions = SolveModels(models, modelReaders);
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
+
+            string path3 = Path.Combine(Directory.GetCurrentDirectory(), "CD_Structural_9HexaOutput.vtu");
+            var numberOfPoints = models[0].Nodes.Count;
+            var numberOfCells = models[0].Elements.Count;
+            using (StreamWriter outputFile = new StreamWriter(path3))
+            {
+                outputFile.WriteLine("<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\">");
+                outputFile.WriteLine("  <UnstructuredGrid>");
+                outputFile.WriteLine($"     <Piece NumberOfPoints=\"{numberOfPoints}\" NumberOfCells=\"{numberOfCells}\">");
+                outputFile.WriteLine("          <Points>");
+
+                outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"position\" NumberOfComponents=\"3\" format =\"ascii\">");
+                for (int i = 0; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"{models[0].Nodes[i].X} {models[0].Nodes[i].Y} {models[0].Nodes[i].Z} ");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("          </Points>");
+                outputFile.WriteLine("          <PointData>");
+
+                outputFile.WriteLine("              <DataArray type=\"Int32\" Name=\"node_ID\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"{i + 1}");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"solution1\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"{Solutions[0][0][i]} ");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"solution2\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"{Solutions[1][0][i]} ");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"displacement\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"{Displacements[0][3*i]} ");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("          </PointData>");
+                outputFile.WriteLine("          <CellData>");
+                outputFile.WriteLine("              <DataArray type=\"Int32\" Name=\"element_ID\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfCells; i++)
+                {
+                    outputFile.WriteLine($"{i + 1}");
+                }
+                outputFile.WriteLine("              </DataArray>");
+                outputFile.WriteLine("          </CellData>");
+                outputFile.WriteLine("          <Cells>");
+
+                outputFile.WriteLine("              <DataArray type=\"Int32\" Name=\"connectivity\">");
+                for (int i = 0; i < numberOfCells; i++)
+                {
+                    for (int j = 0; j < models[0].Elements[i].Nodes.Count; j++)
+                        outputFile.Write($"{models[0].Elements[i].Nodes[j].ID} ");
+                    outputFile.WriteLine("");
+                }
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Int32\" Name=\"offsets\" NumberOfComponents=\"1\" format=\"ascii\">");
+                var offset = 0;
+                for (int i = 0; i < numberOfCells; i++)
+                {
+                    offset += models[0].Elements[i].Nodes.Count;
+                    outputFile.WriteLine($"{offset} ");
+                }
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Int32\" Name =\"types\" NumberOfComponents =\"1\" format=\"ascii\">");
+                for (int i = 0; i < numberOfCells; i++)
+                {
+                    if (models[0].Elements[i].Nodes.Count == 8)
+                        outputFile.WriteLine($"{12} ");
+                    else outputFile.WriteLine($"{9} ");
+                }
+                outputFile.WriteLine("              </DataArray>");
+                outputFile.WriteLine("          </Cells>");
+                outputFile.WriteLine("      </Piece>");
+                outputFile.WriteLine("  </UnstructuredGrid>");
+                outputFile.WriteLine("</VTKFile>");
+            }
+
             Assert.True(CompareResults(solutions[0]));
         }
 
@@ -204,11 +287,11 @@ namespace ISAAR.MSolve.Tests.FEM
 
 
             int[] domainIDs = new int[] { 0, };
-            //foreach (int domainID in domainIDs)
-            //{
-            //    foreach (Element element in modelReader.elementDomains[domainID])
-            //    {
-            //        IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
+            foreach (int domainID in domainIDs)
+            {
+                foreach (Element element in modelReader.elementDomains[domainID])
+                {
+                    ////IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
                     //var bodyLoadElementCellType = element.ElementType.CellType;
@@ -224,11 +307,11 @@ namespace ISAAR.MSolve.Tests.FEM
                     //model.ElementsDictionary.Add(TriID, surfaceElement);
 
                     //model.NodesDictionary[surfaceElement.ID].Constraints.Add(new Constraint() { DOF = ThermalDof.Temperature, Amount = 100 });
-            //    }
-            //}
+                }
+            }
             //foreach (Node node in model.Nodes)
             //{
-            //    model.Loads.Add(new Load() { Amount = bl[node.ID]/4, Node = node, DOF = ThermalDof.Temperature });
+            //    model.Loads.Add(new Load() { Amount = bl[node.ID], Node = node, DOF = ThermalDof.Temperature });
             //}
 
             int[] boundaryIDs = new int[] { 0, };
@@ -385,8 +468,8 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     foreach (Node node in nodes)
                     {
-                        //value0[0][node.ID] = 1;
-                        //value0[1][node.ID] = 0;
+                        value0[0][node.ID] = 0;
+                        value0[1][node.ID] = 0;
                     }
                 }
             }
@@ -404,8 +487,8 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
             }
 
-            const double timestep = .001;
-            const double time = 5;
+            const double timestep = 1;
+            const double time = 3;
             var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
                 providers, childAnalyzers, timestep, time, initialTemperature: initialValues);
             parentAnalyzer.Initialize();

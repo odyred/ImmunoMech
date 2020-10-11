@@ -32,6 +32,9 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
         {
             //nodes[0].ElementsDictionary.Values.ToList<>
             int numDofs = nodes.Count;
+            double kappaCoef;
+            if (numDofs == 4) kappaCoef = 100;
+            else kappaCoef = 1;
             var stiffness = Matrix.CreateZero(numDofs, numDofs);
             IReadOnlyList<double[]> shapeFunctions =
                 interpolation.EvaluateFunctionsAtGaussPoints(integration);
@@ -39,16 +42,23 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                interpolation.EvaluateNaturalGradientsAtGaussPoints(integration);
 
             double[] dist = new double[nodes.Count];
-            //for (int i = 0; i < nodes.Count - 1; i++)
-            //{
-            //    for (int j = i + 1; j < nodes.Count; j++)
-            //    {
-            //        dist[i + j - 1] = Math.Sqrt(Math.Pow(nodes[i].X - nodes[j].X, 2) +
-            //            Math.Pow(nodes[i].Y - nodes[j].Y, 2) + Math.Pow(nodes[i].Z - nodes[j].Z, 2));
-            //    }
-            //}
-            //double kappa = _diffusionCoeff / dist.Min();
-            double kappa = _diffusionCoeff / .05;
+            List<INode> neighborNodes = new List<INode>();
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                neighborNodes.Clear();
+                foreach (var element in nodes[i].ElementsDictionary.Values)
+                {
+                    neighborNodes.AddRange(element.Nodes);
+                }
+                neighborNodes = neighborNodes.Distinct().ToList();
+                neighborNodes.Remove(nodes[i]);
+                var minDist = neighborNodes.Select(x => Math.Sqrt(
+                      Math.Pow(nodes[i].X - x.X, 2) +
+                              Math.Pow(nodes[i].Y - x.Y, 2) + Math.Pow(nodes[i].Z - x.Z, 2))).Min();
+                dist[i] = minDist;
+            }
+            //double kappa = kappaCoef * _diffusionCoeff / dist.Min();
+            //double[] kappa = new double[nodes.Count];
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
                 //var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
@@ -66,6 +76,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                     jacobianMatrix[1, 0] += shapeGradientsNatural[gp][k, 1] * nodes[k].X;
                     jacobianMatrix[1, 1] += shapeGradientsNatural[gp][k, 1] * nodes[k].Y;
                     jacobianMatrix[1, 2] += shapeGradientsNatural[gp][k, 1] * nodes[k].Z;
+                    //kappa[k] = _diffusionCoeff / .05 / dist[k];
                 }
                 Vector tangentVector1 = jacobianMatrix.GetRow(0);
                 Vector tangentVector2 = jacobianMatrix.GetRow(1);
@@ -82,6 +93,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 //Vector deformationZ = deformation.GetRow(2);
                 //Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
                 //    -_diffusionCoeff * deformationNormal.TensorProduct(shapeFunctionMatrix);
+                double kappa = _diffusionCoeff / .05;
                 Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);

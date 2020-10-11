@@ -401,19 +401,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     int id = linearSystem.Subdomain.ID;
                     temperature[i][id].CopyFrom(linearSystem.Solution);
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
-                    if ((timeStep + 1) % 500 == 0)
-                    {
-                        string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
-                        //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
-                        var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                        writer.WriteToFile(temperature[i][id], path2);
-                        //writer.WriteToFile(temperature[id][0], path1);
+                    //if ((timeStep + 1) % 1 == 0)
+                    //{
+                    //    string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    //    //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
+                    //    //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    //    var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
+                    //    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    //    writer.WriteToFile(temperature[i][id], path2);
+                    //    //writer.WriteToFile(temperature[id][0], path1);
 
-                        //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
-                        //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
-                    }
+                    //    //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
+                    //    //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
+                    //}
                 }
             }
         }

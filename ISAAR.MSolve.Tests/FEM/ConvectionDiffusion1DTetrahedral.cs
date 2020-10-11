@@ -53,7 +53,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
         private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "48tet.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "240tet.mphtxt");
             ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
@@ -186,11 +186,11 @@ namespace ISAAR.MSolve.Tests.FEM
             var builder = new DenseMatrixSolver.Builder();
             builder.IsMatrixPositiveDefinite = false;
             var solver = builder.BuildSolver(model);
-            var provider = new ProblemConvectionDiffusion2(model, solver);
+            var provider = new ProblemConvectionDiffusion(model, solver);
 
             var childAnalyzer = new LinearAnalyzer(model, solver, provider);
             //var parentAnalyzer = new BDF(model, solver, provider, childAnalyzer, 1, 10, 1, initialTemp);
-            var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, .5, 10, initialTemp);
+            var parentAnalyzer = new ConvectionDiffusionExplicitDynamicAnalyzer(model, solver, provider, childAnalyzer, 2.5e-3, 5, initialTemp);
 
             parentAnalyzer.Initialize();
             parentAnalyzer.Solve();
