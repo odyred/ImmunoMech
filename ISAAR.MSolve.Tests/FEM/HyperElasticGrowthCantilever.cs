@@ -30,10 +30,14 @@ using ISAAR.MSolve.FEM.Loading.BodyLoads;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
-    public class ConvectionDiffusionStructuralMulti1D9Hexa
+    public class HyperElasticGrowthCantilever
     {
         private const int subdomainID = 0;
+        private static double lambdag = 1;
+        private const double a = 1;
+        private const double b = 1;
         private static DenseMatrixSolver.Builder builder = new DenseMatrixSolver.Builder();
+        private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
         private static Dictionary<int, IVector>[] Solutions;
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
@@ -46,11 +50,10 @@ namespace ISAAR.MSolve.Tests.FEM
             //var modelReaders = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2 };
 
             //var modelTuples = new[] { CreateConvectionDiffusionModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0), CreateConvectionDiffusionModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0) };
-            var modelTuple1 = CreateConvectionDiffusionModel1(1, new double[] { -2, -2, -2 }, 0, 0, 0, 0, 10);
-            var modelTuple2 = CreateConvectionDiffusionModel2(1, new double[] { 0, 0, 0 }, 0, 0, 0, new double[modelTuple1.Item1.Nodes.Count]);
-            var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
-            var models = new[] { modelTuple1.Item1, modelTuple2.Item1};
-            var modelReaders = new[] { modelTuple1.Item2, modelTuple2.Item2};
+            var modelTuple1 = CreateConvectionDiffusionModel2(0, new double[] { 0, 0, 0 }, 1, 0, 0, 1.5);
+            //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
+            var models = new[] { modelTuple1.Item1};
+            var modelReaders = new[] { modelTuple1.Item2};
             //IVectorView[] solutions = SolveModels(models, modelReaders);
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
 
@@ -89,7 +92,7 @@ namespace ISAAR.MSolve.Tests.FEM
 
                 outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"displacement\" NumberOfComponents=\"1\" format=\"ascii\">");
                 for (int i = 0; i < numberOfPoints; i++)
-                    outputFile.WriteLine($"{Displacements[0][3*i]} ");
+                    outputFile.WriteLine($"{Displacements[0][3 * i]} ");
                 outputFile.WriteLine("              </DataArray>");
 
                 outputFile.WriteLine("          </PointData>");
@@ -142,11 +145,11 @@ namespace ISAAR.MSolve.Tests.FEM
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             Solutions = solutions;
-            double[] sol0 = solutions[0][0].CopyToArray();
-            double[] sol1 = solutions[1][0].CopyToArray();
-            var fluxLoad = sol0[39];// (sol0[39] + sol0[38] + sol0[37] + sol1[36])/8 ;
-            modelsToReplace[0] = CreateConvectionDiffusionModel1(1, new double[] { -2, -2, -2 }, 0, 0, 0, 0, 10).Item1;
-            modelsToReplace[1] = CreateConvectionDiffusionModel2(1, new double[] { 0, 0, 0 }, 0, 0, fluxLoad, new double[] { }).Item1;
+            double[] lg = solutions[0][0].CopyToArray();
+            //double[] sol1 = solutions[1][0].CopyToArray();
+            lambdag = lg[0];// (sol0[39] + sol0[38] + sol0[37] + sol1[36])/8 ;
+            modelsToReplace[0] = CreateConvectionDiffusionModel2(0, new double[] { 0, 0, 0 }, 1, 0, 0, 1.5).Item1;
+            //modelsToReplace[1] = CreateConvectionDiffusionModel2(1, new double[] { 0, 0, 0 }, 0, 0, fluxLoad, new double[] { }).Item1;
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
@@ -160,16 +163,20 @@ namespace ISAAR.MSolve.Tests.FEM
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             double[] sol0 = Solutions[0][0].CopyToArray();
-            double[] sol1 = Solutions[1][0].CopyToArray();
-            var load = new double[] { sol1[39], sol1[39], sol1[39] };
+            //double[] sol1 = Solutions[1][0].CopyToArray();
+            //var load = new double[] { sol1[39], sol1[39], sol1[39] };
             IDynamicMaterial commonDynamicMaterialProperties = new DynamicMaterial(.001, 0, 0, true);
             Accelerations = accelerations;
             Velocities = velocities;
             Displacements = displacements;
-            modelsToReplace[0] = CreateStructuralModel(10e4, 0, commonDynamicMaterialProperties, 0, load).Item1;
-            solversToReplace[0] = builder.BuildSolver(modelsToReplace[0]);
+            modelsToReplace[0] = CreateStructuralModel(3e4, 0, commonDynamicMaterialProperties, 0, new double[] { 1000, 0, 0 }, lambdag).Item1;
+            solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
-            childAnalyzersToReplace[0] = new LinearAnalyzer(modelsToReplace[0], solversToReplace[0], providersToReplace[0]);
+            solversToReplace[0].HandleMatrixWillBeSet();
+            //childAnalyzersToReplace[0] = new LinearAnalyzer(modelsToReplace[0], solversToReplace[0], providersToReplace[0]);
+            var increments = 2;
+            var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
+            childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
         }
 
         private static bool CompareResults(IVectorView solution)
@@ -186,82 +193,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return true;
         }
-
-        private static Tuple<Model, IModelReader> CreateConvectionDiffusionModel1(double k, double[] U, double L, double b1, double b2, double f1, double f2)
-        {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, k, U, L);
-            Model model = modelReader.CreateModelFromFile();
-            //Boundary Conditions
-            var flux1 = new FluxLoad(f1);
-            var flux2 = new FluxLoad(f2);
-            var dir1 = new DirichletDistribution(list =>
-            {
-                return Vector.CreateWithValue(list.Count, b1);
-            });
-            var dir2 = new DirichletDistribution(list =>
-            {
-                return Vector.CreateWithValue(list.Count, b2);
-            });
-            var weakDirichlet1 = new WeakDirichlet(dir1, k);
-            var weakDirichlet2 = new WeakDirichlet(dir2, k);
-
-            var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
-            var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
-            var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
-            var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-                new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
-
-
-            int[] boundaryIDs = new int[] { 0, };
-            int QuadID = model.ElementsDictionary.Count + 1;
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-                {
-                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(fluxElement1);
-                    var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(dirichletElement1);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    var element = new Element();
-                    element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
-                    model.SubdomainsDictionary[0].Elements.Add(element);
-                    model.ElementsDictionary.Add(QuadID, element);
-                    foreach (Node node in nodes)
-                    {
-                        element.AddNode(node);
-                    }
-                    QuadID += 1;
-                }
-            }
-            boundaryIDs = new int[] { 5 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-                {
-                    var fluxElement2 = fluxFactory2.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(fluxElement2);
-                    //var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(dirichletElement2);
-                    //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    //var element = new Element();
-                    //element.ID = QuadID;
-                    //element.ElementType = SurfaceBoundaryElement;
-                    //model.SubdomainsDictionary[0].Elements.Add(element);
-                    //model.ElementsDictionary.Add(QuadID, element);
-                    //foreach (Node node in nodes)
-                    //{
-                    //    element.AddNode(node);
-                    //}
-                    //QuadID += 1;
-                }
-            }
-            return new Tuple<Model, IModelReader>(model, modelReader);
-        }
-        private static Tuple<Model, IModelReader> CreateConvectionDiffusionModel2(double k, double[] U, double L, double b, double f, double[] bl)
+        private static Tuple<Model, IModelReader> CreateConvectionDiffusionModel2(double k, double[] U, double L, double b, double f, double bl)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, k, U, L);
@@ -294,12 +226,12 @@ namespace ISAAR.MSolve.Tests.FEM
                     ////IReadOnlyList<Node> nodes = (IReadOnlyList<Node>)element.Nodes;
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
-                    //var bodyLoadElementCellType = element.ElementType.CellType;
-                    //var nodes = (IReadOnlyList<Node>)element.Nodes;
-                    //var domainLoad = new ConvectionDiffusionDomainLoad(material, bl[], ThermalDof.Temperature);
-                    //var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
-                    //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
-                    //model.BodyLoads.Add(bodyLoadElement);
+                    var bodyLoadElementCellType = element.ElementType.CellType;
+                    var nodes = (IReadOnlyList<Node>)element.Nodes;
+                    var domainLoad = new ConvectionDiffusionDomainLoad(material, bl, ThermalDof.Temperature);
+                    var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
+                    var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Hexa8, nodes);
+                    model.BodyLoads.Add(bodyLoadElement);
                     //var surfaceElement = new SurfaceLoadElement();
                     //element.ID = TriID;
                     //surfaceElement.ElementType = DirichletElement1;
@@ -323,19 +255,19 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(fluxElement1);
-                    var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(dirichletElement1);
-                    var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    var element = new Element();
-                    element.ID = QuadID;
-                    element.ElementType = SurfaceBoundaryElement;
-                    model.SubdomainsDictionary[0].Elements.Add(element);
-                    model.ElementsDictionary.Add(QuadID, element);
-                    foreach (Node node in nodes)
-                    {
-                        element.AddNode(node);
-                    }
-                    QuadID += 1;
+                    //var dirichletElement1 = dirichletFactory1.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(dirichletElement1);
+                    //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    //var element = new Element();
+                    //element.ID = QuadID;
+                    //element.ElementType = SurfaceBoundaryElement;
+                    //model.SubdomainsDictionary[0].Elements.Add(element);
+                    //model.ElementsDictionary.Add(QuadID, element);
+                    //foreach (Node node in nodes)
+                    //{
+                    //    element.AddNode(node);
+                    //}
+                    //QuadID += 1;
                 }
             }
             boundaryIDs = new int[] { 5 };
@@ -343,8 +275,8 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
                 {
-                    var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(fluxElement1);
+                    //var fluxElement1 = fluxFactory1.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(fluxElement1);
                     //var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Quad4, nodes);
                     //model.SurfaceLoads.Add(bodyLoadElement);
                     //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
@@ -362,16 +294,18 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l)
+        private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lg)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, C1, C2, 1, commonDynamicMaterialProperties);
+            double poisonRatio = .45;
+            double bulkModulus = 4 * C1 * (1 + poisonRatio) / 3 / (1 - 2 * poisonRatio);
+            var modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lg);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
             var ly = l[1];
             var lz = l[2];
-            var distributedLoad = new DistributedLoad(lx,ly,lz);
+            var distributedLoad = new DistributedLoad(lx, ly, lz);
             //var flux2 = new FluxLoad(f2);
             //var dir1 = new DirichletDistribution(list => {
             //    return Vector.CreateWithValue(list.Count, b1);
@@ -449,31 +383,11 @@ namespace ISAAR.MSolve.Tests.FEM
                 double[] v0 = new double[models[i].Nodes.Count];
                 value0.Add(i, v0);
             }
-            int[] boundaryIDs = new int[] { 0 };
-            foreach (int boundaryID in boundaryIDs)
+            foreach (Node node in models[0].Nodes)
             {
-                foreach (IList<Node> nodes in modelReaders[0].quadBoundaries[boundaryID])
-                {
-                    foreach (Node node in nodes)
-                    {
-                        value0[0][node.ID] = 0;
-                        value0[1][node.ID] = 0;
-                    }
-                }
+                value0[0][node.ID] = 1;
             }
-            boundaryIDs = new int[] { 5 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (IList<Node> nodes in modelReaders[0].quadBoundaries[boundaryID])
-                {
-                    foreach (Node node in nodes)
-                    {
-                        value0[0][node.ID] = 0;
-                        value0[1][node.ID] = 0;
-                    }
-                }
-            }
-
+             
             DenseMatrixSolver[] solvers = new DenseMatrixSolver[models.Length];
             IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
             IChildAnalyzer[] childAnalyzers = new IChildAnalyzer[models.Length];
@@ -487,14 +401,14 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
             }
 
-            const double timestep = 1;
+            const double timestep = .1;
             const double time = 3;
             var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
                 providers, childAnalyzers, timestep, time, initialTemperature: initialValues);
             parentAnalyzer.Initialize();
 
-            var structuralModel = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 }).Item1; // new Model();
-            var structuralSolver = builder.BuildSolver(structuralModel);
+            var structuralModel = CreateStructuralModel(3e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 1000, 0, 0 }, 1).Item1; // new Model();
+            var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
             var structuralProvider = new ProblemStructural(structuralModel, structuralSolver);
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);
             var increments = 2;

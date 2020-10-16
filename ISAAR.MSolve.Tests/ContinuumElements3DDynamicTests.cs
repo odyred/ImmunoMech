@@ -33,6 +33,7 @@
 		private const double density = 0.001;
 		private const double hardeningRation = plasticModulus / youngModulus;
 		private const int monitorDof = 11;
+		private const double lambdag = 1;
 
         //Linear Geometry Examples
        [Fact]
@@ -653,7 +654,7 @@
 			int[][] connectivityMatrix = new int[8][];
 			connectivityMatrix[0] = new int[] { 1, 1, 2, 4, 3, 5, 6, 8, 7 };
 
-			var factory = new ContinuumElement3DNonLinearDefGradFactory(material3D, dynamicMaterial);
+			var factory = new ContinuumElement3DNonLinearDefGradFactory(material3D, dynamicMaterial, lambdag);
 
 			for (int i = 0; i < 1; i++)
 			{

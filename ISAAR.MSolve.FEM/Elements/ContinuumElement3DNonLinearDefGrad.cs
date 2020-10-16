@@ -41,6 +41,7 @@ namespace ISAAR.MSolve.FEM.Elements
         private double[][] strainsVec;
         //private double[][] strainsVec_last_converged;
         private double[][] DefGradVec;
+        private double lambdag = 1;
 
         protected ContinuumElement3DNonLinearDefGrad()
         {
@@ -81,6 +82,42 @@ namespace ISAAR.MSolve.FEM.Elements
             this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
             this.QuadratureForConsistentMass = quadratureForMass;
             this.QuadratureForStiffness = quadratureForStiffness;
+
+            materialsAtGaussPoints = new IContinuumMaterial3DDefGrad[nGaussPoints];
+            for (int i = 0; i < nGaussPoints; i++)
+                materialsAtGaussPoints[i] = (IContinuumMaterial3DDefGrad)material.Clone();
+
+            dofTypes = new IDofType[nodes.Count][];
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                dofTypes[i] = new IDofType[]
+                {
+                    StructuralDof.TranslationX, StructuralDof.TranslationY, StructuralDof.TranslationZ
+                };
+            }
+
+            //strainsVec = new double[nGaussPoints][];
+            //strainsVecLastConverged = new double[nGaussPoints][];
+            //for (int gpoint = 0; gpoint < materialsAtGaussPoints.Count; gpoint++)
+            //{
+            //    strainsVec[gpoint] = new double[6];
+            //    strainsVecLastConverged[gpoint] = new double[6];
+            //}
+        }
+        public ContinuumElement3DNonLinearDefGrad(IReadOnlyList<Node> nodes, IIsoparametricInterpolation3D interpolation,
+            IQuadrature3D quadratureForStiffness, IQuadrature3D quadratureForMass,
+            IGaussPointExtrapolation3D gaussPointExtrapolation,
+            IContinuumMaterial3DDefGrad material, IDynamicMaterial dynamicProperties, double lambdag)
+        {
+            this.dynamicProperties = dynamicProperties;
+            //this.materialsAtGaussPoints[] = materialsAtGaussPoints;
+            //this.GaussPointExtrapolation = gaussPointExtrapolation;
+            this.Nodes = nodes;
+            this.Interpolation = interpolation;
+            this.nGaussPoints = quadratureForStiffness.IntegrationPoints.Count;
+            this.QuadratureForConsistentMass = quadratureForMass;
+            this.QuadratureForStiffness = quadratureForStiffness;
+            this.lambdag = lambdag;
 
             materialsAtGaussPoints = new IContinuumMaterial3DDefGrad[nGaussPoints];
             for (int i = 0; i < nGaussPoints; i++)
@@ -355,11 +392,13 @@ namespace ISAAR.MSolve.FEM.Elements
             {
                 //
                 deformationGradientsTransposed[npoint] = jacobianInverse[npoint] * jacobiansDeformedMatrices[npoint];
-                DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], deformationGradientsTransposed[npoint][1, 1], deformationGradientsTransposed[npoint][2, 2], deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1], deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], deformationGradientsTransposed[npoint][0, 1], deformationGradientsTransposed[npoint][1, 2], };//MS
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     ////
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     //GL[npoint] = deformationGradientsTransposed[npoint] * deformationGradientsTransposed[npoint].Transpose();
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     //for (int m = 0; m < 3; m++)
-
+                DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], deformationGradientsTransposed[npoint][1, 1], 
+                    deformationGradientsTransposed[npoint][2, 2], deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1], 
+                    deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], deformationGradientsTransposed[npoint][0, 1], 
+                    deformationGradientsTransposed[npoint][1, 2], };//MS
+                ////
+                //GL[npoint] = deformationGradientsTransposed[npoint] * deformationGradientsTransposed[npoint].Transpose();
+                //for (int m = 0; m < 3; m++)
             }
 
         }
@@ -419,8 +458,81 @@ namespace ISAAR.MSolve.FEM.Elements
 
             for (int npoint = 0; npoint < nGaussPoints; npoint++)
             {
+                var stressesElastic = materialsAtGaussPoints[npoint].Stresses;
+                var secondPiolaElastic = new double[3, 3] { {stressesElastic[0],stressesElastic[3],stressesElastic[5] },
+                    { stressesElastic[3],stressesElastic[1],stressesElastic[4] },
+                    {stressesElastic[5],stressesElastic[4],stressesElastic[2] } };
+                //DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], 
+                //deformationGradientsTransposed[npoint][1, 1], deformationGradientsTransposed[npoint][2, 2], 
+                //    deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1], 
+                //    deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], 
+                //    deformationGradientsTransposed[npoint][0, 1], deformationGradientsTransposed[npoint][1, 2], };//MS
+                var defGradTransposed = new double[3, 3] {{DefGradVec[npoint][0],
+                DefGradVec[npoint][7], DefGradVec[npoint][5] },
+                    { DefGradVec[npoint][3], DefGradVec[npoint][1],
+                    DefGradVec[npoint][8] }, {DefGradVec[npoint][6],
+                    DefGradVec[npoint][4], DefGradVec[npoint][2] }, };
+                var defGradElasticTransposed = new double[3, 3] {{DefGradVec[npoint][0] / lambdag,
+                DefGradVec[npoint][7] / lambdag, DefGradVec[npoint][5] / lambdag },
+                    { DefGradVec[npoint][3] / lambdag, DefGradVec[npoint][1] / lambdag,
+                    DefGradVec[npoint][8] / lambdag}, {DefGradVec[npoint][6] / lambdag,
+                    DefGradVec[npoint][4] / lambdag, DefGradVec[npoint][2] / lambdag }, };
+                var firstPiolaElastic = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        for (int k = 0; k < 3; k++)
+                        {
+                            firstPiolaElastic[i, j] += secondPiolaElastic[i, k] * defGradElasticTransposed[k, j];
+                        }
+                    }
+                }
+                double defGradDeterminant = 0;
+                for (int i = 0; i < 3; i++)
+                    defGradDeterminant = defGradDeterminant + (defGradTransposed[0, i] * (defGradTransposed[1, (i + 1) % 3] 
+                        * defGradTransposed[2, (i + 2) % 3] - defGradTransposed[1, (i + 2) % 3] * defGradTransposed[2, (i + 1) % 3]));
 
-                integrCoeffsTimesStresses[npoint] = materialsAtGaussPoints[npoint].Stresses.Scale(integrationCoeffs[npoint]);
+                double defGradElasticDeterminant = 0;
+                for (int i = 0; i < 3; i++)
+                    defGradElasticDeterminant = defGradElasticDeterminant + (defGradElasticTransposed[0, i] * (defGradElasticTransposed[1, (i + 1) % 3]
+                        * defGradElasticTransposed[2, (i + 2) % 3] - defGradElasticTransposed[1, (i + 2) % 3] * defGradElasticTransposed[2, (i + 1) % 3]));
+
+                var firstPiola = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
+                    }
+                }
+
+                double[,] defGradInverseTransposed = new double[3, 3] { { (defGradTransposed[2, 2]*defGradTransposed[1,1]- defGradTransposed[2, 1]
+                    * defGradTransposed[1, 2])/defGradDeterminant,
+                        (-(defGradTransposed[2, 2] * defGradTransposed[0, 1] - defGradTransposed[2, 1]
+                    * defGradTransposed[0, 2]))/defGradDeterminant,
+                        (defGradTransposed[1,2] * defGradTransposed[0, 1] - defGradTransposed[1, 1] * defGradTransposed[0, 2])/defGradDeterminant },
+                    { (-(defGradTransposed[2,2]*defGradTransposed[1,0]-defGradTransposed[2,0]*defGradTransposed[1,2]))/defGradDeterminant,
+                        (defGradTransposed[2,2]*defGradTransposed[0,0]-defGradTransposed[2,0]*defGradTransposed[0,2])/ defGradDeterminant,
+                        (-(defGradTransposed[1,2]*defGradTransposed[0,0]-defGradTransposed[1,0]*defGradTransposed[0,2]))/defGradDeterminant },
+                    {(defGradTransposed[2,1]*defGradTransposed[1,0]-defGradTransposed[2,0]*defGradTransposed[1,1])/defGradDeterminant,
+                        (-(defGradTransposed[2,1]*defGradTransposed[0,0]-defGradTransposed[2,0]*defGradTransposed[0,1]))/defGradDeterminant,
+                        (defGradTransposed[1,1]*defGradTransposed[0,0]-defGradTransposed[1,0]*defGradTransposed[0,1])/ defGradDeterminant } };
+
+                var secondPiola = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        for (int k = 0; k < 3; k++)
+                        {
+                            secondPiola[i, j] += firstPiola[i, k] * defGradInverseTransposed[k, j];
+                        }
+                    }
+                }
+
+                var stresses = new double[6] { secondPiola[0, 0], secondPiola[1, 1], secondPiola[2, 2], secondPiola[0, 1], secondPiola[1, 2], secondPiola[2, 0] };
+                integrCoeffsTimesStresses[npoint] = stresses.Scale(integrationCoeffs[npoint]);
 
                 //
                 Matrix lcyrcumflex;//= Matrix.CreateZero(3, 3);
@@ -508,9 +620,83 @@ namespace ISAAR.MSolve.FEM.Elements
 
             for (int npoint = 0; npoint < nGaussPoints; npoint++)
             {
+                var stressesElastic = materialsAtGaussPoints[npoint].Stresses;
+                var secondPiolaElastic = new double[3, 3] { {stressesElastic[0],stressesElastic[3],stressesElastic[5] },
+                    { stressesElastic[3],stressesElastic[1],stressesElastic[4] },
+                    {stressesElastic[5],stressesElastic[4],stressesElastic[2] } };
+                //DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], 
+                //deformationGradientsTransposed[npoint][1, 1], deformationGradientsTransposed[npoint][2, 2], 
+                //    deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1], 
+                //    deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], 
+                //    deformationGradientsTransposed[npoint][0, 1], deformationGradientsTransposed[npoint][1, 2], };//MS
+                var defGradTransposed = new double[3, 3] {{DefGradVec[npoint][0],
+                DefGradVec[npoint][7], DefGradVec[npoint][5] },
+                    { DefGradVec[npoint][3], DefGradVec[npoint][1],
+                    DefGradVec[npoint][8] }, {DefGradVec[npoint][6],
+                    DefGradVec[npoint][4], DefGradVec[npoint][2] }, };
+                var defGradElasticTransposed = new double[3, 3] {{DefGradVec[npoint][0] / lambdag,
+                DefGradVec[npoint][7] / lambdag, DefGradVec[npoint][5] / lambdag },
+                    { DefGradVec[npoint][3] / lambdag, DefGradVec[npoint][1] / lambdag,
+                    DefGradVec[npoint][8] / lambdag}, {DefGradVec[npoint][6] / lambdag,
+                    DefGradVec[npoint][4] / lambdag, DefGradVec[npoint][2] / lambdag }, };
+                var firstPiolaElastic = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        for (int k = 0; k < 3; k++)
+                        {
+                            firstPiolaElastic[i, j] += secondPiolaElastic[i, k] * defGradElasticTransposed[k, j];
+                        }
+                    }
+                }
+                double defGradDeterminant = 0;
+                for (int i = 0; i < 3; i++)
+                    defGradDeterminant = defGradDeterminant + (defGradTransposed[0, i] * (defGradTransposed[1, (i + 1) % 3]
+                        * defGradTransposed[2, (i + 2) % 3] - defGradTransposed[1, (i + 2) % 3] * defGradTransposed[2, (i + 1) % 3]));
+
+                double defGradElasticDeterminant = 0;
+                for (int i = 0; i < 3; i++)
+                    defGradElasticDeterminant = defGradElasticDeterminant + (defGradElasticTransposed[0, i] * (defGradElasticTransposed[1, (i + 1) % 3]
+                        * defGradElasticTransposed[2, (i + 2) % 3] - defGradElasticTransposed[1, (i + 2) % 3] * defGradElasticTransposed[2, (i + 1) % 3]));
+
+                var firstPiola = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
+                    }
+                }
+
+                double[,] defGradInverseTransposed = new double[3, 3] { { (defGradTransposed[2, 2]*defGradTransposed[1,1]- defGradTransposed[2, 1]
+                    * defGradTransposed[1, 2])/defGradDeterminant,
+                        (-(defGradTransposed[2, 2] * defGradTransposed[0, 1] - defGradTransposed[2, 1]
+                    * defGradTransposed[0, 2]))/defGradDeterminant,
+                        (defGradTransposed[1,2] * defGradTransposed[0, 1] - defGradTransposed[1, 1] * defGradTransposed[0, 2])/defGradDeterminant },
+                    { (-(defGradTransposed[2,2]*defGradTransposed[1,0]-defGradTransposed[2,0]*defGradTransposed[1,2]))/defGradDeterminant,
+                        (defGradTransposed[2,2]*defGradTransposed[0,0]-defGradTransposed[2,0]*defGradTransposed[0,2])/ defGradDeterminant,
+                        (-(defGradTransposed[1,2]*defGradTransposed[0,0]-defGradTransposed[1,0]*defGradTransposed[0,2]))/defGradDeterminant },
+                    {(defGradTransposed[2,1]*defGradTransposed[1,0]-defGradTransposed[2,0]*defGradTransposed[1,1])/defGradDeterminant,
+                        (-(defGradTransposed[2,1]*defGradTransposed[0,0]-defGradTransposed[2,0]*defGradTransposed[0,1]))/defGradDeterminant,
+                        (defGradTransposed[1,1]*defGradTransposed[0,0]-defGradTransposed[1,0]*defGradTransposed[0,1])/ defGradDeterminant } };
+
+                var secondPiola = new double[3, 3];
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        for (int k = 0; k < 3; k++)
+                        {
+                            secondPiola[i, j] += firstPiola[i, k] * defGradInverseTransposed[k, j];
+                        }
+                    }
+                }
+
+                var stresses = new double[6] { secondPiola[0, 0], secondPiola[1, 1], secondPiola[2, 2], secondPiola[0, 1], secondPiola[1, 2], secondPiola[2, 0] };
 
                 // 
-                integrCoeffsTimesSpkvec[npoint] = materialsAtGaussPoints[npoint].Stresses.Scale(integrationCoeffs[npoint]);
+                integrCoeffsTimesSpkvec[npoint] = stresses.Scale(integrationCoeffs[npoint]);
 
                 //
                 Matrix lcyrcumflex = Matrix.CreateZero(3, 3);
@@ -661,7 +847,12 @@ namespace ISAAR.MSolve.FEM.Elements
                 //};
                 //materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec_strain_minus_last_converged_value); 
                 // //To update with total strain simplY = materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec[npoint]);
-                materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVec[npoint]); //MS
+                double[] DefGradVecEl = new double[9];
+                for (int i= 0; i < 9; i++)
+                {
+                    DefGradVecEl[i] = DefGradVec[npoint][i] / lambdag;
+                }
+                materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVecEl); //MS
             };
             //return new Tuple<double[], double[]>(strainsVec_strain_minus_last_converged_value, 
             //    materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);

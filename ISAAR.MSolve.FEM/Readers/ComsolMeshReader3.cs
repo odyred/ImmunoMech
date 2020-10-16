@@ -17,7 +17,7 @@ using ISAAR.MSolve.FEM.Readers.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader1:IModelReader
+    public class ComsolMeshReader3 : IModelReader
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
@@ -25,11 +25,6 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Element>> elementDomains;
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
-        private readonly double C1;
-        private readonly double C2;
-        private readonly double k_cons;
-        private IDynamicMaterial CommonDynamicProperties;
-        private readonly double lambdag = 1;
         enum Attributes
         {
             sdim = 1001,
@@ -46,22 +41,11 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader1(string filename, double C1, double C2, double k_cons, IDynamicMaterial commonDynamicProperties)
+        public ComsolMeshReader3(string filename, double C1, double C0)
         {
             Filename = filename;
             this.C1 = C1;
-            this.C2 = C2;
-            this.k_cons = k_cons;
-            CommonDynamicProperties = commonDynamicProperties;
-        }
-        public ComsolMeshReader1(string filename, double C1, double C2, double k_cons, IDynamicMaterial commonDynamicProperties,  double lambdag)
-        {
-            Filename = filename;
-            this.C1 = C1;
-            this.C2 = C2;
-            this.k_cons = k_cons;
-            CommonDynamicProperties = commonDynamicProperties;
-            this.lambdag = lambdag;
+            this.C0 = C0;
         }
 
         int NumberOfNodes;
@@ -69,12 +53,13 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfTetElements;
         int NumberOfHexElements;
         int NumberOfQuadElements;
+        private readonly double C1;
+        private readonly double C0;
 
         public Model CreateModelFromFile()
         {
-            var hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() { C1 = C1, C2 = C2, k_cons = k_cons }; 
-            var elementFactory3D = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial, 
-                CommonDynamicProperties, lambdag);
+            var ODEMaterial = new ODEMaterial(C1,C0) ;
+            var elementFactory3D = new ODEElement3DFactory(ODEMaterial);
             //var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
             var model = new Model();

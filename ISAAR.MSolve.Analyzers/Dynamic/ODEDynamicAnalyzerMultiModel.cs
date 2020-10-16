@@ -17,28 +17,27 @@ using ISAAR.MSolve.Solvers.LinearSystems;
 //TODO: Use a base class for implicit time integration methods (perhaps to together with explicit)
 namespace ISAAR.MSolve.Analyzers.Dynamic
 {
-    public class ConvectionDiffusionImplicitDynamicAnalyzerMultiModel : INonLinearParentAnalyzer //TODO: why is this non linear
+    public class ODEDynamicAnalyzerMultiModel : INonLinearParentAnalyzer //TODO: why is this non linear
     {
         private readonly int maxStaggeredSteps;
-        private readonly double timeStep, totalTime, tolerance;
+        private readonly double beta, timeStep, totalTime, tolerance;
         private IStructuralModel[] models;
         private readonly IReadOnlyDictionary<int, ILinearSystem>[] linearSystems;
         private readonly ISolver[] solvers;
         private readonly IChildAnalyzer[] childAnalyzers;
-        private readonly IConvectionDiffusionIntegrationProvider[] providers;
-        private readonly IVector[] initialTemperature;
+        private readonly IImplicitIntegrationProvider[] providers;
+        private readonly IVector[] initialValue;
         private readonly Dictionary<int, IVector>[] rhs;
-        private readonly Dictionary<int, IVector>[] stabilizingRhs;//TODO: has to be implemented, pertains to domain loads
         private readonly Dictionary<int, IVector>[] rhsPrevious;//TODO: at the moment domain loads are not implemented in this
-        private readonly Dictionary<int, IVector>[] temperature;
-        private readonly Dictionary<int, IVector>[] temperatureFromPreviousStaggeredStep;
-        private readonly Dictionary<int, IVector>[] capacityTimesTemperature;
-        private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
-        private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
+        private readonly Dictionary<int, IVector>[] unknown;
+        private readonly Dictionary<int, IVector>[] unknownFromPreviousStaggeredStep;
+        private readonly Dictionary<int, IVector>[] firstOrderMatrixTimesUnknown;
+        private readonly Dictionary<int, IVector>[] secondOrderMatrixTimesUnknown;
+        private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
 
-        public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator,
-            IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime,
-            int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialTemperature = null)
+        public ODEDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator,
+            IStructuralModel[] models, ISolver[] solvers, IImplicitIntegrationProvider[] providers, IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime,
+            int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialValue = null)
         {
             this.CreateNewModel = modelCreator;
             this.maxStaggeredSteps = maxStaggeredSteps;
@@ -46,22 +45,20 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             this.models = models;
             this.linearSystems = new IReadOnlyDictionary<int, ILinearSystem>[solvers.Length];
             rhs = new Dictionary<int, IVector>[solvers.Length];
-            stabilizingRhs = new Dictionary<int, IVector>[solvers.Length];
             rhsPrevious = new Dictionary<int, IVector>[solvers.Length];
-            temperature = new Dictionary<int, IVector>[solvers.Length];
-            temperatureFromPreviousStaggeredStep = new Dictionary<int, IVector>[solvers.Length];
-            capacityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
-            stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
+            unknown = new Dictionary<int, IVector>[solvers.Length];
+            unknownFromPreviousStaggeredStep = new Dictionary<int, IVector>[solvers.Length];
+            firstOrderMatrixTimesUnknown = new Dictionary<int, IVector>[solvers.Length];
+            secondOrderMatrixTimesUnknown = new Dictionary<int, IVector>[solvers.Length];
             for (int i = 0; i < solvers.Length; i++)
             {
                 this.linearSystems[i] = solvers[i].LinearSystems;
                 rhs[i] = new Dictionary<int, IVector>();
-                stabilizingRhs[i] = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
                 rhsPrevious[i] = new Dictionary<int, IVector>();//TODO: at the moment domain loads are not implemented in this
-                temperature[i] = new Dictionary<int, IVector>();
-                temperatureFromPreviousStaggeredStep[i] = new Dictionary<int, IVector>();
-                capacityTimesTemperature[i] = new Dictionary<int, IVector>();
-                stabilizingConductivityTimesTemperature[i] = new Dictionary<int, IVector>();
+                unknown[i] = new Dictionary<int, IVector>();
+                unknownFromPreviousStaggeredStep[i] = new Dictionary<int, IVector>();
+                firstOrderMatrixTimesUnknown[i] = new Dictionary<int, IVector>();
+                secondOrderMatrixTimesUnknown[i] = new Dictionary<int, IVector>();
             }
             this.solvers = solvers;
             //solver.PreventFromOverwrittingSystemMatrices(); //TODO: If the scheme is purely implicit we can overwrite the matrix.
@@ -71,7 +68,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             this.timeStep = timeStep;
             this.totalTime = totalTime;
             this.ChildAnalyzer.ParentAnalyzer = this;
-            this.initialTemperature = initialTemperature;
+            this.initialValue = initialValue;
         }
 
         public Dictionary<int, IAnalyzerLog[]> Logs => null; //TODO: this can't be right
@@ -84,9 +81,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1/ timeStep / timeStep,
-                Damping = -1,
-                Stiffness = 1/ timeStep
+                Mass = 1 / timeStep,
+                Stiffness = beta
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {
@@ -150,7 +146,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             #endregion
 
             // result = M * u
-            return providers[0].ConductivityMatrixVectorProduct(linearSystem.Subdomain, currentSolution);
+            return providers[0].MassMatrixVectorProduct(linearSystem.Subdomain, currentSolution);
         }
 
         public void Initialize(bool isFirstAnalysis = true)
@@ -234,7 +230,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         public void SolveTimestep(int t)
         {
             DateTime start = DateTime.Now;
-            Debug.WriteLine("Implicit Integration step: {0}", t);
+            Debug.WriteLine("Newmark step: {0}", t);
 
             int staggeredStep = 0;
             var temperatureNorm = 0d;
@@ -246,12 +242,12 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
                 for (int i = 0; i < linearSystems.Length; i++)
                 {
-                    temperatureFromPreviousStaggeredStep[i].Clear();
+                    unknownFromPreviousStaggeredStep[i].Clear();
                     foreach (var linearSystem in linearSystems[i].Values)
                     {
                         if (linearSystem.Solution != null)
                         {
-                            temperatureFromPreviousStaggeredStep[i].Add(linearSystem.Subdomain.ID, linearSystem.Solution.Copy());
+                            unknownFromPreviousStaggeredStep[i].Add(linearSystem.Subdomain.ID, linearSystem.Solution.Copy());
                         }
                         this.linearSystems[i] = solvers[i].LinearSystems;
                     }
@@ -280,12 +276,12 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                 staggeredStep++;
 
-                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
+                CreateNewModel(unknown, models, solvers, providers, childAnalyzers);
             }
             while (staggeredStep < maxStaggeredSteps && error > tolerance);
 
             DateTime end = DateTime.Now;
-            UpdateTemperature(t);
+            UpdateUnknown(t);
             UpdateResultStorages(start, end);
             Debug.WriteLine("-------------");
         }
@@ -313,16 +309,15 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             //TODO: stabilizingRhs has not been implemented
 
             // result = -dt(conductuvity*temperature + rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
-            double a0 = 1 / Math.Pow(timeStep, 2);
-            double a1 = 1 / (2 * timeStep);
-            double a2 = 1 / timeStep;
             int id = linearSystem.Subdomain.ID;
-            capacityTimesTemperature[modelNo][id] = providers[modelNo].CapacityMatrixVectorProduct(linearSystem.Subdomain, temperature[modelNo][id]);
-            capacityTimesTemperature[modelNo][id].ScaleIntoThis(a0);
-            rhs[modelNo][id].ScaleIntoThis(a2);
-            var rhsResult = capacityTimesTemperature[modelNo][id].Subtract(stabilizingRhs[modelNo][id]);
-            rhsResult.AddIntoThis(rhs[modelNo][id]);
+            firstOrderMatrixTimesUnknown[modelNo][id] = providers[modelNo].MassMatrixVectorProduct(linearSystem.Subdomain, unknown[modelNo][id]);
+            secondOrderMatrixTimesUnknown[modelNo][id] = providers[modelNo].DampingMatrixVectorProduct(linearSystem.Subdomain, unknown[modelNo][id]);
 
+            IVector rhsResult = rhsPrevious[modelNo][id].LinearCombination(1 - beta, rhs[modelNo][id], beta);
+            rhsResult.AxpyIntoThis(firstOrderMatrixTimesUnknown[modelNo][id], 1 / timeStep);
+            rhsResult.AxpyIntoThis(secondOrderMatrixTimesUnknown[modelNo][id], -(1 - beta));
+
+            rhsPrevious[modelNo][id] = rhs[modelNo][id];
             return rhsResult;
         }
 
@@ -331,24 +326,22 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             for (int i = 0; i < linearSystems.Length; i++)
             {
                 //temperature[i].Clear();
-                stabilizingRhs[i].Clear();
                 rhs[i].Clear();
                 rhsPrevious[i].Clear();
-                stabilizingConductivityTimesTemperature[i].Clear();
-                capacityTimesTemperature[i].Clear();
+                secondOrderMatrixTimesUnknown[i].Clear();
+                firstOrderMatrixTimesUnknown[i].Clear();
 
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
                     int id = linearSystem.Subdomain.ID;
-                    capacityTimesTemperature[i].Add(id, linearSystem.CreateZeroVector());
-                    stabilizingConductivityTimesTemperature[i].Add(id, linearSystem.CreateZeroVector());
+                    firstOrderMatrixTimesUnknown[i].Add(id, linearSystem.CreateZeroVector());
+                    secondOrderMatrixTimesUnknown[i].Add(id, linearSystem.CreateZeroVector());
                     //temperature.Add(id, linearSystem.CreateZeroVector());
-                    stabilizingRhs[i].Add(id, linearSystem.CreateZeroVector());
                     rhs[i].Add(id, linearSystem.CreateZeroVector());
                     rhsPrevious[i].Add(id, linearSystem.CreateZeroVector());
 
-                    if (temperature[i].ContainsKey(id) == false)
-                        temperature[i].Add(id, initialTemperature[i].Copy());
+                    if (unknown[i].ContainsKey(id) == false)
+                        unknown[i].Add(id, initialValue[i].Copy());
 
                     //// Account for initial conditions coming from a previous solution. 
                     ////TODO: This doesn't work as intended. The solver (previously the LinearSystem) initializes the solution to zero.
@@ -367,9 +360,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             };
             foreach (ILinearSystem linearSystem in linearSystems[modelNo].Values)
             {
-                providers[modelNo].ProcessRhs(linearSystem.Subdomain, linearSystem.RhsVector);
+                providers[modelNo].ProcessRhs(coeffs, linearSystem.Subdomain, linearSystem.RhsVector);
                 rhs[modelNo][linearSystem.Subdomain.ID] = linearSystem.RhsVector.Copy(); //TODO: copying the vectors is wasteful.
-                stabilizingRhs[modelNo][linearSystem.Subdomain.ID] = providers[modelNo].StabilizingRhs(linearSystem.Subdomain);
             }
         }
 
@@ -388,15 +380,15 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             }
         }
 
-        private void UpdateTemperature(int timeStep)
+        private void UpdateUnknown(int timeStep)
         {
             for (int i = 0; i < linearSystems.Length; i++)
             {
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
                     int id = linearSystem.Subdomain.ID;
-                    temperature[i][id].CopyFrom(linearSystem.Solution);
-                    //temperature[i][id].AddIntoThis(linearSystem.Solution);
+                    unknown[i][id].CopyFrom(linearSystem.Solution);
+                    unknown[i][id].AddIntoThis(linearSystem.Solution);
                     if ((timeStep + 1) % 1 == 0)
                     {
                         string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
@@ -404,7 +396,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                         //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                         var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
                         var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                        writer.WriteToFile(temperature[i][id], path2);
+                        writer.WriteToFile(unknown[i][id], path2);
                         //writer.WriteToFile(temperature[id][0], path1);
 
                         //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);

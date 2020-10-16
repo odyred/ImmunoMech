@@ -46,7 +46,7 @@ namespace ISAAR.MSolve.Problems
         {
             get
             {
-                if (mass == null) BuildMass();
+                if (mass == null || mass.Count == 0) BuildMass();
                 return mass;
             }
         }
@@ -55,7 +55,7 @@ namespace ISAAR.MSolve.Problems
         {
             get
             {
-                if (damping == null) BuildDamping();
+                if (damping == null || damping.Count == 0) BuildDamping();
                 return damping;
             }
         }
@@ -64,7 +64,7 @@ namespace ISAAR.MSolve.Problems
         {
             get
             {
-                if (stiffnessFreeFree == null)
+                if (stiffnessFreeFree == null || stiffnessFreeFree.Count == 0)
                     BuildStiffnessFreeFree();
                 else
                 {
@@ -128,15 +128,23 @@ namespace ISAAR.MSolve.Problems
 
         //TODO: With Rayleigh damping, C is more efficiently built using linear combinations of global K, M, 
         //      instead of building and assembling element k, m matrices.
-        private void BuildDamping() => damping = solver.BuildGlobalMatrices(dampingProvider);
+        private void BuildDamping()
+        {
+            damping = solver.BuildGlobalMatrices(dampingProvider);
+        }
 
         #region IAnalyzerProvider Members
         public void ClearMatrices()
         {
+            //damping.Clear();
             damping = null;
+            //stiffnessFreeFree.Clear();
             stiffnessFreeFree = null;
+            //if (stiffnessConstrFree != null) stiffnessConstrFree.Clear();
             stiffnessConstrFree = null;
+            //if (stiffnessConstrConstr != null) stiffnessConstrConstr.Clear();
             stiffnessConstrConstr = null;
+            //mass.Clear();
             mass = null;
         }
 

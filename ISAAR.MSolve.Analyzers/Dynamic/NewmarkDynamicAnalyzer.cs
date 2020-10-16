@@ -221,10 +221,65 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             ChildAnalyzer.Initialize(isFirstAnalysis);
         }
 
+        public void InitializeInternal(bool isFirstAnalysis = true)
+        {
+            if (isFirstAnalysis)
+            {
+                // The order in which the next initializations happen is very important.
+                model.ConnectDataStructures();
+                solver.OrderDofs(false);
+                provider.ClearMatrices();
+                foreach (ILinearSystem linearSystem in linearSystems.Values)
+                {
+                    linearSystem.Reset(); // Necessary to define the linear system's size 
+                    linearSystem.Subdomain.Forces = Vector.CreateZero(linearSystem.Size);
+                }
+            }
+            else
+            {
+                foreach (ILinearSystem linearSystem in linearSystems.Values)
+                {
+                    //TODO: Perhaps these shouldn't be done if an analysis has already been executed. The model will not be 
+                    //      modified. Why should the linear system be?
+                    linearSystem.Reset();
+                    linearSystem.Subdomain.Forces = Vector.CreateZero(linearSystem.Size);
+                }
+            }
+
+            //TODO: Perhaps this should be called by the child analyzer
+            BuildMatrices();
+
+            // Loads must be created after building the matrices.
+            //TODO: Some loads may not have to be recalculated each time the stiffness changes.
+            model.AssignLoads(solver.DistributeNodalLoads);
+            foreach (ILinearSystem linearSystem in linearSystems.Values)
+            {
+                linearSystem.RhsVector = linearSystem.Subdomain.Forces;
+            }
+
+            //InitializeCoefficients();
+            //InitializeMatrices();
+            InitializeRhs();
+
+            if (ChildAnalyzer == null) throw new InvalidOperationException("Newmark analyzer must contain an embedded analyzer.");
+            ChildAnalyzer.Initialize(isFirstAnalysis);
+        }
         public void SolveTimestep(int i)
         {
             Debug.WriteLine("Newmark step: {0}", i);
 
+            if (CreateNewModel != null)
+            {
+                CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+                model = modelsForReplacement[0];
+                solver = solversForReplacement[0];
+                linearSystems = solver.LinearSystems;
+                provider = providersForReplacement[0];
+                ChildAnalyzer = childAnalyzersForReplacement[0];
+                ChildAnalyzer.ParentAnalyzer = this;
+
+                InitializeInternal(true);
+            }
             IDictionary<int, IVector> rhsVectors = provider.GetRhsFromHistoryLoad(i);
             foreach (var l in linearSystems.Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
             InitializeRhs();
@@ -237,25 +292,26 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             UpdateVelocityAndAcceleration(i);
             UpdateResultStorages(start, end);
             // Print output results in *.txt file
-            using (var fileName = new System.IO.StreamWriter(@"C:\Users\Ody\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
+            using (var fileName = new StreamWriter(@"C:\Users\Ody\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
             {
                 double currentTime = ((i + 1) * timeStep);
                 string strTimeStep = currentTime.ToString();
-                var totalSolution = ChildAnalyzer.Responses[0][11];
+                var totalSolution = ChildAnalyzer.Responses[0][107];
                 string strTotalSolution = totalSolution.ToString();
                 fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
             }
-            if (CreateNewModel != null)
-            {
-                CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
-                model = modelsForReplacement[0];
-                solver = solversForReplacement[0];
-                linearSystems = solver.LinearSystems;
-                provider = providersForReplacement[0];
-                ChildAnalyzer = childAnalyzersForReplacement[0];
+            //if (CreateNewModel != null)
+            //{
+            //    CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+            //    model = modelsForReplacement[0];
+            //    solver = solversForReplacement[0];
+            //    linearSystems = solver.LinearSystems;
+            //    provider = providersForReplacement[0];
+            //    ChildAnalyzer = childAnalyzersForReplacement[0];
+            //    ChildAnalyzer.ParentAnalyzer = this;
 
-                Initialize(true);
-            }
+            //    InitializeInternal(true);
+            //}
         }
 
         public void Solve()
@@ -430,20 +486,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 v1[id].AxpyIntoThis(vv, a6);
                 v1[id].AxpyIntoThis(v2[id], a7);
 
-                //temperature[i][id].AddIntoThis(linearSystem.Solution);
-                //if ((timeStep + 1) % 1 == 0)
-                //{
-                //    string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                //    //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
-                //    //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                //    var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
-                //    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                //    writer.WriteToFile(v[id], path2);
-                //    //writer.WriteToFile(temperature[id][0], path1);
+                if ((timeStep + 1) % 1 == 0)
+                {
+                    string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
+                    //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
+                    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    writer.WriteToFile(v[id], path2);
+                    //writer.WriteToFile(temperature[id][0], path1);
 
-                //    //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
-                //    //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
-                //}
+                    //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
+                    //File.AppendAllLines(path2, new string[] { temperature[id][340].ToString() }, Encoding.UTF8);
+                }
 
             }
         }
