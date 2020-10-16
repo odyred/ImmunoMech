@@ -24,6 +24,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
 		private readonly IContinuumMaterial3DDefGrad commonMaterial;
 		private readonly IDynamicMaterial commonDynamicProperties;
+		private readonly double lambdag = 1;
 
 		static ContinuumElement3DNonLinearDefGradFactory()
 		{
@@ -124,6 +125,13 @@ namespace ISAAR.MSolve.FEM.Elements
 			this.commonDynamicProperties = commonDynamicProperties;
 			this.commonMaterial = commonMaterial;
 		}
+		public ContinuumElement3DNonLinearDefGradFactory(IContinuumMaterial3DDefGrad commonMaterial, IDynamicMaterial commonDynamicProperties,
+			double lambdag)
+		{
+			this.commonDynamicProperties = commonDynamicProperties;
+			this.commonMaterial = commonMaterial;
+			this.lambdag = lambdag;
+		}
 
 		public ContinuumElement3DNonLinearDefGrad CreateElement(CellType cellType, IReadOnlyList<Node> nodes)
 		{
@@ -138,7 +146,7 @@ namespace ISAAR.MSolve.FEM.Elements
 			for (int gp = 0; gp < numGPs; ++gp) materialsAtGaussPoints[gp] = (IContinuumMaterial3DDefGrad)commonMaterial.Clone();
 			return new ContinuumElement3DNonLinearDefGrad(nodes, interpolations[cellType],
 				integrationsForStiffness[cellType], integrationsForMass[cellType], extrapolations[cellType],
-				material, commonDynamicProperties);
+				material, commonDynamicProperties, lambdag);
 		}
 
 	}

@@ -28,6 +28,7 @@ namespace ISAAR.MSolve.FEM.Readers
         private readonly double C1;
         private readonly double C2;
         private IDynamicMaterial CommonDynamicProperties;
+        private readonly double lambdag = 1;
         enum Attributes
         {
             sdim = 1001,
@@ -51,6 +52,14 @@ namespace ISAAR.MSolve.FEM.Readers
             this.C2 = C2;
             CommonDynamicProperties = commonDynamicProperties;
         }
+        public ComsolMeshReader1(string filename, double C1, double C2, IDynamicMaterial commonDynamicProperties, double lambdag)
+        {
+            Filename = filename;
+            this.C1 = C1;
+            this.C2 = C2;
+            CommonDynamicProperties = commonDynamicProperties;
+            this.lambdag = lambdag;
+        }
 
         int NumberOfNodes;
         int NumberOfTriElements;
@@ -62,7 +71,7 @@ namespace ISAAR.MSolve.FEM.Readers
         {
             var hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() { C1 = C1, C2 = C2, k_cons = 1 }; 
             var elementFactory3D = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial, 
-                CommonDynamicProperties);
+                CommonDynamicProperties, lambdag);
             //var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
             var model = new Model();
