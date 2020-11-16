@@ -228,7 +228,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 // The order in which the next initializations happen is very important.
                 model.ConnectDataStructures();
                 solver.OrderDofs(false);
-                provider.ClearMatrices();
+                //provider.ClearMatrices();
                 foreach (ILinearSystem linearSystem in linearSystems.Values)
                 {
                     linearSystem.Reset(); // Necessary to define the linear system's size 
@@ -296,7 +296,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 double currentTime = ((i + 1) * timeStep);
                 string strTimeStep = currentTime.ToString();
-                var totalSolution = ChildAnalyzer.Responses[0][107];
+                var totalSolution = ChildAnalyzer.Responses[0][105];
                 string strTotalSolution = totalSolution.ToString();
                 fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
             }

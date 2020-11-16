@@ -49,8 +49,8 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void RunTest()
         {
 
-            Model model = CreateModel1(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, -1 }, lambdag).Item1; ;
-            IModelReader modelReader = CreateModel1(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, -1 }, lambdag).Item2;
+            Model model = CreateModel1(3e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 1000, 0, 0 }, lambdag).Item1; ;
+            IModelReader modelReader = CreateModel1(3e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 10e6, 0, 0 }, lambdag).Item2;
             string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
             string path3 = Path.Combine(Directory.GetCurrentDirectory(), "HyperElastiGrowthCantilever.vtu");
             //var path2 = Path.Combine(path0, $"nodes.txt");
@@ -148,23 +148,23 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            double[] disp = displacements[0].CopyToArray();
-            Displacements = Vector.CreateFromArray(disp);
+            //double[] disp = displacements[0].CopyToArray();
+            //Displacements = Vector.CreateFromArray(disp);
             IDynamicMaterial commonDynamicMaterialProperties = new DynamicMaterial(.001, 0, 0, true);
-            modelsToReplace[0] = CreateModel1(10e4, 0, commonDynamicMaterialProperties, 0, new double[] { 0, 0, -1 }, lambdag).Item1;
-            solversToReplace[0] = builder.BuildSolver(modelsToReplace[0]);
-            providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
-            var increments = 2;
-            var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
-            childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
+            modelsToReplace[0] = CreateModel1(3e4, 0, commonDynamicMaterialProperties, 0, new double[] { 10e6, 0, 0 }, lambdag).Item1;
+            //solversToReplace[0] = builder.BuildSolver(modelsToReplace[0]);
+            //providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
+            //var increments = 2;
+            //var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
+            //childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
         }
         private static Tuple<Model, IModelReader> CreateModel1(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
-            double poissonV = 0.2;
+            double poissonV = 0.45;
             double muLame = 2 * C1;
             double bulkModulus = 2 * muLame * (1 + poissonV) / (3 * (1 - 2 * poissonV));
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, C1, C2, 1, commonDynamicMaterialProperties, lambdag);
+            var modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lambdag);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -189,7 +189,7 @@ namespace ISAAR.MSolve.Tests.FEM
             //    new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
 
 
-            int[] boundaryIDs = new int[] { 0, 5 };
+            int[] boundaryIDs = new int[] { 0, };
             foreach (int boundaryID in boundaryIDs)
             {
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
@@ -214,29 +214,33 @@ namespace ISAAR.MSolve.Tests.FEM
                     }
                 }
             }
-            //boundaryIDs = new int[] { 5 };
-            //int QuadID = model.ElementsDictionary.Count + 1;
-            //foreach (int boundaryID in boundaryIDs)
-            //{
-            //    foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
-            //    {
-            //        var distributedLoadElement = distributedLoadFactory.CreateElement(CellType.Quad4, nodes);
-            //        model.SurfaceLoads.Add(distributedLoadElement);
-            //        //var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
-            //        //model.SurfaceLoads.Add(dirichletElement2);
-            //        //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-            //        //var element = new Element();
-            //        //element.ID = QuadID;
-            //        //element.ElementType = SurfaceBoundaryElement;
-            //        //model.SubdomainsDictionary[0].Elements.Add(element);
-            //        //model.ElementsDictionary.Add(QuadID, element);
-            //        //foreach (Node node in nodes)
-            //        //{
-            //        //    element.AddNode(node);
-            //        //}
-            //        //QuadID += 1;
-            //    }
-            //}
+            boundaryIDs = new int[] { 5 };
+            int QuadID = model.ElementsDictionary.Count + 1;
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+                {
+                    //var distributedLoadElement = distributedLoadFactory.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(distributedLoadElement);
+                    //var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(dirichletElement2);
+                    //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
+                    //var element = new Element();
+                    //element.ID = QuadID;
+                    //element.ElementType = SurfaceBoundaryElement;
+                    //model.SubdomainsDictionary[0].Elements.Add(element);
+                    //model.ElementsDictionary.Add(QuadID, element);
+                    //foreach (Node node in nodes)
+                    //{
+                    //    element.AddNode(node);
+                    //}
+                    //QuadID += 1;
+                    foreach (Node node in nodes)
+                    {
+                        model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = +250.0 });
+                    }
+                }
+            }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
         private static Tuple<Model, IModelReader> CreateModel2(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
@@ -372,17 +376,17 @@ namespace ISAAR.MSolve.Tests.FEM
             childAnalyzerBuilder.NumIterationsForMatrixRebuild = 1;
             LoadControlAnalyzer childAnalyzer = childAnalyzerBuilder.Build();
 
-            //var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, timestep, time);
-            //parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
-            //NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
-            var parentAnalyzer = new NewmarkDynamicAnalyzer(UpdateNewmarkModel, model, solver,
-                provider, childAnalyzer, timestep, time, .25, .5);
+            var parentAnalyzerBuilder = new NewmarkDynamicAnalyzer.Builder(model, solver, provider, childAnalyzer, timestep, time);
+            parentAnalyzerBuilder.SetNewmarkParametersForConstantAcceleration();
+            NewmarkDynamicAnalyzer parentAnalyzer = parentAnalyzerBuilder.Build();
+            //var parentAnalyzer = new NewmarkDynamicAnalyzer(model, solver,
+            //    provider, childAnalyzer, timestep, time, .25, .5);
 
 
             parentAnalyzer.Initialize();
             for (int i = 0; i < time / timestep; i++)
             {
-                lambdag = .01 * i + 1;
+                //lambdag = .01 * i + 1;
                 parentAnalyzer.SolveTimestep(i);
             }
 

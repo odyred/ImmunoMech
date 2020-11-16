@@ -63,6 +63,14 @@ namespace ISAAR.MSolve.FEM.Readers
             CommonDynamicProperties = commonDynamicProperties;
             this.lambdag = lambdag;
         }
+        public ComsolMeshReader1(string filename, double C1, double C2, IDynamicMaterial commonDynamicProperties, double lambdag)
+        {
+            Filename = filename;
+            this.C1 = C1;
+            this.C2 = C2;
+            CommonDynamicProperties = commonDynamicProperties;
+            this.lambdag = lambdag;
+        }
 
         int NumberOfNodes;
         int NumberOfTriElements;

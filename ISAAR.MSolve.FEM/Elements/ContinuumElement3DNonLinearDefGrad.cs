@@ -392,9 +392,9 @@ namespace ISAAR.MSolve.FEM.Elements
             {
                 //
                 deformationGradientsTransposed[npoint] = jacobianInverse[npoint] * jacobiansDeformedMatrices[npoint];
-                DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], deformationGradientsTransposed[npoint][1, 1], 
-                    deformationGradientsTransposed[npoint][2, 2], deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1], 
-                    deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], deformationGradientsTransposed[npoint][0, 1], 
+                DefGradVec[npoint] = new double[9] { deformationGradientsTransposed[npoint][0, 0], deformationGradientsTransposed[npoint][1, 1],
+                    deformationGradientsTransposed[npoint][2, 2], deformationGradientsTransposed[npoint][1, 0], deformationGradientsTransposed[npoint][2, 1],
+                    deformationGradientsTransposed[npoint][0, 2], deformationGradientsTransposed[npoint][2, 0], deformationGradientsTransposed[npoint][0, 1],
                     deformationGradientsTransposed[npoint][1, 2], };//MS
                 ////
                 //GL[npoint] = deformationGradientsTransposed[npoint] * deformationGradientsTransposed[npoint].Transpose();
@@ -490,7 +490,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 }
                 double defGradDeterminant = 0;
                 for (int i = 0; i < 3; i++)
-                    defGradDeterminant = defGradDeterminant + (defGradTransposed[0, i] * (defGradTransposed[1, (i + 1) % 3] 
+                    defGradDeterminant = defGradDeterminant + (defGradTransposed[0, i] * (defGradTransposed[1, (i + 1) % 3]
                         * defGradTransposed[2, (i + 2) % 3] - defGradTransposed[1, (i + 2) % 3] * defGradTransposed[2, (i + 1) % 3]));
 
                 double defGradElasticDeterminant = 0;
@@ -848,7 +848,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 //materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec_strain_minus_last_converged_value); 
                 // //To update with total strain simplY = materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec[npoint]);
                 double[] DefGradVecEl = new double[9];
-                for (int i= 0; i < 9; i++)
+                for (int i = 0; i < 9; i++)
                 {
                     DefGradVecEl[i] = DefGradVec[npoint][i] / lambdag;
                 }
