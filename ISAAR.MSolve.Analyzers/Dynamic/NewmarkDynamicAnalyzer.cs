@@ -296,7 +296,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 double currentTime = ((i + 1) * timeStep);
                 string strTimeStep = currentTime.ToString();
-                var totalSolution = ChildAnalyzer.Responses[0][105];
+                var totalSolution = ChildAnalyzer.Responses[0][1];
                 string strTotalSolution = totalSolution.ToString();
                 fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
             }

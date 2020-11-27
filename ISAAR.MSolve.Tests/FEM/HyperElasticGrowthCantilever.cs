@@ -27,6 +27,8 @@ using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
+using System.Reflection;
+using ISAAR.MSolve.FEM.Elements;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -158,6 +160,16 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzersToReplace[i] = new LinearAnalyzer(modelsToReplace[i], solversToReplace[i], providersToReplace[i]);
             }
         }
+        private static void ReplaceLambdaGInModel(IStructuralModel model, double lg)
+        {
+            foreach (var e in model.Elements)
+            {
+                var et = (ContinuumElement3DNonLinearDefGrad)e.ElementType;
+                var bindFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+                FieldInfo field = typeof(ContinuumElement3DNonLinearDefGrad).GetField("lambdag", bindFlags);
+                field.SetValue(et, lg);
+            }
+        }
 
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
@@ -169,7 +181,8 @@ namespace ISAAR.MSolve.Tests.FEM
             Accelerations = accelerations;
             Velocities = velocities;
             Displacements = displacements;
-            modelsToReplace[0] = CreateStructuralModel(3e4, 0, commonDynamicMaterialProperties, 0, new double[] { 1000, 0, 0 }, lambdag).Item1;
+            //modelsToReplace[0] = CreateStructuralModel(3e4, 0, commonDynamicMaterialProperties, 0, new double[] { 1000, 0, 0 }, lambdag).Item1;
+            ReplaceLambdaGInModel(modelsToReplace[0], 1);
             solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
             solversToReplace[0].HandleMatrixWillBeSet();
@@ -306,25 +319,10 @@ namespace ISAAR.MSolve.Tests.FEM
             var ly = l[1];
             var lz = l[2];
             var distributedLoad = new DistributedLoad(lx, ly, lz);
-            //var flux2 = new FluxLoad(f2);
-            //var dir1 = new DirichletDistribution(list => {
-            //    return Vector.CreateWithValue(list.Count, b1);
-            //});
-            //var dir2 = new DirichletDistribution(list => {
-            //    return Vector.CreateWithValue(list.Count, b2);
-            //});
-            //var weakDirichlet1 = new WeakDirichlet(dir1, k);
-            //var weakDirichlet2 = new WeakDirichlet(dir2, k);
-
-            //var dirichletFactory1 = new SurfaceLoadElementFactory(weakDirichlet1);
-            //var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var distributedLoadFactory = new SurfaceLoadElementFactory(distributedLoad);
-            //var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
-            //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-            //    new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
 
 
-            int[] boundaryIDs = new int[] { 0, };
+            int[] boundaryIDs = new int[] { 0 };
             foreach (int boundaryID in boundaryIDs)
             {
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
@@ -336,11 +334,61 @@ namespace ISAAR.MSolve.Tests.FEM
                             Amount = b,
                             DOF = StructuralDof.TranslationX
                         });
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationY
+                        //});
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationZ
+                        //});
+                    }
+                }
+            }
+            boundaryIDs = new int[] { 1 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+                {
+                    foreach (Node node in nodes)
+                    {
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationX
+                        //});
                         node.Constraints.Add(new Constraint()
                         {
                             Amount = b,
                             DOF = StructuralDof.TranslationY
                         });
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationZ
+                        //});
+                    }
+                }
+            }
+            boundaryIDs = new int[] { 2 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
+                {
+                    foreach (Node node in nodes)
+                    {
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationX
+                        //});
+                        //node.Constraints.Add(new Constraint()
+                        //{
+                        //    Amount = b,
+                        //    DOF = StructuralDof.TranslationY
+                        //});
                         node.Constraints.Add(new Constraint()
                         {
                             Amount = b,
@@ -355,21 +403,11 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 foreach (IReadOnlyList<Node> nodes in modelReader.quadBoundaries[boundaryID])
                 {
-                    var distributedLoadElement = distributedLoadFactory.CreateElement(CellType.Quad4, nodes);
-                    model.SurfaceLoads.Add(distributedLoadElement);
-                    //var dirichletElement2 = dirichletFactory2.CreateElement(CellType.Quad4, nodes);
-                    //model.SurfaceLoads.Add(dirichletElement2);
-                    //var SurfaceBoundaryElement = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                    //var element = new Element();
-                    //element.ID = QuadID;
-                    //element.ElementType = SurfaceBoundaryElement;
-                    //model.SubdomainsDictionary[0].Elements.Add(element);
-                    //model.ElementsDictionary.Add(QuadID, element);
-                    //foreach (Node node in nodes)
-                    //{
-                    //    element.AddNode(node);
-                    //}
-                    //QuadID += 1;
+                    foreach (Node node in nodes)
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = +250.0 });
+
+                    //var distributedLoadElement = distributedLoadFactory.CreateElement(CellType.Quad4, nodes);
+                    //model.SurfaceLoads.Add(distributedLoadElement);
                 }
             }
             return new Tuple<Model, IModelReader>(model, modelReader);

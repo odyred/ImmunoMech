@@ -48,7 +48,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
 
                     if (TotalDisplacementsPerIterationLog != null) TotalDisplacementsPerIterationLog.StoreDisplacements(uPlusdu);
 
-                    if (errorNorm < residualTolerance)
+                    if (errorNorm < residualTolerance )
                     {
                         foreach (var subdomainLogPair in IncrementalLogs)
                         {
