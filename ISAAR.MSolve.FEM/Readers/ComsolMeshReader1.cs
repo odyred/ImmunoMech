@@ -17,7 +17,7 @@ using ISAAR.MSolve.FEM.Readers.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader1:IModelReader
+    public class ComsolMeshReader1 : IModelReader
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
@@ -25,9 +25,9 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Element>> elementDomains;
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
-        private readonly double C1;
-        private readonly double C2;
-        private readonly double k_cons;
+        private readonly double[] C1;
+        private readonly double[] C2;
+        private readonly double[] k_cons;
         private IDynamicMaterial CommonDynamicProperties;
         private readonly double lambdag = 1;
         enum Attributes
@@ -46,7 +46,7 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader1(string filename, double C1, double C2, double k_cons, IDynamicMaterial commonDynamicProperties)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial commonDynamicProperties)
         {
             Filename = filename;
             this.C1 = C1;
@@ -54,7 +54,7 @@ namespace ISAAR.MSolve.FEM.Readers
             this.k_cons = k_cons;
             CommonDynamicProperties = commonDynamicProperties;
         }
-        public ComsolMeshReader1(string filename, double C1, double C2, double k_cons, IDynamicMaterial commonDynamicProperties,  double lambdag)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial commonDynamicProperties,  double lambdag)
         {
             Filename = filename;
             this.C1 = C1;
@@ -63,7 +63,7 @@ namespace ISAAR.MSolve.FEM.Readers
             CommonDynamicProperties = commonDynamicProperties;
             this.lambdag = lambdag;
         }
-        public ComsolMeshReader1(string filename, double C1, double C2, IDynamicMaterial commonDynamicProperties, double lambdag)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, IDynamicMaterial commonDynamicProperties, double lambdag)
         {
             Filename = filename;
             this.C1 = C1;
@@ -80,11 +80,14 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            var hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() { C1 = C1, C2 = C2, k_cons = k_cons }; 
-            var elementFactory3D = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial, 
-                CommonDynamicProperties, lambdag);
-            //var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(diffusionCoeff, convectionCoeff, loadFromUnknownCoeff));
-            //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] { 0, 0, 0 }, 0));
+            HyperElasticMaterial3DDefGrad[] hyperElasticMaterial = new HyperElasticMaterial3DDefGrad[C1.Length];
+            ContinuumElement3DNonLinearDefGradFactory[] elementFactory = new ContinuumElement3DNonLinearDefGradFactory[C1.Length];
+            for (int i = 0; i < C1.Length; i++)
+            {
+                hyperElasticMaterial[i] = new HyperElasticMaterial3DDefGrad() { C1 = C1[i], C2 = C2[i], k_cons = k_cons[i] };
+                elementFactory[i] = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial[i],
+                    CommonDynamicProperties, lambdag);
+            }
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material
@@ -205,9 +208,18 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
                             triBoundaries[boundaryID].Add(triNodesCollection[TriID]);
+                            foreach (Node node in triNodesCollection[TriID])
+                            {
+                                nodeBoundaries[boundaryID].Add(node);
+                            }
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+
+                        for (int boundaryID = 0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        {
+                            nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
                         break;
                     case Attributes.quad:
@@ -260,9 +272,19 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
                             quadBoundaries[boundaryID].Add(quadNodesCollection[QuadID]);
+                            foreach (Node node in quadNodesCollection[QuadID])
+                            {
+                                nodeBoundaries[boundaryID].Add(node);
+                            }
+
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+
+                        for (int boundaryID = 0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        {
+                            nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
                         break;
                     case Attributes.tet:
@@ -275,36 +297,37 @@ namespace ISAAR.MSolve.FEM.Readers
                         line = text[i].Split(delimeters);
                         NumberOfTetElements = Int32.Parse(line[0]);
                         i++;
+                        List<IReadOnlyList<Node>> TetraNodes = new List<IReadOnlyList<Node>>();
                         for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
 
-                            IReadOnlyList<Node> nodes = new List<Node>
+                            TetraNodes.Add(new List<Node>
                             {
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[2])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
                                 model.NodesDictionary[Int32.Parse(line[0])]
-                            };
-                            var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodes);
+                            });
+                        }
+                        i = i + 3;
+                        for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
+                        {
+                            i++;
+                            line = text[i].Split(delimeters);
+                            int elementDomainID = Int32.Parse(line[0]);
+                            IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
+                            var Tet4 = elementFactory[elementDomainID-1].CreateElement(CellType.Tet4, nodesTet);                                
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
-                            foreach (Node node in nodes)
+                            foreach (Node node in nodesTet)
                             {
                                 element.AddNode(node);
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
-                        }
-                        i = i + 3;
-                        for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
-
-                        {
-                            i++;
-                            line = text[i].Split(delimeters);
-                            int elementDomainID = Int32.Parse(line[0]);
                             elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[TetID]);
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
@@ -321,12 +344,13 @@ namespace ISAAR.MSolve.FEM.Readers
                         line = text[i].Split(delimeters);
                         NumberOfHexElements = Int32.Parse(line[0]);
                         i++;
+                        List<IReadOnlyList<Node>> HexaNodes = new List<IReadOnlyList<Node>>();
                         for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
 
-                            IReadOnlyList<Node> nodes = new List<Node>
+                            HexaNodes.Add(new List<Node>
                             {
                                 model.NodesDictionary[Int32.Parse(line[4])],
                                 model.NodesDictionary[Int32.Parse(line[6])],
@@ -336,17 +360,7 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[2])],
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
-                            };
-                            var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodes);
-                            var element = new Element();
-                            element.ID = HexID;
-                            element.ElementType = Hexa8;
-                            foreach (Node node in nodes)
-                            {
-                                element.AddNode(node);
-                            }
-                            model.SubdomainsDictionary[0].Elements.Add(element);
-                            model.ElementsDictionary.Add(HexID, element);
+                            });
                         }
                         i = i + 3;
                         for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
@@ -354,6 +368,17 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
+                            IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
+                            var Hexa8 = elementFactory[elementDomainID - 1].CreateElement(CellType.Hexa8, nodesHex);
+                            var element = new Element();
+                            element.ID = HexID;
+                            element.ElementType = Hexa8;
+                            foreach (Node node in nodesHex)
+                            {
+                                element.AddNode(node);
+                            }
+                            model.SubdomainsDictionary[0].Elements.Add(element);
+                            model.ElementsDictionary.Add(HexID, element);
                             elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[HexID]);
                         }
                         break;

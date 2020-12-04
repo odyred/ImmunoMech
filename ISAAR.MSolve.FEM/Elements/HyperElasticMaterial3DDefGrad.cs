@@ -113,7 +113,8 @@ namespace ISAAR.MSolve.Materials
                 ((double)1 / 2) * Math.Pow(I_3, -(double)2 / 3) * I_3_stst;
 
 
-            var Spk = C1 * J_1_st + C2 * J_2_st + k_cons * (J_3-1)*J_3_st;//einai to spk_pavla
+            var Spk = C1 * J_1_st + C2 * J_2_st + k_cons * (J_3 - 1) * J_3_st;//einai to spk_pavla
+            var SpkNH = C1 * J_1_st - C1 / J_3 *J_3_st + C2 * Math.Log(J_3)/J_3 * J_3_st;//einai to spk_pavla
             var Spk_vec = new double[] { Spk[0, 0], Spk[1, 1], Spk[2, 2], Spk[0, 1], Spk[1, 2], Spk[2, 0] };
 
             //einai to Cklrs_pavla_vec

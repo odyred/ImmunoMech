@@ -312,7 +312,7 @@ namespace ISAAR.MSolve.Tests.FEM
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             double poisonRatio = .45;
             double bulkModulus = 4 * C1 * (1 + poisonRatio) / 3 / (1 - 2 * poisonRatio);
-            var modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lg);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { bulkModulus }, commonDynamicMaterialProperties, lg);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];

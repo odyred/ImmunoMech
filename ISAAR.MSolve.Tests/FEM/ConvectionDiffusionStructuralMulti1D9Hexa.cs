@@ -365,7 +365,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, C1, C2, 1, commonDynamicMaterialProperties);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];

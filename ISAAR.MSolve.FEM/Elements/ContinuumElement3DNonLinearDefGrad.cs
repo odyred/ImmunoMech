@@ -503,7 +503,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
+                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
                     }
                 }
 
