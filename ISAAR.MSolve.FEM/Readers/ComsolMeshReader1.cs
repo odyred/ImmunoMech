@@ -28,8 +28,8 @@ namespace ISAAR.MSolve.FEM.Readers
         private readonly double[] C1;
         private readonly double[] C2;
         private readonly double[] k_cons;
-        private IDynamicMaterial CommonDynamicProperties;
-        private readonly double lambdag = 1;
+        private IDynamicMaterial[] CommonDynamicProperties;
+        private readonly double[] lambdag; 
         enum Attributes
         {
             sdim = 1001,
@@ -46,15 +46,19 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial commonDynamicProperties)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial[] commonDynamicProperties)
         {
             Filename = filename;
             this.C1 = C1;
             this.C2 = C2;
             this.k_cons = k_cons;
             CommonDynamicProperties = commonDynamicProperties;
+            for (int i = 0; i < C1.Length; i++)
+            {
+                this.lambdag[i] = 1;
+            }
         }
-        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial commonDynamicProperties,  double lambdag)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial[] commonDynamicProperties,  double[] lambdag)
         {
             Filename = filename;
             this.C1 = C1;
@@ -63,11 +67,15 @@ namespace ISAAR.MSolve.FEM.Readers
             CommonDynamicProperties = commonDynamicProperties;
             this.lambdag = lambdag;
         }
-        public ComsolMeshReader1(string filename, double[] C1, double[] C2, IDynamicMaterial commonDynamicProperties, double lambdag)
+        public ComsolMeshReader1(string filename, double[] C1, double[] C2, IDynamicMaterial[] commonDynamicProperties, double[] lambdag)
         {
             Filename = filename;
             this.C1 = C1;
             this.C2 = C2;
+            for (int i = 0; i < C1.Length; i++)
+            {
+                this.k_cons[i] = 1;
+            }
             CommonDynamicProperties = commonDynamicProperties;
             this.lambdag = lambdag;
         }
@@ -86,7 +94,7 @@ namespace ISAAR.MSolve.FEM.Readers
             {
                 hyperElasticMaterial[i] = new HyperElasticMaterial3DDefGrad() { C1 = C1[i], C2 = C2[i], k_cons = k_cons[i] };
                 elementFactory[i] = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial[i],
-                    CommonDynamicProperties, lambdag);
+                    CommonDynamicProperties[i], lambdag[i]);
             }
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);

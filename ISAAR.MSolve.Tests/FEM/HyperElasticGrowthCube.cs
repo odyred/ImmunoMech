@@ -311,13 +311,19 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
+        private static Tuple<Model, IModelReader> CreateStructuralModel(double[] C1, double[] C2, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
-            double poissonV = 0.2;
-            double muLame = 2 * C1;
-            double bulkModulus = 2 * muLame * (1 + poissonV) / (3 * (1 - 2 * poissonV));
+            double[] poissonV = new double[C1.Length];
+            double[] muLame = new double[C1.Length];
+            double[] bulkModulusnew = new double[C1.Length];
+            for (int i = 0; i < C1.Length; i++)
+            {
+                poissonV[i] = 0.2;
+                muLame[i] = 2 * C1[i];
+                bulkModulusnew[i] = 2 * muLame[i] * (1 + poissonV[i]) / (3 * (1 - 2 * poissonV[i]));
+            }
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "125HexaHyperelasticCube.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, new double[]{ C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, lambdag);
+            var modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulusnew, commonDynamicMaterialProperties, new double[] { lambdag, 1 });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -477,7 +483,8 @@ namespace ISAAR.MSolve.Tests.FEM
             parentAnalyzer.Initialize();
 
             //var structuralModel = CreateStructuralModel(10.5e3, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 25000 }, lambdag).Item1; // new Model();
-            var structuralModel = CreateStructuralModel(1, 1, new DynamicMaterial(1000, 0, 0, true), 0, new double[] { 0, 0, 2500 }, lambdag).Item1; // new Model();
+            DynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(1000, 0, 0, true)};
+            var structuralModel = CreateStructuralModel(new double[] { 1 }, new double[] { 1 }, dynamicMaterials, 0, new double[] { 0, 0, 2500 }, lambdag).Item1; // new Model();
             var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
             var structuralProvider = new ProblemStructural(structuralModel, structuralSolver);
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);
