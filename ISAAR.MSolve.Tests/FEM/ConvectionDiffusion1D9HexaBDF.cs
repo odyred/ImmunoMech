@@ -56,7 +56,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "48tet.mphtxt");
-            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
+            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var bodyLoad = new ConvectionDiffusionDomainLoad(new ConvectionDiffusionMaterial(k,U,L), 1,ThermalDof.Temperature);

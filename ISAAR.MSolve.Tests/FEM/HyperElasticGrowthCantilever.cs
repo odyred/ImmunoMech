@@ -209,7 +209,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Tuple<Model, IModelReader> CreateConvectionDiffusionModel2(double k, double[] U, double L, double b, double f, double bl)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, k, U, L);
+            var modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
             var material = new ConvectionDiffusionMaterial(k, U, L);
             //Boundary Conditions
@@ -307,12 +307,12 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lg)
+        private static Tuple<Model, IModelReader> CreateStructuralModel(double C1, double C2, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lg)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
             double poisonRatio = .45;
             double bulkModulus = 4 * C1 * (1 + poisonRatio) / 3 / (1 - 2 * poisonRatio);
-            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { bulkModulus }, commonDynamicMaterialProperties, lg);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { bulkModulus }, commonDynamicMaterialProperties, new double[] { lg });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -445,7 +445,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 providers, childAnalyzers, timestep, time, initialTemperature: initialValues);
             parentAnalyzer.Initialize();
 
-            var structuralModel = CreateStructuralModel(3e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 1000, 0, 0 }, 1).Item1; // new Model();
+            var structuralModel = CreateStructuralModel(3e4, 0, new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true) }, 0, new double[] { 1000, 0, 0 }, 1).Item1; // new Model();
             var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
             var structuralProvider = new ProblemStructural(structuralModel, structuralSolver);
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);

@@ -50,8 +50,8 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void RunTest()
         {
 
-            Model model = CreateModel1(1, 1, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 250 }, lambdag).Item1; ;
-            IModelReader modelReader = CreateModel1(1, 1, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 250 }, lambdag).Item2;
+            Model model = CreateModel1(1, 1, new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true) }, 0, new double[] { 0, 0, 250 }, lambdag).Item1; ;
+            IModelReader modelReader = CreateModel1(1, 1, new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true) }, 0, new double[] { 0, 0, 250 }, lambdag).Item2;
             string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
             string path3 = Path.Combine(Directory.GetCurrentDirectory(), "HyperElastiGrowthCantilever.vtu");
             //var path2 = Path.Combine(path0, $"nodes.txt");
@@ -170,13 +170,13 @@ namespace ISAAR.MSolve.Tests.FEM
             var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
             childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
         }
-        private static Tuple<Model, IModelReader> CreateModel1(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
+        private static Tuple<Model, IModelReader> CreateModel1(double C1, double C2, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
             double poissonV = 0.2;
             double muLame = 2 * C1;
             double bulkModulus = 2 * muLame * (1 + poissonV) / (3 * (1 - 2 * poissonV));
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "125HexaHyperelasticCube.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, lambdag);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, new double[] { lambdag });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -310,13 +310,13 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateModel2(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
+        private static Tuple<Model, IModelReader> CreateModel2(double C1, double C2, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
             double poissonV = 0.2;
             double muLame = 2 * C1;
             double bulkModulus = 2 * muLame * (1 + poissonV) / (3 * (1 - 2 * poissonV));
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, lambdag);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, new double[] { lambdag });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -368,13 +368,13 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateModel3(double C1, double C2, IDynamicMaterial commonDynamicMaterialProperties, double b, double[] l, double lambdag)
+        private static Tuple<Model, IModelReader> CreateModel3(double C1, double C2, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
             double poissonV = 0.2;
             double muLame = 2 * C1;
             double bulkModulus = 2 * muLame * (1 + poissonV) / (3 * (1 - 2 * poissonV));
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, lambdag);
+            var modelReader = new ComsolMeshReader1(filename, new double[] { C1 }, new double[] { C2 }, new double[] { 1 }, commonDynamicMaterialProperties, new double[] { lambdag });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];

@@ -82,7 +82,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L, double b1, double b2, double f1, double f2, double[] bl)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, k, U, L);
+            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var flux1 = new FluxLoad(f1);
