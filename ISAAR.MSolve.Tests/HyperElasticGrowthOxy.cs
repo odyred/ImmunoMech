@@ -59,12 +59,7 @@ namespace ISAAR.MSolve.Tests.FEM
         {
             //var models = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item1 };
             //var modelReaders = new[] { CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2, CreateModel(1, new double[] { 2, 2, 2 }, 0, 1, 0, 0, 0).Item2 };
-            var modelTuples = new[] { CreateGrowthModel(0, new double[] { 0, 0, 0 }, 1/3, 0, 0, 0), 
-                CreateOxygenTransportModel(Dox, new double[][] { new double[]{ 0, 0, 0 }, new double[] { 0, 0, 0 } }, new double[]{0,0 }, 1, 0, 0) };
-            var modelTuple1 = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 1/3, 0, 0, 0);
             //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
-            var models = new[] { modelTuples[0].Item1, modelTuples[1].Item1 };
-            var modelReaders = new[] { modelTuples[0].Item2, modelTuples[1].Item2 };
             //IVectorView[] solutions = SolveModels(models, modelReaders);
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
 
@@ -156,14 +151,10 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            cox = solutions[1];
-            Grox = new double[] { (loxc[0] * cvox * c_ox) / (cvox * c_ox + Koxc[0]), (loxc[1] * cvox * c_ox) / (cvox * c_ox + Koxc[1]) }; //(loxc* cox)/(cox+Koxc)
-            double[] fox = new double[] { -((Aox[0] * c_ox) / (kox[0] + c_ox * cvox)) * 0.3, -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3 };
             double[] lg = solutions[0][0].CopyToArray();
             //double[] sol1 = solutions[1][0].CopyToArray();
             lambdag = lg[0];// (sol0[39] + sol0[38] + sol0[37] + sol1[36])/8 ;
             modelsToReplace[0] = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 1, 0, 0, 1.5).Item1;
-            modelsToReplace[1] = CreateOxygenTransportModel(Dox, new double[][] { new double[]{ 0, 0, 0 }, new double[] { 0, 0, 0 } }, new double[]{0,0 }, 1, 0, fox).Item1;
 
 
             for (int i = 0; i < modelsToReplace.Length; i++)
@@ -187,7 +178,6 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            double[] sol0 = cox[0].CopyToArray();
             //double[] sol1 = Solutions[1][0].CopyToArray();
             //var load = new double[] { sol1[39], sol1[39], sol1[39] };
             //IDynamicMaterial commonDynamicMaterialProperties = new DynamicMaterial(.001, 0, 0, true);
@@ -424,18 +414,14 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateStructuralModel(double[] muLame, double[] poissonV, IDynamicMaterial[] commonDynamicMaterialProperties, double b, double[] l, double lambdag)
         {
-            double[] C1 = new double[muLame.Length];
             double[] bulkModulus = new double[C1.Length];
             for (int i = 0; i < C1.Length; i++)
             {
                 //poissonV[i] = 0.2;
-                C1[i] = muLame[i] / 2;
                 bulkModulus[i] = 2 * muLame[i] * (1 + poissonV[i]) / (3 * (1 - 2 * poissonV[i]));
             }
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
-            var modelReader = new ComsolMeshReader1(filename, C1, new double[] { 0, 0 }, bulkModulus, commonDynamicMaterialProperties, new double[]{lambdag, 1});
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -595,10 +581,6 @@ namespace ISAAR.MSolve.Tests.FEM
             parentAnalyzer.Initialize();
 
             //var structuralModel = CreateStructuralModel(10.5e3, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 25000 }, lambdag).Item1; // new Model();
-            DynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true), new DynamicMaterial(.001, 0, 0, true) };
-            double[] poissonV = new double[] { 0.45, 0.2 };
-            double[] muLame = new double[] { 6e4, 2.1e4 };
-            var structuralModel = CreateStructuralModel(muLame, poissonV, dynamicMaterials, 0, new double[] { 0, 0, 2500 }, lambdag).Item1; // new Model();
             var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
             var structuralProvider = new ProblemStructural(structuralModel, structuralSolver);
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);
