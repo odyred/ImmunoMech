@@ -23,6 +23,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
         public IList<IList<Element>> elementDomains;
+        public IList<IList<Node>> nodeDomains;
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         private readonly double[] C1;
@@ -89,12 +90,15 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model CreateModelFromFile()
         {
             HyperElasticMaterial3DDefGrad[] hyperElasticMaterial = new HyperElasticMaterial3DDefGrad[C1.Length];
-            ContinuumElement3DNonLinearDefGradFactory[] elementFactory = new ContinuumElement3DNonLinearDefGradFactory[C1.Length];
+            ContinuumElement3DNonLinearDefGradFactory[][] elementFactory = new ContinuumElement3DNonLinearDefGradFactory[C1.Length][];
             for (int i = 0; i < C1.Length; i++)
             {
                 hyperElasticMaterial[i] = new HyperElasticMaterial3DDefGrad() { C1 = C1[i], C2 = C2[i], k_cons = k_cons[i] };
-                elementFactory[i] = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial[i],
-                    CommonDynamicProperties[i], lambdag[i]);
+                for (int j = 0; j < lambdag.Length; j++)
+                {
+                    elementFactory[i][j] = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial[i],
+                        CommonDynamicProperties[i], lambdag[j]);
+                }
             }
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
@@ -106,6 +110,7 @@ namespace ISAAR.MSolve.FEM.Readers
             String[] text = System.IO.File.ReadAllLines(Filename);
             elementBoundaries = new List<IList<Element>>();
             elementDomains = new List<IList<Element>>();
+            nodeDomains = new List<IList<Node>>();
             nodeBoundaries = new List<IList<Node>>();
             quadBoundaries = new List<IList<IList<Node>>>();
             triBoundaries = new List<IList<IList<Node>>>();
@@ -119,6 +124,7 @@ namespace ISAAR.MSolve.FEM.Readers
             for (int i = 0; i < 2; i++)
             {
                 elementDomains.Add(new List<Element>());
+                nodeDomains.Add(new List<Node>());
             }
 
             for (int i = 0; i < text.Length; i++)
@@ -326,13 +332,14 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
                             IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
-                            var Tet4 = elementFactory[elementDomainID-1].CreateElement(CellType.Tet4, nodesTet);                                
+                            var Tet4 = elementFactory[elementDomainID-1][TetID].CreateElement(CellType.Tet4, nodesTet);                                
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
                             foreach (Node node in nodesTet)
                             {
                                 element.AddNode(node);
+                                nodeDomains[elementDomainID-1].Add(node);
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
@@ -340,6 +347,10 @@ namespace ISAAR.MSolve.FEM.Readers
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        {
+                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
                         }
                         break;
                     case Attributes.hex:
@@ -377,17 +388,22 @@ namespace ISAAR.MSolve.FEM.Readers
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
                             IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
-                            var Hexa8 = elementFactory[elementDomainID - 1].CreateElement(CellType.Hexa8, nodesHex);
+                            var Hexa8 = elementFactory[elementDomainID - 1][HexID].CreateElement(CellType.Hexa8, nodesHex);
                             var element = new Element();
                             element.ID = HexID;
                             element.ElementType = Hexa8;
                             foreach (Node node in nodesHex)
                             {
                                 element.AddNode(node);
+                                nodeDomains[elementDomainID - 1].Add(node);
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(HexID, element);
                             elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[HexID]);
+                        }
+                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        {
+                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
                         }
                         break;
                 }

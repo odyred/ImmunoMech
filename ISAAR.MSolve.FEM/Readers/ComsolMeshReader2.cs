@@ -23,6 +23,8 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
         public IList<IList<Element>> elementDomains;
+        public IList<IList<Node>> nodeDomains;
+        public int[] DomainIDs { get; set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         private readonly double[] diffusionCoeff;
@@ -58,7 +60,7 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfHexElements;
         int NumberOfQuadElements;
 
-        public Model CreateModelFromFile()
+        public Model CreateModelFromFile(bool AllDomains = true)
         {
             ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
@@ -78,6 +80,7 @@ namespace ISAAR.MSolve.FEM.Readers
             String[] text = System.IO.File.ReadAllLines(Filename);
             elementBoundaries = new List<IList<Element>>();
             elementDomains = new List<IList<Element>>();
+            nodeDomains = new List<IList<Node>>();
             nodeBoundaries = new List<IList<Node>>();
             quadBoundaries = new List<IList<IList<Node>>>();
             triBoundaries = new List<IList<IList<Node>>>();
@@ -91,6 +94,7 @@ namespace ISAAR.MSolve.FEM.Readers
             for (int i = 0; i < 2; i++)
             {
                 elementDomains.Add(new List<Element>());
+                nodeDomains.Add(new List<Node>());
             }
 
             for (int i = 0; i < text.Length; i++)
@@ -306,6 +310,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             foreach (Node node in nodesTet)
                             {
                                 element.AddNode(node);
+                                nodeDomains[elementDomainID - 1].Add(node);
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(TetID, element);
@@ -313,6 +318,10 @@ namespace ISAAR.MSolve.FEM.Readers
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
+                        }
+                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        {
+                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
                         }
                         break;
                     case Attributes.hex:
@@ -357,10 +366,15 @@ namespace ISAAR.MSolve.FEM.Readers
                             foreach (Node node in nodesHex)
                             {
                                 element.AddNode(node);
+                                nodeDomains[elementDomainID - 1].Add(node);
                             }
                             model.SubdomainsDictionary[0].Elements.Add(element);
                             model.ElementsDictionary.Add(HexID, element);
                             elementDomains[elementDomainID-1].Add(model.ElementsDictionary[HexID]);
+                        }
+                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        {
+                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
                         }
                         break;
                 }
