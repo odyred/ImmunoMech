@@ -399,7 +399,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
                     if ((timeStep + 1) % 1 == 0)
                     {
-                        string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                        string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
                         //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
                         //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                         var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
