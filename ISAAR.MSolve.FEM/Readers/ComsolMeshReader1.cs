@@ -54,10 +54,10 @@ namespace ISAAR.MSolve.FEM.Readers
             this.C2 = C2;
             this.k_cons = k_cons;
             CommonDynamicProperties = commonDynamicProperties;
-            for (int i = 0; i < C1.Length; i++)
-            {
-                this.lambdag[i] = 1;
-            }
+            //for (int i = 0; i < C1.Length; i++)
+            //{
+            //    this.lambdag[i] = 1;
+            //}
         }
         public ComsolMeshReader1(string filename, double[] C1, double[] C2, double[] k_cons, IDynamicMaterial[] commonDynamicProperties,  double[] lambdag)
         {
@@ -89,17 +89,6 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            HyperElasticMaterial3DDefGrad[] hyperElasticMaterial = new HyperElasticMaterial3DDefGrad[C1.Length];
-            ContinuumElement3DNonLinearDefGradFactory[][] elementFactory = new ContinuumElement3DNonLinearDefGradFactory[C1.Length][];
-            for (int i = 0; i < C1.Length; i++)
-            {
-                hyperElasticMaterial[i] = new HyperElasticMaterial3DDefGrad() { C1 = C1[i], C2 = C2[i], k_cons = k_cons[i] };
-                for (int j = 0; j < lambdag.Length; j++)
-                {
-                    elementFactory[i][j] = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial[i],
-                        CommonDynamicProperties[i], lambdag[j]);
-                }
-            }
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material
@@ -189,7 +178,6 @@ namespace ISAAR.MSolve.FEM.Readers
                             model.NodesDictionary.Add(nodeGlobalID, node);
                             nodelist.Add(node);
                         }
-
                         break;
                     case Attributes.tri:
                         do
@@ -331,8 +319,23 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
+                            HyperElasticMaterial3DDefGrad hyperElasticMaterial = new HyperElasticMaterial3DDefGrad() 
+                                { 
+                                    C1 = C1[elementDomainID-1], C2 = C2[elementDomainID - 1], k_cons = k_cons[elementDomainID - 1] 
+                                };
+                            ContinuumElement3DNonLinearDefGradFactory elementFactory;
+                            if (lambdag == null) 
+                            {
+                                elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
+                                    CommonDynamicProperties[elementDomainID - 1]);
+                            }
+                            else
+                            {
+                                elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
+                                    CommonDynamicProperties[elementDomainID - 1], lambdag[TetID]);
+                            }
                             IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
-                            var Tet4 = elementFactory[elementDomainID-1][TetID].CreateElement(CellType.Tet4, nodesTet);                                
+                            var Tet4 = elementFactory.CreateElement(CellType.Tet4, nodesTet);                                
                             var element = new Element();
                             element.ID = TetID;
                             element.ElementType = Tet4;
@@ -387,8 +390,25 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
+                            HyperElasticMaterial3DDefGrad hyperElasticMaterial = new HyperElasticMaterial3DDefGrad()
+                            {
+                                C1 = C1[elementDomainID - 1],
+                                C2 = C2[elementDomainID - 1],
+                                k_cons = k_cons[elementDomainID-1]
+                            };
+                            ContinuumElement3DNonLinearDefGradFactory elementFactory;
+                            if (lambdag == null)
+                            {
+                                elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
+                                    CommonDynamicProperties[elementDomainID - 1]);
+                            }
+                            else
+                            {
+                                elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
+                                    CommonDynamicProperties[elementDomainID - 1], lambdag[HexID]);
+                            }
                             IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
-                            var Hexa8 = elementFactory[elementDomainID - 1][HexID].CreateElement(CellType.Hexa8, nodesHex);
+                            var Hexa8 = elementFactory.CreateElement(CellType.Hexa8, nodesHex);
                             var element = new Element();
                             element.ID = HexID;
                             element.ElementType = Hexa8;

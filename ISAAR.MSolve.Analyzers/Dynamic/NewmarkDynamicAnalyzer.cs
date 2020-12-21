@@ -292,7 +292,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             UpdateVelocityAndAcceleration(i);
             UpdateResultStorages(start, end);
             // Print output results in *.txt file
-            using (var fileName = new StreamWriter(@"C:\Users\Ody\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
+            using (var fileName = new StreamWriter(@"C:\Users\odyre\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
             {
                 double currentTime = ((i + 1) * timeStep);
                 string strTimeStep = currentTime.ToString();
@@ -489,7 +489,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
                 if ((timeStep + 1) % 1 == 0)
                 {
-                    string path0 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
                     //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
