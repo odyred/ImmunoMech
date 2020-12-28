@@ -655,6 +655,10 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 value0[1][node.ID] = 1;
             }
+            foreach (Node node in models[1].Nodes)
+            {
+                value0[1][node.ID] = 0.96733;
+            }
 
             DenseMatrixSolver[] solvers = new DenseMatrixSolver[models.Length];
             IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
