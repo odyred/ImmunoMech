@@ -10,5 +10,7 @@ namespace ISAAR.MSolve.FEM.Readers.Interfaces
         Model Model { get; }
         IList<IList<IList<Node>>> quadBoundaries { get; }
         IList<IList<IList<Node>>> triBoundaries { get; }
+        IList<IList<Element>> elementDomains { get; }
+        IList<IList<Node>> nodeDomains { get; }
     }
 }

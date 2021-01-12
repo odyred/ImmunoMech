@@ -22,7 +22,9 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
-        public IList<IList<Element>> elementDomains;
+        public IList<IList<Element>> elementDomains { get; private set; }
+        public IList<IList<Node>> nodeDomains { get; private set; }
+
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         enum Attributes

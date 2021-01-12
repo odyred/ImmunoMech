@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISAAR.MSolve.Discretization.Interfaces;
@@ -292,14 +293,29 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             UpdateVelocityAndAcceleration(i);
             UpdateResultStorages(start, end);
             // Print output results in *.txt file
-            using (var fileName = new StreamWriter(@"C:\Users\odyre\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
+            if (i == 0)
             {
-                double currentTime = ((i + 1) * timeStep);
-                string strTimeStep = currentTime.ToString();
-                //var totalSolution = ChildAnalyzer.Responses[0][0];
-                var totalSolution = ChildAnalyzer.Responses[0][16];
-                string strTotalSolution = totalSolution.ToString();
-                fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+                using (var fileName = new StreamWriter(@"C:\Users\odyre\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt"))
+                {
+                    double currentTime = ((i + 1) * timeStep);
+                    string strTimeStep = currentTime.ToString();
+                    //var totalSolution = ChildAnalyzer.Responses[0][0];
+                    var totalSolution = ChildAnalyzer.Responses[0][16];
+                    string strTotalSolution = totalSolution.ToString();
+                    fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+                }
+            }
+            else
+            {
+                using (var fileName = new StreamWriter(@"C:\Users\odyre\Documents\Marie Curie\comsolModels\MSolveHyperelasticDynamicsImplicitResults.txt", true))
+                {
+                    double currentTime = ((i + 1) * timeStep);
+                    string strTimeStep = currentTime.ToString();
+                    //var totalSolution = ChildAnalyzer.Responses[0][0];
+                    var totalSolution = ChildAnalyzer.Responses[0][16];
+                    string strTotalSolution = totalSolution.ToString();
+                    fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+                }
             }
             //if (CreateNewModel != null)
             //{
@@ -493,8 +509,25 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
                     //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
-                    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                    writer.WriteToFile(v[id], path2);
+                    //var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    //writer.WriteToFile(v[id], path2);
+                    for (int i = 0; i < (v[id].Length/3); i++)
+                    {
+                        if (i == 0)
+                        {
+                            using (var fileName = new StreamWriter(path2))
+                            {
+                                fileName.WriteLine(v[id][3*i].ToString() +" " +  v[id][3*i+1].ToString() + " " + v[id][3*i+2].ToString());
+                            }
+                        }
+                        else
+                        {
+                            using (var fileName = new StreamWriter(path2, true))
+                            {
+                                fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
+                            }
+                        }
+                    }
                     //writer.WriteToFile(temperature[id][0], path1);
 
                     //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);

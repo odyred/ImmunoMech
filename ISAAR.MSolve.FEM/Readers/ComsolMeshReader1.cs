@@ -22,8 +22,8 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
         public IList<IList<Element>> elementBoundaries;
-        public IList<IList<Element>> elementDomains;
-        public IList<IList<Node>> nodeDomains;
+        public IList<IList<Element>> elementDomains { get; private set; }
+        public IList<IList<Node>> nodeDomains { get; private set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
         private readonly double[] C1;
@@ -329,10 +329,15 @@ namespace ISAAR.MSolve.FEM.Readers
                                 elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
                                     CommonDynamicProperties[elementDomainID - 1]);
                             }
-                            else
+                            else if (elementDomainID==1)
                             {
                                 elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
                                     CommonDynamicProperties[elementDomainID - 1], lambdag[TetID]);
+                            }
+                            else
+                            {
+                                elementFactory = new ContinuumElement3DNonLinearDefGradFactory(hyperElasticMaterial,
+                                CommonDynamicProperties[elementDomainID - 1]);
                             }
                             IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
                             var Tet4 = elementFactory.CreateElement(CellType.Tet4, nodesTet);                                

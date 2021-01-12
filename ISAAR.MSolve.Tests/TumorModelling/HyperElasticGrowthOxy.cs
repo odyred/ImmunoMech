@@ -52,6 +52,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static double[] lgElement;
         private static double[] c_oxNode;
         private static double[] c_oxElement;
+        private static IModelReader structuralMR;
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
         private static Dictionary<int, IVector> Displacements;
@@ -157,11 +158,11 @@ namespace ISAAR.MSolve.Tests.FEM
             Assert.True(CompareResults(solutions[0]));
         }
 
-        private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+        private static void UpdateModels(Dictionary<int, IVector>[] prevStepSolutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            c_oxNode = solutions[0][0].CopyToArray();
-            lgNode = solutions[1][0].CopyToArray();
+            c_oxNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
+            lgNode = solversToReplace[1].LinearSystems[0].Solution.CopyToArray();
             if (c_oxElement == null) c_oxElement = new double[modelsToReplace[0].Elements.Count];
             foreach (var e in modelsToReplace[0].Elements)
             {
@@ -172,7 +173,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
             }
             if (lgElement == null) lgElement = new double[modelsToReplace[1].Elements.Count];
-            foreach (var e in modelsToReplace[0].Elements)
+            foreach (var e in modelsToReplace[1].Elements)
             {
                 lgElement[e.ID] = 0;
                 for (int i = 0; i < e.Nodes.Count; i++)
@@ -203,6 +204,10 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
+            foreach (Element e in structuralMR.elementDomains[1])
+            { 
+                lgElement[e.ID] = 1d; 
+            }
             ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
             solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
@@ -232,7 +237,7 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
             Model model = modelReader.CreateModelFromFile();
             if (lgr == null)
@@ -274,7 +279,7 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateOxygenTransportModel(double[] k, double[][] U, double[] L, double[] coxElement)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, k, U, L);
             Model model = modelReader.CreateModelFromFile();
             var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
@@ -287,9 +292,8 @@ namespace ISAAR.MSolve.Tests.FEM
                     coxElement[i] = 0;/* 0.9673;*/
                 }
             }
-
             double[] fox = new double[model.Elements.Count];
-            int[] domainIDs = new int[] { 0, 1};
+            int[] domainIDs = new int[] { 0, 1 };
             foreach (int domainID in domainIDs)
             {
                 foreach (Element element in modelReader.elementDomains[domainID])
@@ -324,7 +328,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 C2[i] = 0;
                 bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
             }
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
             ComsolMeshReader1 modelReader;
             if (lambdag == null)
             {
@@ -334,6 +338,7 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lambdag); 
             }
+            structuralMR = modelReader;
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var lx = l[0];
@@ -383,7 +388,23 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 foreach (Node node in modelReader.nodeBoundaries[boundaryID])
                 {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationZ, Amount = .1 });
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationZ, Amount = 1e-4 });
+                }
+            }
+            boundaryIDs = new int[] { 8 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationY, Amount = 1e-4 });
+                }
+            }
+            boundaryIDs = new int[] { 9 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = 1e-4 });
                 }
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
@@ -420,7 +441,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
             }
 
-            const double timestep = .005;
+            const double timestep = 1;
             const double time = 30;
             var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
                 providers, childAnalyzers, timestep, time, initialTemperature: initialValues);
