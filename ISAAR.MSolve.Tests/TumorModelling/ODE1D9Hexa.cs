@@ -32,7 +32,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void RunTest()
         {
             Model model = CreateModel(1, 1).Item1;
-            ComsolMeshReader3 modelReader = CreateModel(1, 1).Item2;
+            ComsolMeshReaderODE modelReader = CreateModel(1, 1).Item2;
             IVectorView solution = SolveModel(model, modelReader);
             Assert.True(CompareResults(solution));
         }
@@ -52,10 +52,10 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
 
-        private static Tuple<Model, ComsolMeshReader3> CreateModel(double C1, double C0)
+        private static Tuple<Model, ComsolMeshReaderODE> CreateModel(double C1, double C0)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            ComsolMeshReader3 modelReader = new ComsolMeshReader3(filename, C1, C0);
+            ComsolMeshReaderODE modelReader = new ComsolMeshReaderODE(filename, C1, C0);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var bodyLoad = new ODEDomainLoad(new ODEMaterial(C1, C0), 1, ThermalDof.Temperature);
@@ -165,10 +165,10 @@ namespace ISAAR.MSolve.Tests.FEM
             //    }
             //}
 
-            return new Tuple<Model, ComsolMeshReader3>(model, modelReader);
+            return new Tuple<Model, ComsolMeshReaderODE>(model, modelReader);
         }
 
-        private static IVectorView SolveModel(Model model, ComsolMeshReader3 modelReader)
+        private static IVectorView SolveModel(Model model, ComsolMeshReaderODE modelReader)
         {
             //var initialTemp = Vector.CreateZero(model.Nodes.Count);
             double[] value0 = new double[model.Nodes.Count];
