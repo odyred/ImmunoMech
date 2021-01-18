@@ -86,8 +86,11 @@ namespace ISAAR.MSolve.Solvers
             var subdomainLoads = new SortedDictionary<int, double>();
             foreach ((INode node, IDofType dofType, double amount) in globalNodalLoads)
             {
-                int subdomainDofIdx = subdomain.FreeDofOrdering.FreeDofs[node, dofType];
-                subdomainLoads[subdomainDofIdx] = amount;
+                if (subdomain.FreeDofOrdering.FreeDofs.Contains(node,dofType))
+                {
+                    int subdomainDofIdx = subdomain.FreeDofOrdering.FreeDofs[node, dofType];
+                    subdomainLoads[subdomainDofIdx] = amount;
+                }
             }
             return new Dictionary<int, SparseVector>
             {

@@ -49,8 +49,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
         private static double[] lgNode;
         private static double[] lgElement;
-        private static double[] c_oxNode;
-        private static double[] c_oxElement;
+        private static double[] lgElementFull;
         private static IModelReader structuralMR;
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
@@ -64,10 +63,10 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 DoxDays[i] = 24 * 3600 * Dox[i];
             }
-            var models = new[] { 
-                CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode).Item1 };
-            var modelReaders = new[] { 
-                CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode).Item2 };
+            var modelTuples = new[] {
+                CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode) };
+            var models = new[] {modelTuples[0].Item1 };
+            var modelReaders = new[] { modelTuples[0].Item2 };
             //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
             //IVectorView[] solutions = SolveModels(models, modelReaders);
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
@@ -192,11 +191,19 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            foreach (Element e in structuralMR.elementDomains[1])
+            if (lgElementFull == null)
             {
-                lgElement[e.ID] = 1d;
+                lgElementFull = new double[modelsToReplace[0].Elements.Count];
+                foreach (Element e in structuralMR.elementDomains[1])
+                {
+                    lgElementFull[e.ID] = 1d;
+                }
             }
-            ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
+            foreach (Element e in structuralMR.elementDomains[0])
+            {
+                lgElementFull[e.ID] = lgElement[e.ID];
+            }
+            ReplaceLambdaGInModel(modelsToReplace[0], lgElementFull);
             solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
             //solversToReplace[0].HandleMatrixWillBeSet();
@@ -226,8 +233,10 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
-            Model model = modelReader.CreateModelFromFile();
+            var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+            int[] modelDomains = new int[] { 0 };
+            int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
+            Model model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
             if (lgr == null)
             {
                 lgr = new double[model.Elements.Count];
@@ -315,30 +324,29 @@ namespace ISAAR.MSolve.Tests.FEM
                     });
                 }
             }
-            boundaryIDs = new int[] { 6 };
-            foreach (int boundaryID in boundaryIDs)
+
+            int[] domainIDs = new int[] { 0, 1 };
+            for (int domainID = 0; domainID < domainIDs.Length; domainID++)
             {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                foreach (Element e in modelReader.elementDomains[domainID])
                 {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationZ, Amount = 1e-9 });
+                    var bodyload = -.1;
+                    var nodes = (IReadOnlyList<Node>)e.Nodes;
+                    var domainLoadX = new GravityLoad(1, bodyload, StructuralDof.TranslationX);
+                    var domainLoadY = new GravityLoad(1, bodyload, StructuralDof.TranslationY);
+                    var domainLoadZ = new GravityLoad(1, bodyload, StructuralDof.TranslationZ);
+                    var bodyLoadElementFactoryX = new BodyLoadElementFactory(domainLoadX, model);
+                    var bodyLoadElementFactoryY = new BodyLoadElementFactory(domainLoadY, model);
+                    var bodyLoadElementFactoryZ = new BodyLoadElementFactory(domainLoadZ, model);
+                    var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
+                    var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
+                    var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
+                    model.BodyLoads.Add(bodyLoadElementX);
+                    model.BodyLoads.Add(bodyLoadElementY);
+                    model.BodyLoads.Add(bodyLoadElementZ);
                 }
             }
-            boundaryIDs = new int[] { 8 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
-                {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationY, Amount = 1e-9 });
-                }
-            }
-            boundaryIDs = new int[] { 9 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
-                {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = 1e-9 });
-                }
-            }
+
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
         private static IVectorView[] SolveModelsWithNewmark(Model[] models, IModelReader[] modelReaders)
