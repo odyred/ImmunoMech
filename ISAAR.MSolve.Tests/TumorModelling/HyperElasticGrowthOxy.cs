@@ -65,8 +65,8 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 DoxDays[i] = 24 * 3600 * Dox[i];
             }
-            var oxModel = CreateOxygenTransportModel(DoxDays, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }, c_oxNode);
-            var gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode);
+            var oxModel = CreateOxygenTransportModel(DoxDays, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }, c_oxElement);
+            var gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgElement);
             var models = new[] { oxModel.Item1, gModel.Item1 };
             var modelReaders = new[] { oxModel.Item2, gModel.Item2 };            
             //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
@@ -172,13 +172,13 @@ namespace ISAAR.MSolve.Tests.FEM
                     c_oxElement[e.ID] += c_oxNode[i] / (e.Nodes.Count);
                 }
             }
-            if (lgElement == null) lgElement = new double[modelsToReplace[1].Elements.Count];
+            if (lgElement == null) lgElement = new double[modelsToReplace[0].Elements.Count];
             foreach (var e in modelsToReplace[1].Elements)
             {
                 lgElement[e.ID] = 0;
                 for (int i = 0; i < e.Nodes.Count; i++)
                 {
-                    lgElement[e.ID] += lgNode[i] / (e.Nodes.Count);
+                    lgElement[e.ID] += lgNode[e.Nodes[i].ID] / (e.Nodes.Count);
                 }
             }
             modelsToReplace[0] = CreateOxygenTransportModel(Dox, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }, c_oxElement).Item1;
@@ -251,14 +251,14 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
             }
 
-            if (c_oxElement == null)
-            {
-                c_oxElement = new double[model.Elements.Count];
-                for (int i = 0; i < model.Elements.Count; i++)
-                {
-                    c_oxElement[i] = 0;/* 0.9673;*/
-                }
-            }
+            //if (c_oxElement == null)
+            //{
+            //    c_oxElement = new double[model.Elements.Count];
+            //    for (int i = 0; i < model.Elements.Count; i++)
+            //    {
+            //        c_oxElement[i] = 0;/* 0.9673;*/
+            //    }
+            //}
 
             var materialODE =  new ConvectionDiffusionMaterial(k, U, L);
             double[] Grox = new double[model.Elements.Count];
@@ -288,10 +288,10 @@ namespace ISAAR.MSolve.Tests.FEM
 
             if (coxElement == null)
             {
-                coxElement = new double[model.Elements.Count];
+                c_oxElement = new double[model.Elements.Count];
                 for (int i = 0; i < model.Elements.Count; i++)
                 {
-                    coxElement[i] = 0;/* 0.9673;*/
+                    c_oxElement[i] = 0;/* 0.9673;*/
                 }
             }
             double[] fox = new double[model.Elements.Count];
@@ -302,7 +302,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 {
                     if (domainID == 0)
                     {
-                        fox[element.ID] = (Dox[domainID] / Lwv * 7e3 - ((Aox[domainID] * coxElement[element.ID]) / (kox[domainID] + coxElement[element.ID] * cvox)) * 0.3) * (24d * 3600d);
+                        fox[element.ID] = (Dox[domainID] / Lwv * 7e3 - ((Aox[domainID] * c_oxElement[element.ID]) / (kox[domainID] + c_oxElement[element.ID] * cvox)) * 0.3) * (24d * 3600d);
                     }
                     else
                     {

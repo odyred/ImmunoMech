@@ -203,7 +203,7 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double b, double f, double bl)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "4HexaHyperelasticCube100m.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "125HexaHyperelasticCube100m.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
             var material = new ConvectionDiffusionMaterial(k, U, L);
@@ -234,7 +234,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 muLame[i] = 2 * C1[i];
                 bulkModulusnew[i] = 2 * muLame[i] * (1 + poissonV[i]) / (3 * (1 - 2 * poissonV[i]));
             }
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "4HexaHyperelasticCube100m.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "125HexaHyperelasticCube100m.mphtxt");
             var modelReader = new ComsolMeshReader1(filename, C1, C2, new double[] { 1e5 }, commonDynamicMaterialProperties, lambdag);
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
@@ -376,5 +376,21 @@ namespace ISAAR.MSolve.Tests.FEM
 
             return solvers.Select(x => x.LinearSystems[subdomainID].Solution).ToArray();
         }
+        //private static double[] CalculateStress(double[] DefGrad)
+        //{
+        //    C1 = 1e4;
+        //    C2 = 1e4;
+        //    k = 1e5;
+        0.776426938
+-2.55E-15
+-4.28E-15
+9.31E-16
+0.776426938
+-6.86E-15
+-1.38E-15
+3.46E-16
+0.776426938
+
+        //}
     }
 }
