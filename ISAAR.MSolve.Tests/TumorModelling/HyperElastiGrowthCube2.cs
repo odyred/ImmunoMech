@@ -65,7 +65,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             var modelTuples = new[] {
                 CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode) };
-            var models = new[] {modelTuples[0].Item1 };
+            var models = new[] { modelTuples[0].Item1 };
             var modelReaders = new[] { modelTuples[0].Item2 };
             //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
             //IVectorView[] solutions = SolveModels(models, modelReaders);
@@ -191,19 +191,11 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            if (lgElementFull == null)
+            foreach (Element e in structuralMR.elementDomains[1])
             {
-                lgElementFull = new double[modelsToReplace[0].Elements.Count];
-                foreach (Element e in structuralMR.elementDomains[1])
-                {
-                    lgElementFull[e.ID] = 1d;
-                }
+                lgElement[e.ID] = 1d;
             }
-            foreach (Element e in structuralMR.elementDomains[0])
-            {
-                lgElementFull[e.ID] = lgElement[e.ID];
-            }
-            ReplaceLambdaGInModel(modelsToReplace[0], lgElementFull);
+            ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
             solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
             //solversToReplace[0].HandleMatrixWillBeSet();
@@ -251,7 +243,7 @@ namespace ISAAR.MSolve.Tests.FEM
             double[] fg = new double[model.Elements.Count];
             foreach (Element element in modelReader.elementDomains[0])
             {
-                Grox[element.ID] = (loxc[0] * cvox ) / (cvox + Koxc[0]);
+                Grox[element.ID] = (loxc[0] * cvox) / (cvox + Koxc[0]);
                 fg[element.ID] = 24d * 3600d * Grox[element.ID] * lgr[element.ID] / 3d;
                 var nodes = (IReadOnlyList<Node>)element.Nodes;
                 var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg[element.ID], ThermalDof.Temperature);
@@ -324,29 +316,30 @@ namespace ISAAR.MSolve.Tests.FEM
                     });
                 }
             }
-
-            int[] domainIDs = new int[] { 0, 1 };
-            for (int domainID = 0; domainID < domainIDs.Length; domainID++)
+            boundaryIDs = new int[] { 6 };
+            foreach (int boundaryID in boundaryIDs)
             {
-                foreach (Element e in modelReader.elementDomains[domainID])
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
                 {
-                    var bodyload = -.1;
-                    var nodes = (IReadOnlyList<Node>)e.Nodes;
-                    var domainLoadX = new GravityLoad(1, bodyload, StructuralDof.TranslationX);
-                    var domainLoadY = new GravityLoad(1, bodyload, StructuralDof.TranslationY);
-                    var domainLoadZ = new GravityLoad(1, bodyload, StructuralDof.TranslationZ);
-                    var bodyLoadElementFactoryX = new BodyLoadElementFactory(domainLoadX, model);
-                    var bodyLoadElementFactoryY = new BodyLoadElementFactory(domainLoadY, model);
-                    var bodyLoadElementFactoryZ = new BodyLoadElementFactory(domainLoadZ, model);
-                    var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
-                    var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
-                    var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
-                    model.BodyLoads.Add(bodyLoadElementX);
-                    model.BodyLoads.Add(bodyLoadElementY);
-                    model.BodyLoads.Add(bodyLoadElementZ);
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationZ, Amount = 1e-9 });
                 }
             }
-
+            boundaryIDs = new int[] { 8 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationY, Amount = 1e-9 });
+                }
+            }
+            boundaryIDs = new int[] { 9 };
+            foreach (int boundaryID in boundaryIDs)
+            {
+                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                {
+                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = 1e-9 });
+                }
+            }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
         private static IVectorView[] SolveModelsWithNewmark(Model[] models, IModelReader[] modelReaders)

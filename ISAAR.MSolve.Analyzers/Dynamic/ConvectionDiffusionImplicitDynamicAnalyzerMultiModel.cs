@@ -84,9 +84,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1/ timeStep / timeStep,
+                Mass = 1 / timeStep / timeStep,
                 Damping = -1,
-                Stiffness = 1/ timeStep
+                Stiffness = 1 / timeStep
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {

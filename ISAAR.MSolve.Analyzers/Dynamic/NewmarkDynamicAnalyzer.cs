@@ -40,7 +40,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         IImplicitIntegrationProvider[] providersForReplacement = new IImplicitIntegrationProvider[1];
         IChildAnalyzer[] childAnalyzersForReplacement = new IChildAnalyzer[1];
 
-        public NewmarkDynamicAnalyzer(Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator, 
+        public NewmarkDynamicAnalyzer(Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator,
             IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
             IChildAnalyzer childAnalyzer, double timeStep, double totalTime, double alpha, double delta)
         {
@@ -300,7 +300,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][53];
+                    var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa
+                    //var totalSolution = ChildAnalyzer.Responses[0][53]; //125HexaHyperelasticCube100m
                     string strTotalSolution = totalSolution.ToString();
                     fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
                 }
@@ -311,7 +313,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][53];
+                    //var totalSolution = ChildAnalyzer.Responses[0][0];
+                    var totalSolution = ChildAnalyzer.Responses[0][16];
                     string strTotalSolution = totalSolution.ToString();
                     fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
                 }
@@ -446,7 +449,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             ImplicitIntegrationCoefficients coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = a0, Damping = a1, Stiffness = 1
+                Mass = a0,
+                Damping = a1,
+                Stiffness = 1
             };
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
@@ -492,15 +497,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
                 if ((timeStep + 1) % 1 == 0)
                 {
-                    string path0 =  Path.Combine(Directory.GetCurrentDirectory(), "MsolveOutput");
+                    string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
+                    //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
+                    //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
+                    //var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    //writer.WriteToFile(v[id], path2);
                     for (int i = 0; i < (v[id].Length/3); i++)
                     {
                         if (i == 0)
                         {
                             using (var fileName = new StreamWriter(path2))
                             {
-                                fileName.WriteLine(v[id][3*i].ToString() +" " +  v[id][3*i+1].ToString() + " " + v[id][3*i+2].ToString());
+                                fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
                             }
                         }
                         else

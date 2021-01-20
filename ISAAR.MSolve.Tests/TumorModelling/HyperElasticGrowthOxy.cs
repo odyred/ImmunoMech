@@ -251,15 +251,6 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
             }
 
-            //if (c_oxElement == null)
-            //{
-            //    c_oxElement = new double[model.Elements.Count];
-            //    for (int i = 0; i < model.Elements.Count; i++)
-            //    {
-            //        c_oxElement[i] = 0;/* 0.9673;*/
-            //    }
-            //}
-
             var materialODE =  new ConvectionDiffusionMaterial(k, U, L);
             double[] Grox = new double[model.Elements.Count];
             double[] fg = new double[model.Elements.Count];
@@ -457,9 +448,9 @@ namespace ISAAR.MSolve.Tests.FEM
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);
             var increments = 2;
             var structuralChildAnalyzerBuilder = new LoadControlAnalyzer.Builder(structuralModel, structuralSolver, structuralProvider, increments);
-            structuralChildAnalyzerBuilder.ResidualTolerance = 1E-6;
+            structuralChildAnalyzerBuilder.ResidualTolerance = 1E-5;
             structuralChildAnalyzerBuilder.MaxIterationsPerIncrement = 50;
-            structuralChildAnalyzerBuilder.NumIterationsForMatrixRebuild = 1;
+            structuralChildAnalyzerBuilder.NumIterationsForMatrixRebuild = 10;
             //childAnalyzerBuilder.SubdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) }; // This is the default
             LoadControlAnalyzer structuralChildAnalyzer = structuralChildAnalyzerBuilder.Build();
             var structuralParentAnalyzer = new NewmarkDynamicAnalyzer(UpdateNewmarkModel, structuralModel, structuralSolver,
