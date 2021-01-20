@@ -30,7 +30,7 @@ namespace ISAAR.MSolve.Solvers
         protected readonly ISubdomain subdomain;
         protected readonly SingleSubdomainSystem<TMatrix> linearSystem;
 
-        protected SingleSubdomainSolverBase(IStructuralModel model, IDofOrderer dofOrderer, 
+        protected SingleSubdomainSolverBase(IStructuralModel model, IDofOrderer dofOrderer,
             IGlobalMatrixAssembler<TMatrix> assembler, string name)
         {
             if (model.Subdomains.Count != 1) throw new InvalidSolverException(
@@ -86,8 +86,11 @@ namespace ISAAR.MSolve.Solvers
             var subdomainLoads = new SortedDictionary<int, double>();
             foreach ((INode node, IDofType dofType, double amount) in globalNodalLoads)
             {
-                int subdomainDofIdx = subdomain.FreeDofOrdering.FreeDofs[node, dofType];
-                subdomainLoads[subdomainDofIdx] = amount;
+                if (subdomain.FreeDofOrdering.FreeDofs.Contains(node, dofType))
+                {
+                    int subdomainDofIdx = subdomain.FreeDofOrdering.FreeDofs[node, dofType];
+                    subdomainLoads[subdomainDofIdx] = amount;
+                }
             }
             return new Dictionary<int, SparseVector>
             {
@@ -100,7 +103,7 @@ namespace ISAAR.MSolve.Solvers
             if (otherMatrix.Count != 1) throw new InvalidSolverException("There can only be 1 subdomain when using this solver");
             KeyValuePair<int, IMatrixView> idMatrixPair = otherMatrix.First();
             int id = idMatrixPair.Key;
-            Debug.Assert(id == subdomain.ID, 
+            Debug.Assert(id == subdomain.ID,
                 "The matrix that will be multiplied with the inverse system matrix belongs to a different subdomain.");
             Matrix result = InverseSystemMatrixTimesOtherMatrix(idMatrixPair.Value);
             return new Dictionary<int, Matrix>() { { id, result } };

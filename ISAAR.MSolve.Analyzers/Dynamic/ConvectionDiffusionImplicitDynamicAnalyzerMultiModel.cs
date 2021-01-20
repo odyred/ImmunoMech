@@ -84,9 +84,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             var coeffs = new ImplicitIntegrationCoefficients
             {
-                Mass = 1/ timeStep / timeStep,
+                Mass = 1 / timeStep / timeStep,
                 Damping = -1,
-                Stiffness = 1/ timeStep
+                Stiffness = 1 / timeStep
             };
             for (int i = 0; i < linearSystems.Length; i++)
             {
@@ -399,12 +399,10 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
                     if ((timeStep + 1) % 1 == 0)
                     {
-                        string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
-                        //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
-                        var path2 = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
+                        var path0 = Path.Combine(Directory.GetCurrentDirectory(), $"MSolveOutput");
+                        var path = Path.Combine(path0, $"temperature{i}-{timeStep}.txt");
                         var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                        writer.WriteToFile(temperature[i][id], path2);
+                        writer.WriteToFile(temperature[i][id], path);
                         //writer.WriteToFile(temperature[id][0], path1);
 
                         //File.AppendAllLines(path1, new string[] { temperature[id][0].ToString() }, Encoding.UTF8);
