@@ -217,7 +217,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
             childAnalyzerBuilder.ResidualTolerance = 1E-6;
             childAnalyzerBuilder.MaxIterationsPerIncrement = 50;
-            childAnalyzerBuilder.NumIterationsForMatrixRebuild = 10;
+            childAnalyzerBuilder.NumIterationsForMatrixRebuild = 5;
             childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
         }
 
@@ -237,7 +237,7 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
             var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
             int[] modelDomains = new int[] { 0 };
             int[] modelBoundaries = new int[] { 0 ,1, 2, 5};
@@ -272,7 +272,7 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateOxygenTransportModel(double[] k, double[][] U, double[] L, double[] coxElement)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, k, U, L);
             Model model = modelReader.CreateModelFromFile();
             var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
@@ -321,7 +321,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 C2[i] = 0;
                 bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
             }
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
             ComsolMeshReader1 modelReader;
             if (lambdag == null)
             {
@@ -450,7 +450,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var structuralChildAnalyzerBuilder = new LoadControlAnalyzer.Builder(structuralModel, structuralSolver, structuralProvider, increments);
             structuralChildAnalyzerBuilder.ResidualTolerance = 1E-5;
             structuralChildAnalyzerBuilder.MaxIterationsPerIncrement = 50;
-            structuralChildAnalyzerBuilder.NumIterationsForMatrixRebuild = 10;
+            structuralChildAnalyzerBuilder.NumIterationsForMatrixRebuild = 5;
             //childAnalyzerBuilder.SubdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) }; // This is the default
             LoadControlAnalyzer structuralChildAnalyzer = structuralChildAnalyzerBuilder.Build();
             var structuralParentAnalyzer = new NewmarkDynamicAnalyzer(UpdateNewmarkModel, structuralModel, structuralSolver,

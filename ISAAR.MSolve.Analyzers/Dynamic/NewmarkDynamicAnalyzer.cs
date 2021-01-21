@@ -39,7 +39,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         ISolver[] solversForReplacement = new ISolver[1];
         IImplicitIntegrationProvider[] providersForReplacement = new IImplicitIntegrationProvider[1];
         IChildAnalyzer[] childAnalyzersForReplacement = new IChildAnalyzer[1];
-        string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
+        string path0 = Path.Combine(Directory.GetCurrentDirectory(), $"MSolveOutput");
         string path = Path.Combine(Directory.GetCurrentDirectory(), $"MSolveOutput\\DynamicResults\\NewmarkResults.txt");
 
         public NewmarkDynamicAnalyzer(Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator,
@@ -301,7 +301,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
+                    var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
+                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
@@ -316,7 +317,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
+                    var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
+                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
@@ -506,25 +508,25 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
                     //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
-                    //var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
-                    //writer.WriteToFile(v[id], path2);
-                    for (int i = 0; i < (v[id].Length/3); i++)
-                    {
-                        if (i == 0)
-                        {
-                            using (var fileName = new StreamWriter(path2))
-                            {
-                                fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
-                            }
-                        }
-                        else
-                        {
-                            using (var fileName = new StreamWriter(path2, true))
-                            {
-                                fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
-                            }
-                        }
-                    }
+                    var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
+                    writer.WriteToFile(v[id], path2);
+                    //for (int i = 0; i < (v[id].Length/3); i++)
+                    //{
+                    //    if (i == 0)
+                    //    {
+                    //        using (var fileName = new StreamWriter(path2))
+                    //        {
+                    //            fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        using (var fileName = new StreamWriter(path2, true))
+                    //        {
+                    //            fileName.WriteLine(v[id][3 * i].ToString() + " " + v[id][3 * i + 1].ToString() + " " + v[id][3 * i + 2].ToString());
+                    //        }
+                    //    }
+                    //}
                 }
 
             }
