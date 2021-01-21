@@ -503,9 +503,23 @@ namespace ISAAR.MSolve.FEM.Elements
                 {
                     for (int j = 0; j < 3; j++)
                     {
+                        //firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
                         firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
                     }
                 }
+                //double[,] defGrad_lamdag_inv = new double[3, 3] { { (double)1 / lambdag, 0, 0 }, { 0, (double)1 / lambdag, 0 }, { 0, 0, (double)1 / lambdag } };
+
+                //var firstPiola = new double[3, 3];
+                //for (int i = 0; i < 3; i++)
+                //{
+                //    for (int j = 0; j < 3; j++)
+                //    {
+                //        for (int k = 0; k < 3; k++)
+                //        {
+                //            firstPiola[i, j] += firstPiolaElastic[i, k] * defGrad_lamdag_inv[k, j];
+                //        }
+                //    }
+                //}
 
                 double[,] defGradInverseTransposed = new double[3, 3] { { (defGradTransposed[2, 2]*defGradTransposed[1,1]- defGradTransposed[2, 1]
                     * defGradTransposed[1, 2])/defGradDeterminant,
@@ -665,11 +679,23 @@ namespace ISAAR.MSolve.FEM.Elements
                 {
                     for (int j = 0; j < 3; j++)
                     {
-                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
-                        //firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
+                        //firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
+                        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
                     }
                 }
+                //double[,] defGrad_lamdag_inv = new double[3, 3] { { (double)1 / lambdag, 0, 0 }, { 0, (double)1 / lambdag, 0 }, { 0, 0, (double)1 / lambdag } };
 
+                //var firstPiola = new double[3, 3];
+                //for (int i = 0; i < 3; i++)
+                //{
+                //    for (int j = 0; j < 3; j++)
+                //    {
+                //        for (int k = 0; k < 3; k++)
+                //        {
+                //            firstPiola[i, j] += firstPiolaElastic[i, k] * defGrad_lamdag_inv[k, j];
+                //        }
+                //    }
+                //}
                 double[,] defGradInverseTransposed = new double[3, 3] { { (defGradTransposed[2, 2]*defGradTransposed[1,1]- defGradTransposed[2, 1]
                     * defGradTransposed[1, 2])/defGradDeterminant,
                         (-(defGradTransposed[2, 2] * defGradTransposed[0, 1] - defGradTransposed[2, 1]

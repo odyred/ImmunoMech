@@ -217,7 +217,7 @@ namespace ISAAR.MSolve.Tests.FEM
             var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
             childAnalyzerBuilder.ResidualTolerance = 1E-6;
             childAnalyzerBuilder.MaxIterationsPerIncrement = 50;
-            childAnalyzerBuilder.NumIterationsForMatrixRebuild = 1;
+            childAnalyzerBuilder.NumIterationsForMatrixRebuild = 10;
             childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
         }
 

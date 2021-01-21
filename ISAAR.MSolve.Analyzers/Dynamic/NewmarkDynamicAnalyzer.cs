@@ -39,6 +39,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         ISolver[] solversForReplacement = new ISolver[1];
         IImplicitIntegrationProvider[] providersForReplacement = new IImplicitIntegrationProvider[1];
         IChildAnalyzer[] childAnalyzersForReplacement = new IChildAnalyzer[1];
+        string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
+        string path = Path.Combine(Directory.GetCurrentDirectory(), $"MSolveOutput\\DynamicResults\\NewmarkResults.txt");
 
         public NewmarkDynamicAnalyzer(Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> modelCreator,
             IStructuralModel model, ISolver solver, IImplicitIntegrationProvider provider,
@@ -293,16 +295,17 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             UpdateVelocityAndAcceleration(i);
             UpdateResultStorages(start, end);
             // Print output results in *.txt file
-            string path = Path.Combine(Directory.GetCurrentDirectory(), $"MSolveOutput\\DynamicResults\\NewmarkResults.txt");
             if (i == 0)
             {
                 using (var fileName = new StreamWriter(path))
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
-                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa
-                    //var totalSolution = ChildAnalyzer.Responses[0][53]; //125HexaHyperelasticCube100m
+                    var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa 
                     string strTotalSolution = totalSolution.ToString();
                     fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
                 }
@@ -313,8 +316,11 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    //var totalSolution = ChildAnalyzer.Responses[0][0];
-                    var totalSolution = ChildAnalyzer.Responses[0][16];
+                    var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
+                    //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa 
                     string strTotalSolution = totalSolution.ToString();
                     fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
                 }
@@ -497,7 +503,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
                 if ((timeStep + 1) % 1 == 0)
                 {
-                    string path0 = @"C:\Users\odyre\Documents\Marie Curie\comsolModels\MsolveOutput";
                     //string path1 = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput\temperature0.txt";
                     //string path = @"C:\Users\Ody\Documents\Marie Curie\comsolModels\MsolveOutput";
                     var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
