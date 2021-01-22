@@ -56,7 +56,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
         private static Dictionary<int, IVector> Displacements;
-
+        private static Tuple<Model, IModelReader> oxModel, gModel;
         [Fact]
         private static void RunTest()
         {
@@ -65,8 +65,8 @@ namespace ISAAR.MSolve.Tests.FEM
             {
                 DoxDays[i] = 24 * 3600 * Dox[i];
             }
-            var oxModel = CreateOxygenTransportModel(DoxDays, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }, c_oxElement);
-            var gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgElement);
+            oxModel = CreateOxygenTransportModel(DoxDays, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }, c_oxElement);
+            gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgElement);
             var models = new[] { oxModel.Item1, gModel.Item1 };
             var modelReaders = new[] { oxModel.Item2, gModel.Item2 };            
             //var modelTuple3 = CreateStructuralModel(10e4, 0, new DynamicMaterial(.001, 0, 0, true), 0, new double[] { 0, 0, 0 });
@@ -237,11 +237,32 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
-            var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
-            int[] modelDomains = new int[] { 0 };
-            int[] modelBoundaries = new int[] { 0 ,1, 2, 5};
-            Model model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
+            //string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+            //var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+            //int[] modelDomains = new int[] { 0 };
+            //int[] modelBoundaries = new int[] { 0 ,1, 2, 5};
+            //Model model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
+            ComsolMeshReader3 modelReader;
+            Model model;
+
+            if (gModel == null)
+            {
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+                //var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                int[] modelDomains = new int[] { 0 };
+                int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
+                Console.WriteLine("GrowthModel is null");
+                modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
+            }
+            else
+            {
+                Console.WriteLine("GrowthModel is NOT null");
+                modelReader = (ComsolMeshReader3)gModel.Item2;
+                modelReader = modelReader.UpdateModelReader(new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                model = modelReader.UpdateModel();
+            }
+
             if (lgr == null)
             {
                 lgr = new double[model.Elements.Count];

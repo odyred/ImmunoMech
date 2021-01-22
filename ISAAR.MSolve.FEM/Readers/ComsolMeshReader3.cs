@@ -27,9 +27,9 @@ namespace ISAAR.MSolve.FEM.Readers
         public int[] DomainIDs { get; set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
-        private readonly double[] diffusionCoeff;
-        private readonly double[][] convectionCoeff;
-        private readonly double[] loadFromUnknownCoeff;
+        private  double[] diffusionCoeff;
+        private  double[][] convectionCoeff;
+        private  double[] loadFromUnknownCoeff;
         enum Attributes
         {
             sdim = 1001,
@@ -59,6 +59,91 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfTetElements;
         int NumberOfHexElements;
         int NumberOfQuadElements;
+
+        public ComsolMeshReader3 UpdateModelReader(double[] k, double[][] U, double[] L)
+        {
+            diffusionCoeff = k;
+            convectionCoeff = U;
+            loadFromUnknownCoeff = L;
+            return this;
+        }
+
+        public Model UpdateModel()
+        {
+            int[] domainIDs = new int[] { 0 };
+            int[] boundaryIDs = new int[] { 0, 1, 2, 5 };
+            ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
+            ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
+            for (int i = 0; i < diffusionCoeff.Length; i++)
+            {
+                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
+            }
+            var model = new Model();
+            model.SubdomainsDictionary[0] = new Subdomain(0);
+            var elemBound= new List<IList<Element>>();
+            var elemDom = new List<IList<Element>>();
+            var nodeDom = new List<IList<Node>>();
+            var nodeBound = new List<IList<Node>>();
+            var quadBound = new List<IList<IList<Node>>>();
+            var triBound = new List<IList<IList<Node>>>();
+            for (int i = 0; i < 10; i++)
+            {
+                elemBound.Add(new List<Element>());
+                nodeBound.Add(new List<Node>());
+                quadBound.Add(new List<IList<Node>>());
+                triBound.Add(new List<IList<Node>>());
+            }
+            for (int i = 0; i < 2; i++)
+            {
+                elemDom.Add(new List<Element>());
+                nodeDom.Add(new List<Node>());
+            }
+
+
+            IList<Node> nodelist = new List<Node> { null };
+            for (int j = 0; j < Model.NodesDictionary.Count; j++)
+            {
+                int nodeGlobalID = Model.NodesDictionary[j].ID;
+                double x = Model.NodesDictionary[j].X;
+                double y = Model.NodesDictionary[j].Y;
+                double z = Model.NodesDictionary[j].Z;
+                Node node = new Node(nodeGlobalID, x, y, z);
+                model.NodesDictionary.Add(nodeGlobalID, node);
+                nodelist.Add(node);
+            }            
+            for (int domain = 0; domain < elementDomains.Count; domain++)
+            {
+                foreach (Element elem in elementDomains[domain])
+                {
+                        IReadOnlyList<Node> nodesTet = elem.Nodes.ToList();
+                        var Tet4 = elementFactory3D[domain].CreateElement(CellType.Tet4, nodesTet);
+                        var element = new Element();
+                        element.ID = elem.ID;
+                        element.ElementType = Tet4;
+                        foreach (Node node in nodesTet)
+                        {
+                            element.AddNode(node);
+                            nodeDom[domain].Add(node);
+                        }
+                        model.SubdomainsDictionary[0].Elements.Add(element);
+                        model.ElementsDictionary.Add(elem.ID, element);
+                        elemDom[domain].Add(model.ElementsDictionary[elem.ID]);
+                }
+                foreach (int domainID in domainIDs)
+                {
+                    nodeDom[domainID] = nodeDom[domainID].Distinct().ToList();
+                }
+            }
+            elementBoundaries = elemBound;
+            elementDomains = elemDom;
+            nodeDomains = nodeDom;
+            nodeBoundaries = nodeBound;
+            quadBoundaries = quadBound;
+            triBoundaries = triBound;
+            this.Model = model;
+            return model;
+        }
 
         public Model CreateModelFromFile(int[] domainIDs = null, int[] boundaryIDs = null)
         {
@@ -378,6 +463,7 @@ namespace ISAAR.MSolve.FEM.Readers
             {
                 model.NodesDictionary.Remove(nodeID);
             }
+            this.Model = model;
             return model;
         }
 
