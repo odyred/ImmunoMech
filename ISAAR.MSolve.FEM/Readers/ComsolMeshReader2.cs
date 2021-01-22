@@ -27,9 +27,9 @@ namespace ISAAR.MSolve.FEM.Readers
         public int[] DomainIDs { get; set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
-        private readonly double[] diffusionCoeff;
-        private readonly double[][] convectionCoeff;
-        private readonly double[] loadFromUnknownCoeff;
+        private double[] diffusionCoeff;
+        private double[][] convectionCoeff;
+        private double[] loadFromUnknownCoeff;
         enum Attributes
         {
             sdim = 1001,
@@ -59,6 +59,43 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfTetElements;
         int NumberOfHexElements;
         int NumberOfQuadElements;
+
+        public ComsolMeshReader2 UpdateModelReader(double[] k, double[][] U, double[] L)
+        {
+            diffusionCoeff = k;
+            convectionCoeff = U;
+            loadFromUnknownCoeff = L;
+            return this;
+        }
+
+        public Model UpdateModel()
+        {//only works for tet4 now
+            ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
+            ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
+            for (int i = 0; i < diffusionCoeff.Length; i++)
+            {
+                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
+            }
+            var model = new Model();
+            model.SubdomainsDictionary[0] = new Subdomain(0);
+
+            foreach (int id in Model.NodesDictionary.Keys)
+                model.NodesDictionary.Add(id, Model.NodesDictionary[id]);
+
+            for (int domain = 0; domain < elementDomains.Count; domain++)
+            {
+                foreach (Element elem in elementDomains[domain])
+                {
+                    elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, elem.Nodes.ToList());
+                    model.SubdomainsDictionary[0].Elements.Add(elem);
+                    model.ElementsDictionary.Add(elem.ID, elem);
+                }
+            }
+            Model = model;
+            return model;
+        }
+
 
         public Model CreateModelFromFile(bool AllDomains = true)
         {
@@ -379,6 +416,7 @@ namespace ISAAR.MSolve.FEM.Readers
                         break;
                 }
             }
+            Model = model;
             return model;
         }
 

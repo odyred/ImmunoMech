@@ -237,27 +237,21 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
-            //string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
-            //var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
-            //int[] modelDomains = new int[] { 0 };
-            //int[] modelBoundaries = new int[] { 0 ,1, 2, 5};
-            //Model model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
             ComsolMeshReader3 modelReader;
             Model model;
 
             if (gModel == null)
             {
+                Console.WriteLine("Creating Growth Model");
                 string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
-                //var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                 int[] modelDomains = new int[] { 0 };
                 int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-                Console.WriteLine("GrowthModel is null");
                 modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                 model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
             }
             else
             {
-                Console.WriteLine("GrowthModel is NOT null");
+                Console.WriteLine("Updating Growth Model...");
                 modelReader = (ComsolMeshReader3)gModel.Item2;
                 modelReader = modelReader.UpdateModelReader(new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                 model = modelReader.UpdateModel();
@@ -293,11 +287,27 @@ namespace ISAAR.MSolve.Tests.FEM
         }
         private static Tuple<Model, IModelReader> CreateOxygenTransportModel(double[] k, double[][] U, double[] L, double[] coxElement)
         {
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, k, U, L);
-            Model model = modelReader.CreateModelFromFile();
-            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
+            ComsolMeshReader2 modelReader;
+            Model model;
 
+            if (oxModel == null)
+            {
+                Console.WriteLine("Creating Oxygen Model");
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+                modelReader = new ComsolMeshReader2(filename, k, U, L);
+                model = modelReader.CreateModelFromFile();
+            }
+            else
+            {
+                Console.WriteLine("Updating Oxygen Model...");
+                modelReader = (ComsolMeshReader2)oxModel.Item2;
+                modelReader = modelReader.UpdateModelReader(k, U, L);
+                model = modelReader.UpdateModel();
+            }
+
+
+
+            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
             if (coxElement == null)
             {
                 c_oxElement = new double[model.Elements.Count];
