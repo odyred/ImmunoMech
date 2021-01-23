@@ -52,11 +52,11 @@ namespace ISAAR.MSolve.Tests.FEM
         private static double[] lgElement;
         private static double[] c_oxNode;
         private static double[] c_oxElement;
-        private static IModelReader structuralMR;
+        //private static IModelReader structuralMR;
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
         private static Dictionary<int, IVector> Displacements;
-        private static Tuple<Model, IModelReader> oxModel, gModel;
+        private static Tuple<Model, IModelReader> oxModel, gModel, structModel;
         [Fact]
         private static void RunTest()
         {
@@ -190,6 +190,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 childAnalyzersToReplace[i] = new LinearAnalyzer(modelsToReplace[i], solversToReplace[i], providersToReplace[i]);
             }
         }
+
         private static void ReplaceLambdaGInModel(IStructuralModel model, double[] lg)
         {
             foreach (var e in model.Elements)
@@ -204,7 +205,7 @@ namespace ISAAR.MSolve.Tests.FEM
         private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
             ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
-            foreach (Element e in structuralMR.elementDomains[1])
+            foreach (Element e in structModel.Item2.elementDomains[1])
             { 
                 lgElement[e.ID] = 1d; 
             }
@@ -235,6 +236,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return true;
         }
+
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
             ComsolMeshReader3 modelReader;
@@ -285,6 +287,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
+
         private static Tuple<Model, IModelReader> CreateOxygenTransportModel(double[] k, double[][] U, double[] L, double[] coxElement)
         {
             ComsolMeshReader2 modelReader;
@@ -304,8 +307,6 @@ namespace ISAAR.MSolve.Tests.FEM
                 modelReader = modelReader.UpdateModelReader(k, U, L);
                 model = modelReader.UpdateModel();
             }
-
-
 
             var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
             if (coxElement == null)
@@ -339,6 +340,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
+
         private static Tuple<Model, IModelReader> CreateStructuralModel(double[] MuLame, double[] PoissonV, IDynamicMaterial[] commonDynamicMaterialProperties, 
             double b, double[] l, double[] lambdag)
         {
@@ -352,18 +354,15 @@ namespace ISAAR.MSolve.Tests.FEM
                 C2[i] = 0;
                 bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
             }
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+
             ComsolMeshReader1 modelReader;
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
             if (lambdag == null)
-            {
                 modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties);
-            }
             else
-            {
-                modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lambdag); 
-            }
-            structuralMR = modelReader;
+                modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties, lambdag);
             Model model = modelReader.CreateModelFromFile();
+            
             //Boundary Conditions
             var lx = l[0];
             var ly = l[1];
@@ -433,6 +432,7 @@ namespace ISAAR.MSolve.Tests.FEM
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
+
         private static IVectorView[] SolveModelsWithNewmark(Model[] models, IModelReader[] modelReaders)
         {
             Vector[] initialValues = new Vector[models.Length];
@@ -473,7 +473,8 @@ namespace ISAAR.MSolve.Tests.FEM
             double[] muLame = new double[] { 6e4, 2.1e4 };
             double[] poissonV = new double[] { .45, .2};
             IDynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true), new DynamicMaterial(.001, 0, 0, true) };
-            var structuralModel = CreateStructuralModel(muLame, poissonV, dynamicMaterials, 0, new double[] { 0, 0, 0 }, lgElement).Item1; // new Model();
+            structModel = CreateStructuralModel(muLame, poissonV, dynamicMaterials, 0, new double[] { 0, 0, 0 }, lgElement);//.Item1; // new Model();
+            var structuralModel = structModel.Item1;
             var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
             var structuralProvider = new ProblemStructural(structuralModel, structuralSolver);
             //var structuralChildAnalyzer = new LinearAnalyzer(structuralModel, structuralSolver, structuralProvider);

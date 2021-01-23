@@ -77,23 +77,11 @@ namespace ISAAR.MSolve.FEM.Readers
                 CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
                 elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
             }
-            var model = new Model();
-            model.SubdomainsDictionary[0] = new Subdomain(0);
-
-            foreach (int id in Model.NodesDictionary.Keys)
-                model.NodesDictionary.Add(id, Model.NodesDictionary[id]);
-
             for (int domain = 0; domain < elementDomains.Count; domain++)
-            {
                 foreach (Element elem in elementDomains[domain])
-                {
                     elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, elem.Nodes.ToList());
-                    model.SubdomainsDictionary[0].Elements.Add(elem);
-                    model.ElementsDictionary.Add(elem.ID, elem);
-                }
-            }
-            Model = model;
-            return model;
+            Model.BodyLoads.Clear();
+            return Model;
         }
 
 
