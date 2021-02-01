@@ -14,6 +14,7 @@ using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.Materials;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using ISAAR.MSolve.FEM.Readers.Interfaces;
+using ISAAR.MSolve.LinearAlgebra.Vectors;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
@@ -27,6 +28,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public int[] DomainIDs { get; set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
+        private Dictionary<int, IVector> displacements;
         private double[] diffusionCoeff;
         private double[][] convectionCoeff;
         private double[] loadFromUnknownCoeff;
@@ -68,8 +70,45 @@ namespace ISAAR.MSolve.FEM.Readers
             return this;
         }
 
-        public Model UpdateModel()
+        public Model UpdateModel(Model structuralModel = null, Dictionary<int,IVector> displacements = null, bool updateNodes=true)            
         {//only works for tet4 now
+            this.displacements = displacements;
+            if (updateNodes && displacements!=null)
+            {
+                for (int id = 0; id < displacements.Count; id++)
+                {
+                    Node[] prevNodes = new Node[Model.Nodes.Count];
+                    Model.Nodes.CopyTo(prevNodes, 0);
+                    Model.NodesDictionary.Clear();
+                    int count = 0;
+                    foreach (Node n in prevNodes)
+                    {
+                        var structNode = structuralModel.Nodes[n.ID];
+                        double x = n.X;
+                        double y = n.Y;
+                        double z = n.Z;
+
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationX))
+                        {
+                            x += displacements[id][count];
+                            count += 1;
+                        }
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationY))
+                        {
+                            y += displacements[id][count];
+                            count += 1;
+                        }
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationZ))
+                        {
+                            z += displacements[id][count];
+                            count += 1;
+                        }
+
+                        Node node = new Node(n.ID, x, y, z);
+                        Model.NodesDictionary.Add(n.ID, node);
+                    }
+                }
+            }
             ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
             for (int i = 0; i < diffusionCoeff.Length; i++)
@@ -79,7 +118,15 @@ namespace ISAAR.MSolve.FEM.Readers
             }
             for (int domain = 0; domain < elementDomains.Count; domain++)
                 foreach (Element elem in elementDomains[domain])
-                    elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, elem.Nodes.ToList());
+                {
+                    var oldElemNodes = elem.Nodes.ToList();
+                    var newElemNodes = new List<Node>();
+                    foreach (Node n in oldElemNodes)
+                        newElemNodes.Add(Model.Nodes[n.ID]);
+                    elem.NodesDictionary.Clear();
+                    elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, newElemNodes);
+                    elem.AddNodes(newElemNodes); 
+                }
             Model.BodyLoads.Clear();
             return Model;
         }

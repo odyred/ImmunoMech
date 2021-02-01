@@ -310,6 +310,11 @@ namespace ISAAR.MSolve.Problems
 
         public void ProcessInternalRhs(ISubdomain subdomain, IVectorView solution, IVector rhs) { }
 
+        public IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
     }
 }

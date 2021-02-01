@@ -25,6 +25,7 @@ using ISAAR.MSolve.FEM.Loading;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using System;
 using ISSAR.MSolve.Discretization.Loads;
+using ISAAR.MSolve.LinearAlgebra.Matrices;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -49,7 +50,7 @@ namespace ISAAR.MSolve.Tests.FEM
             Assert.True(CompareResults(solutions[0]));
         }
 
-        private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+        private static void UpdateModels(Dictionary<int, IVector>[] solutions, Dictionary<int, IMatrix>[] derivatives, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             double[] sol0 = solutions[0][0].CopyToArray();

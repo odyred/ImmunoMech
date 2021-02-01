@@ -22,7 +22,8 @@ namespace ISAAR.MSolve.Problems
 {
     public class ProblemConvectionDiffusion2 : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
     {
-        private Dictionary<int, IMatrix> capacity, diffusionConductivityFreeFree, massTransportConductivityFreeFree, stabilizingConductivity;
+        private Dictionary<int, IMatrix> capacity, diffusionConductivityFreeFree, massTransportConductivityFreeFree, stabilizingConductivity,
+            secondSpaceDerivativeXMatrix, secondSpaceDerivativeYMatrix, secondSpaceDerivativeZMatrix;
         private Dictionary<int, IVector> stabilizingDomainLoad;
         private Dictionary<int, IMatrixView> diffusionConductivityFreeConstr, diffusionConductivityConstrFree, diffusionConductivityConstrConstr,
             massTransportConductivityFreeConstr, massTransportConductivityConstrFree, massTransportConductivityConstrConstr;
@@ -34,6 +35,9 @@ namespace ISAAR.MSolve.Problems
         private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
         private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
+        private ElementSecondSpaceDerivativeXProvider secondSpaceDerivativeXProvider = new ElementSecondSpaceDerivativeXProvider();
+        private ElementSecondSpaceDerivativeYProvider secondSpaceDerivativeYProvider = new ElementSecondSpaceDerivativeYProvider();
+        private ElementSecondSpaceDerivativeZProvider secondSpaceDerivativeZProvider = new ElementSecondSpaceDerivativeZProvider();
 
         public ProblemConvectionDiffusion2(Model model, ISolver solver)
         {
@@ -87,6 +91,30 @@ namespace ISAAR.MSolve.Problems
             {
                 if (stabilizingDomainLoad == null) stabilizingDomainLoad = model.BuildGlobalStabilizingBodyLoads(solver.DistributeNodalLoads);
                 return stabilizingDomainLoad;
+            }
+        }
+        private IDictionary<int, IMatrix> SecondDerivativeXMatrix
+        {
+            get
+            {
+                if (secondSpaceDerivativeXMatrix == null) BuildSecondSpaceDerivativeX();
+                return secondSpaceDerivativeXMatrix;
+            }
+        }
+        private IDictionary<int, IMatrix> SecondDerivativeYMatrix
+        {
+            get
+            {
+                if (secondSpaceDerivativeYMatrix == null) BuildSecondSpaceDerivativeY();
+                return secondSpaceDerivativeYMatrix;
+            }
+        }
+        private IDictionary<int, IMatrix> SecondDerivativeZMatrix
+        {
+            get
+            {
+                if (secondSpaceDerivativeZMatrix == null) BuildSecondSpaceDerivativeZ();
+                return secondSpaceDerivativeZMatrix;
             }
         }
 
@@ -166,6 +194,9 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) subdomain.ResetMaterialsModifiedProperty();
         }
 
+        private void BuildSecondSpaceDerivativeX() => secondSpaceDerivativeXMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeXProvider);
+        private void BuildSecondSpaceDerivativeY() => secondSpaceDerivativeYMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeYProvider);
+        private void BuildSecondSpaceDerivativeZ() => secondSpaceDerivativeZMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeZProvider);
         private void BuildCapacity() => capacity = solver.BuildGlobalMatrices(capacityProvider);
         private void BuildStabilizingConductivity() => stabilizingConductivity = solver.BuildGlobalMatrices(stabilizingConductivityProvider);
         //private void BuildStabilizingDomainLoad() => stabilizingDomainLoad = solver.DistributeNodalLoads(stabilizingDomainLoadProvider.StabilizingLoad);
@@ -243,10 +274,37 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces.Copy());
             return rhsVectors;
         }
+        public IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            var ndofs = model.Subdomains[subdomain.ID].Nodes.Count;
+            var v1 = new double[] { 1, 0, 0 };
+            var v2 = new double[] { 0, 1, 0 };
+            var v3 = new double[] { 0, 0, 1 };
+            var i1 = Vector.CreateFromArray(v1);
+            var i2 = Vector.CreateFromArray(v2);
+            var i3 = Vector.CreateFromArray(v3);
+            var secondSpaceDerivatives = Matrix.CreateZero(ndofs,1);
+                var ddX = (Vector)SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
+                var ddY = (Vector)SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
+                var ddZ = (Vector)SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
+            var ddMX = ddX.TensorProduct(i1);
+            var ddMY = ddY.TensorProduct(i2);
+            var ddMZ = ddZ.TensorProduct(i3);
+            ddMX.AddIntoThis(ddMY);
+            ddMX.AddIntoThis(ddMZ);
+            secondSpaceDerivatives = ddMX;
+            return secondSpaceDerivatives;
+        }
         public IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
         {
             throw new NotImplementedException();
         }
+        public IVector SecondDerivativeXMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+            => this.SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
+        public IVector SecondDerivativeYMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+            => this.SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
+        public IVector SecondDerivativeZMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
+            => this.SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
         public IVector CapacityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
             => this.Capacity[subdomain.ID].Multiply(vector);
         public IVector DiffusionConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)

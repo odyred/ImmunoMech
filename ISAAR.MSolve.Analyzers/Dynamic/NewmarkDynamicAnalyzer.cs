@@ -301,14 +301,15 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
+                    var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
+                    //var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa 
                     string strTotalSolution = totalSolution.ToString();
-                    fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+                    fileName.WriteLine(strTimeStep + " " + strTotalSolution);
                 }
             }
             else
@@ -317,14 +318,15 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
+                    var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
+                    //var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][1]; //125HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][13]; //4HexaHyperelasticCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //1Hexa 
                     string strTotalSolution = totalSolution.ToString();
-                    fileName.WriteLine(strTimeStep + ", " + strTotalSolution);
+                    fileName.WriteLine(strTimeStep + " " + strTotalSolution);
                 }
             }
         }

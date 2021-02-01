@@ -29,6 +29,7 @@ using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
 using System.Reflection;
 using ISAAR.MSolve.FEM.Elements;
+using ISAAR.MSolve.LinearAlgebra.Matrices;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -44,13 +45,14 @@ namespace ISAAR.MSolve.Tests.FEM
         private static Dictionary<int, IVector> Accelerations;
         private static Dictionary<int, IVector> Velocities;
         private static Dictionary<int, IVector> Displacements;
+        private static Tuple<Model, IModelReader> gModel, structModel;
 
         [Fact]
         private static void RunTest()
         {
-            var modelTuple1 = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 1, 0, 0, 1.5);
-            var models = new[] { modelTuple1.Item1 };
-            var modelReaders = new[] { modelTuple1.Item2 };
+            gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 1, 0, 0, 1.5);
+            var models = new[] { gModel.Item1 };
+            var modelReaders = new[] { gModel.Item2 };
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
 
             #region paraview commands
@@ -138,7 +140,7 @@ namespace ISAAR.MSolve.Tests.FEM
             Assert.True(CompareResults(solutions[0]));
         }
 
-        private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+        private static void UpdateModels(Dictionary<int, IVector>[] solutions, Dictionary<int, IMatrix>[] derivatives,IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             Solutions = solutions;
@@ -202,7 +204,7 @@ namespace ISAAR.MSolve.Tests.FEM
             return true;
         }
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double b, double f, double bl)
-        {
+        {   
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "106TetCube100m.mphtxt");
             var modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();

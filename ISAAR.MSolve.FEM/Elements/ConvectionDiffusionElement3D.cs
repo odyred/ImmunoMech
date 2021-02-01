@@ -157,6 +157,39 @@ namespace ISAAR.MSolve.FEM.Elements
             //convection.Scale(1);
             return convection;
         }
+        public IReadOnlyList<Matrix> BuildSecondSpaceDerivativeMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var secondDerivativeMatrix = new List<Matrix>();
+            for (int i = 0; i < 3; i++)
+            {
+                secondDerivativeMatrix.Add(Matrix.CreateZero(numDofs, numDofs));
+            }
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
+
+            for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
+            {
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                Matrix shapeGradientsCartesian =
+                   jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
+                Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
+                Vector deformationX = deformation.GetRow(0);
+                Vector deformationY = deformation.GetRow(1);
+                Vector deformationZ = deformation.GetRow(2);
+                Matrix partialKX = deformationX.TensorProduct(deformationX);
+                Matrix partialKY = deformationY.TensorProduct(deformationY);
+                Matrix partialKZ = deformationZ.TensorProduct(deformationZ);
+                double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
+                secondDerivativeMatrix[0].AxpyIntoThis(partialKX, -dA);
+                secondDerivativeMatrix[1].AxpyIntoThis(partialKY, -dA);
+                secondDerivativeMatrix[2].AxpyIntoThis(partialKZ, -dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            //convection.Scale(1);
+            return secondDerivativeMatrix;
+        }
 
         public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
         {
@@ -201,6 +234,18 @@ namespace ISAAR.MSolve.FEM.Elements
         {
             return BuildMassTransportConductivityMatrix();
         }
+        public IMatrix SecondSpaceDerivativeXMatrix(IElement element)
+        {
+            return BuildSecondSpaceDerivativeMatrix()[0];
+        }
+        public IMatrix SecondSpaceDerivativeYMatrix(IElement element)
+        {
+            return BuildSecondSpaceDerivativeMatrix()[1];
+        }
+        public IMatrix SecondSpaceDerivativeZMatrix(IElement element)
+        {
+            return BuildSecondSpaceDerivativeMatrix()[2];
+        }
 
         public Matrix BuildDiffusionConductivityMatrix()
         {
@@ -212,7 +257,6 @@ namespace ISAAR.MSolve.FEM.Elements
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
                 // Calculate the necessary quantities for the integration
-                //Matrix constitutive = (Matrix)(materialsAtGaussPoints[gp].ConstitutiveMatrix); // ugly cast will be removed along with the legacy Matrix classes
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 Matrix shapeGradientsCartesian =
                     jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);

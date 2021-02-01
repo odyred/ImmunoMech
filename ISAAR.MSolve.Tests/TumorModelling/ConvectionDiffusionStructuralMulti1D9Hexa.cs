@@ -27,6 +27,7 @@ using ISAAR.MSolve.Materials.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
+using ISAAR.MSolve.LinearAlgebra.Matrices;
 
 namespace ISAAR.MSolve.Tests.FEM
 {
@@ -138,7 +139,7 @@ namespace ISAAR.MSolve.Tests.FEM
             Assert.True(CompareResults(solutions[0]));
         }
 
-        private static void UpdateModels(Dictionary<int, IVector>[] solutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+        private static void UpdateModels(Dictionary<int, IVector>[] solutions, Dictionary<int, IMatrix>[] derivatives, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             Solutions = solutions;

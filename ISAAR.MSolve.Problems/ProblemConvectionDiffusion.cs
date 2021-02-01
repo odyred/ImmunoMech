@@ -232,6 +232,11 @@ namespace ISAAR.MSolve.Problems
             throw new NotImplementedException();
         }
 
+        public IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            throw new NotImplementedException();
+        }
+
 
         #endregion
     }

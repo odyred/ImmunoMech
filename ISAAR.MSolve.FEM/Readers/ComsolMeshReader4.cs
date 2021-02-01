@@ -18,7 +18,7 @@ using ISAAR.MSolve.LinearAlgebra.Vectors;
 
 namespace ISAAR.MSolve.FEM.Readers
 {
-    public class ComsolMeshReader2:IModelReader
+    public class ComsolMeshReader4 : IModelReader
     {
         public Model Model { get; private set; }
         public IList<IList<Node>> nodeBoundaries;
@@ -27,11 +27,14 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<Node>> nodeDomains { get; private set; }
         public int[] DomainIDs { get; set; }
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
-        private Dictionary<int, IVector> displacements;
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
+        private Dictionary<int, IVector> displacements;
+        private double initialValue1;
+        private double initialValue2;
         private double[] diffusionCoeff;
-        private double[][] convectionCoeff;
-        private double[] loadFromUnknownCoeff;
+        private Dictionary<int,double[]> convectionCoeff = new Dictionary<int, double[]>();
+        private Dictionary<int, double> loadFromUnknownCoeff = new Dictionary<int, double>();
+        private readonly Action<Dictionary<int, double[]>, Dictionary<int, double>> CalculateCoefficients;
         enum Attributes
         {
             sdim = 1001,
@@ -48,12 +51,12 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader2(string filename, double[] k, double[][] U, double[] L)
+        public ComsolMeshReader4(string filename, double[] k, 
+            Action<Dictionary<int, double[]>, Dictionary<int, double>> coefficientsCalculation)
         {
+            this.CalculateCoefficients = coefficientsCalculation;
             Filename = filename;
             diffusionCoeff = k;
-            convectionCoeff = U;
-            loadFromUnknownCoeff = L;
         }
 
         int NumberOfNodes;
@@ -62,8 +65,9 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfHexElements;
         int NumberOfQuadElements;
 
-        public ComsolMeshReader2 UpdateModelReader(double[] k, double[][] U, double[] L)
+        public ComsolMeshReader4 UpdateModelReader(double[] k, Dictionary<int,double[]> U, Dictionary<int, double> L)
         {
+            //CalculateCoefficients(U, L);
             diffusionCoeff = k;
             convectionCoeff = U;
             loadFromUnknownCoeff = L;
@@ -83,22 +87,21 @@ namespace ISAAR.MSolve.FEM.Readers
                     int count = 0;
                     foreach (Node n in prevNodes)
                     {
-                        var structNode = structuralModel.Nodes[n.ID];
                         double x = n.X;
                         double y = n.Y;
                         double z = n.Z;
 
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationX))
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationX))
                         {
                             x += displacements[id][count];
                             count += 1;
                         }
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationY))
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationY))
                         {
                             y += displacements[id][count];
                             count += 1;
                         }
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(structNode, StructuralDof.TranslationZ))
+                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationZ))
                         {
                             z += displacements[id][count];
                             count += 1;
@@ -109,38 +112,32 @@ namespace ISAAR.MSolve.FEM.Readers
                     }
                 }
             }
-            ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
-            ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
-            for (int i = 0; i < diffusionCoeff.Length; i++)
-            {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
-                elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
-            }
             for (int domain = 0; domain < elementDomains.Count; domain++)
                 foreach (Element elem in elementDomains[domain])
                 {
+                    var CDMaterial = new ConvectionDiffusionMaterial(diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID] );
+                    var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                     var oldElemNodes = elem.Nodes.ToList();
                     var newElemNodes = new List<Node>();
                     foreach (Node n in oldElemNodes)
                         newElemNodes.Add(Model.Nodes[n.ID]);
                     elem.NodesDictionary.Clear();
-                    elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, newElemNodes);
+                    elem.ElementType = elementFactory3D.CreateElement(CellType.Tet4, newElemNodes);
                     elem.AddNodes(newElemNodes);
                 }
             Model.BodyLoads.Clear();
             return Model;
         }
 
-
-        public Model CreateModelFromFile(bool AllDomains = true)
+        public Model CreateModelFromFile(int[] domainIDs = null, int[] boundaryIDs = null)
         {
-            ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
-            ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
-            for (int i = 0; i < diffusionCoeff.Length; i++)
-            {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
-                elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
-            }
+            //ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
+            //ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
+            //for (int i = 0; i < diffusionCoeff.Length; i++)
+            //{
+            //    CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+            //    elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
+            //}
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] {0,0,0}, 0));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
@@ -227,7 +224,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             double x = Double.Parse(line[0], CultureInfo.InvariantCulture);
                             double y = Double.Parse(line[1], CultureInfo.InvariantCulture);
                             double z = Double.Parse(line[2], CultureInfo.InvariantCulture);
-                            Node node = new Node (nodeGlobalID, x, y, z);
+                            Node node = new Node(nodeGlobalID, x, y, z);
                             model.NodesDictionary.Add(nodeGlobalID, node);
                             nodelist.Add(node);
                         }
@@ -263,17 +260,21 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
-                            triBoundaries[boundaryID].Add(triNodesCollection[TriID]);
-                            foreach (Node node in triNodesCollection[TriID])
+                            bool res = Array.Exists(boundaryIDs, x => x == boundaryID - 1);
+                            if (res)
                             {
-                                nodeBoundaries[boundaryID].Add(node);
+                                triBoundaries[boundaryID].Add(triNodesCollection[TriID]);
+                                foreach (Node node in triNodesCollection[TriID])
+                                {
+                                    nodeBoundaries[boundaryID].Add(node);
+                                }
                             }
                             //int elementBoundaryID = Int32.Parse(line[0]);
 
                             //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
                         }
 
-                        for (int boundaryID = 0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        foreach (int boundaryID in boundaryIDs)
                         {
                             nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
@@ -294,15 +295,6 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
 
-
-                            //IReadOnlyList<Node> nodes = new List<Node>
-                            //{
-                            //    model.NodesDictionary[Int32.Parse(line[1])], //0
-                            //    model.NodesDictionary[Int32.Parse(line[3])], //1
-                            //    model.NodesDictionary[Int32.Parse(line[2])], //2
-                            //    model.NodesDictionary[Int32.Parse(line[0])]  //3
-                            //};
-
                             quadNodesCollection.Add(new List<Node>
                             {
                                 model.NodesDictionary[Int32.Parse(line[1])], //0
@@ -310,16 +302,6 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[2])], //2
                                 model.NodesDictionary[Int32.Parse(line[0])]  //3
                             });
-                            //var Quad4 = boundaryFactory3D.CreateElement(CellType.Quad4, nodes);
-                            //var element = new Element();
-                            //element.ID = QuadID;
-                            //element.ElementType = Quad4;
-                            //model.SubdomainsDictionary[0].Elements.Add(element);
-                            //model.ElementsDictionary.Add(QuadID, element);
-                            //foreach (Node node in nodes)
-                            //{
-                            //    element.AddNode(node);
-                            //}
                         }
                         i = i + 3;
                         for (int QuadID = 0; QuadID < NumberOfQuadElements; QuadID++)
@@ -327,18 +309,18 @@ namespace ISAAR.MSolve.FEM.Readers
                             i++;
                             line = text[i].Split(delimeters);
                             int boundaryID = Int32.Parse(line[0]);
-                            quadBoundaries[boundaryID].Add(quadNodesCollection[QuadID]);
-                            foreach (Node node in quadNodesCollection[QuadID])
-                            { 
-                                nodeBoundaries[boundaryID].Add(node); 
+                            bool res = Array.Exists(boundaryIDs, x => x == boundaryID - 1);
+                            if (res)
+                            {
+                                quadBoundaries[boundaryID].Add(quadNodesCollection[QuadID]);
+                                foreach (Node node in quadNodesCollection[QuadID])
+                                {
+                                    nodeBoundaries[boundaryID].Add(node);
+                                }
                             }
-                            
-                            //int elementBoundaryID = Int32.Parse(line[0]);
-
-                            //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
                         }
 
-                        for (int boundaryID=0; boundaryID < nodeBoundaries.Count; boundaryID++)
+                        foreach (int boundaryID in boundaryIDs)
                         {
                             nodeBoundaries[boundaryID] = nodeBoundaries[boundaryID].Distinct().ToList();
                         }
@@ -366,34 +348,40 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[1])],
                                 model.NodesDictionary[Int32.Parse(line[0])]
                             });
+                            convectionCoeff.Add(TetID, new double[] { 0d, 0d, 0d });
+                            loadFromUnknownCoeff.Add(TetID, 0d);
                         }
+                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
                         i = i + 3;
                         for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
-
                         {
                             i++;
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
-                            IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
-                            var Tet4 = elementFactory3D[elementDomainID - 1].CreateElement(CellType.Tet4, nodesTet);
-                            var element = new Element();
-                            element.ID = TetID;
-                            element.ElementType = Tet4;
-                            foreach (Node node in nodesTet)
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID - 1);
+                            if (res)
                             {
-                                element.AddNode(node);
-                                nodeDomains[elementDomainID - 1].Add(node);
+                                IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
+                                var CDMaterial = new ConvectionDiffusionMaterial
+                                    (diffusionCoeff[elementDomainID-1], convectionCoeff[TetID], loadFromUnknownCoeff[TetID]);
+                                var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
+                                var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodesTet);
+                                var element = new Element();
+                                element.ID = TetID;
+                                element.ElementType = Tet4;
+                                foreach (Node node in nodesTet)
+                                {
+                                    element.AddNode(node);
+                                    nodeDomains[elementDomainID - 1].Add(node);
+                                }
+                                model.SubdomainsDictionary[0].Elements.Add(element);
+                                model.ElementsDictionary.Add(TetID, element);
+                                elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[TetID]);
                             }
-                            model.SubdomainsDictionary[0].Elements.Add(element);
-                            model.ElementsDictionary.Add(TetID, element);
-                            elementDomains[elementDomainID-1].Add(model.ElementsDictionary[TetID]);
-                            //int elementBoundaryID = Int32.Parse(line[0]);
-
-                            //elementBoundaries[elementBoundaryID].Add(model.ElementsDictionary[QuadID]);
                         }
-                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        foreach (int domainID in domainIDs)
                         {
-                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
+                            nodeDomains[domainID] = nodeDomains[domainID].Distinct().ToList();
                         }
                         break;
                     case Attributes.hex:
@@ -423,35 +411,55 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
                             });
+                            convectionCoeff.Add(HexID, new double[] { 0d, 0d, 0d });
+                            loadFromUnknownCoeff.Add(HexID, 0d);
                         }
+                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
                         i = i + 3;
                         for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
                             int elementDomainID = Int32.Parse(line[0]);
-                            IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
-                            var Hexa8 = elementFactory3D[elementDomainID - 1].CreateElement(CellType.Hexa8, nodesHex);
-                            var element = new Element();
-                            element.ID = HexID;
-                            element.ElementType = Hexa8;
-                            foreach (Node node in nodesHex)
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID - 1);
+                            if (res)
                             {
-                                element.AddNode(node);
-                                nodeDomains[elementDomainID - 1].Add(node);
+                                IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
+                                var CDMaterial = new ConvectionDiffusionMaterial
+                                    (diffusionCoeff[elementDomainID], convectionCoeff[HexID], loadFromUnknownCoeff[HexID]);
+                                var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
+                                var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodesHex);
+                                var element = new Element();
+                                element.ID = HexID;
+                                element.ElementType = Hexa8;
+                                foreach (Node node in nodesHex)
+                                {
+                                    element.AddNode(node);
+                                    nodeDomains[elementDomainID - 1].Add(node);
+                                }
+                                model.SubdomainsDictionary[0].Elements.Add(element);
+                                model.ElementsDictionary.Add(HexID, element);
+                                elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[HexID]);
                             }
-                            model.SubdomainsDictionary[0].Elements.Add(element);
-                            model.ElementsDictionary.Add(HexID, element);
-                            elementDomains[elementDomainID-1].Add(model.ElementsDictionary[HexID]);
                         }
-                        for (int elementDomainID = 0; elementDomainID < elementDomains.Count; elementDomainID++)
+                        foreach (int domainID in domainIDs)
                         {
-                            nodeDomains[elementDomainID] = nodeDomains[elementDomainID].Distinct().ToList();
+                            nodeDomains[domainID] = nodeDomains[domainID].Distinct().ToList();
                         }
                         break;
                 }
             }
-            Model = model;
+            IList<Node> modelNodes = nodeDomains.SelectMany(x => x).ToList();
+            IList<int> nodesToRemove = new List<int>();
+            foreach (Node node in model.NodesDictionary.Values)
+            {
+                if (!(modelNodes.Contains(node))) nodesToRemove.Add(node.ID);
+            }
+            foreach (int nodeID in nodesToRemove)
+            {
+                model.NodesDictionary.Remove(nodeID);
+            }
+            this.Model = model;
             return model;
         }
 
