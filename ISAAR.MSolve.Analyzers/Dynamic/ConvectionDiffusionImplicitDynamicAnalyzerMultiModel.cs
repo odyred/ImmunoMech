@@ -95,7 +95,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
-                    linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
+                     linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
                 }
             }
         }
@@ -198,7 +198,19 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             //if (ChildAnalyzer == null) throw new InvalidOperationException("Newmark analyzer must contain an embedded analyzer.");
             //ChildAnalyzer.Initialize(isFirstAnalysis);
         }
-
+        private void SystemReset()
+        {
+            for (int i = 0; i < linearSystems.Length; i++)
+            {
+                models[i].ConnectDataStructures();
+                solvers[i].OrderDofs(false);
+                //foreach (ILinearSystem linearSystem in linearSystems[i].Values)
+                //{
+                //    linearSystem.Reset(); // Necessary to define the linear system's size 
+                //    linearSystem.Subdomain.Forces = Vector.CreateZero(linearSystem.Size);
+                //}
+            }
+        }
         private void InitializeInternal()
         {
             if (ChildAnalyzer == null) throw new InvalidOperationException("Newmark analyzer must contain an embedded analyzer.");
@@ -288,6 +300,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             while (staggeredStep < maxStaggeredSteps && error > tolerance);
 
             DateTime end = DateTime.Now;
+            SystemReset();
             UpdateTemperature(t);
             UpdateResultStorages(start, end);
             Debug.WriteLine("-------------");

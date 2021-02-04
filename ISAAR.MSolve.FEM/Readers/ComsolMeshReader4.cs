@@ -76,54 +76,61 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model UpdateModel(Model structuralModel = null, Dictionary<int, IVector> displacements = null, bool updateNodes = true)
         {//only works for tet4 now
-            this.displacements = displacements;
-            if (updateNodes && displacements != null)
-            {
-                for (int id = 0; id < displacements.Count; id++)
-                {
-                    Node[] prevNodes = new Node[Model.Nodes.Count];
-                    Model.Nodes.CopyTo(prevNodes, 0);
-                    Model.NodesDictionary.Clear();
-                    int count = 0;
-                    foreach (Node n in prevNodes)
-                    {
-                        double x = n.X;
-                        double y = n.Y;
-                        double z = n.Z;
+            //this.displacements = displacements;
+            //if (updateNodes && displacements != null)
+            //{
+            //    for (int id = 0; id < displacements.Count; id++)
+            //    {
+            //        Node[] prevNodes = new Node[Model.Nodes.Count];
+            //        Model.Nodes.CopyTo(prevNodes, 0);
+            //        Model.NodesDictionary.Clear();
+            //        int count = 0;
+            //        foreach (Node n in prevNodes)
+            //        {
+            //            double x = n.X;
+            //            double y = n.Y;
+            //            double z = n.Z;
 
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationX))
-                        {
-                            x += displacements[id][count];
-                            count += 1;
-                        }
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationY))
-                        {
-                            y += displacements[id][count];
-                            count += 1;
-                        }
-                        if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationZ))
-                        {
-                            z += displacements[id][count];
-                            count += 1;
-                        }
+            //            if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationX))
+            //            {
+            //                x += displacements[id][count];
+            //                count += 1;
+            //            }
+            //            if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationY))
+            //            {
+            //                y += displacements[id][count];
+            //                count += 1;
+            //            }
+            //            if (structuralModel.GlobalDofOrdering.GlobalFreeDofs.Contains(n, StructuralDof.TranslationZ))
+            //            {
+            //                z += displacements[id][count];
+            //                count += 1;
+            //            }
 
-                        Node node = new Node(n.ID, x, y, z);
-                        Model.NodesDictionary.Add(n.ID, node);
-                    }
-                }
-            }
+            //            Node node = new Node(n.ID, x, y, z);
+            //            Model.NodesDictionary.Add(n.ID, node);
+            //        }
+            //    }
+            //}
+            //for (int domain = 0; domain < elementDomains.Count; domain++)
+            //    foreach (Element elem in elementDomains[domain])
+            //    {
+            //        var CDMaterial = new ConvectionDiffusionMaterial(diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID]);
+            //        var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
+            //        var oldElemNodes = elem.Nodes.ToList();
+            //        var newElemNodes = new List<Node>();
+            //        foreach (Node n in oldElemNodes)
+            //            newElemNodes.Add(Model.Nodes[n.ID]);
+            //        elem.NodesDictionary.Clear();
+            //        elem.ElementType = elementFactory3D.CreateElement(CellType.Tet4, newElemNodes);
+            //        elem.AddNodes(newElemNodes);
+            //    }
             for (int domain = 0; domain < elementDomains.Count; domain++)
                 foreach (Element elem in elementDomains[domain])
                 {
-                    var CDMaterial = new ConvectionDiffusionMaterial(diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID] );
+                    var CDMaterial = new ConvectionDiffusionMaterial(diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID]);
                     var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
-                    var oldElemNodes = elem.Nodes.ToList();
-                    var newElemNodes = new List<Node>();
-                    foreach (Node n in oldElemNodes)
-                        newElemNodes.Add(Model.Nodes[n.ID]);
-                    elem.NodesDictionary.Clear();
-                    elem.ElementType = elementFactory3D.CreateElement(CellType.Tet4, newElemNodes);
-                    elem.AddNodes(newElemNodes);
+                    elem.ElementType = elementFactory3D.CreateElement(CellType.Tet4, elem.Nodes.ToList());
                 }
             Model.BodyLoads.Clear();
             return Model;

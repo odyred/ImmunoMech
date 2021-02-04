@@ -880,6 +880,7 @@ namespace ISAAR.MSolve.FEM.Elements
                     DefGradVecEl[i] = DefGradVec[npoint][i] / lambdag;
                 }
                 materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVecEl); //MS
+                //materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVec[npoint]); //MS
             };
             //return new Tuple<double[], double[]>(strainsVec_strain_minus_last_converged_value, 
             //    materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);
