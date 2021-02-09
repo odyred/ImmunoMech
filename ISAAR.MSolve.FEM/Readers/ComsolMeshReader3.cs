@@ -73,7 +73,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public Model UpdateModel(Model structuralModel = null, Dictionary<int,IVector> displacements = null, bool updateNodes=true)            
         {//only works for tet4 now
             //this.displacements = displacements;
-            //if (updateNodes && displacements!=null)
+            //if (updateNodes && displacements != null)
             //{
             //    for (int id = 0; id < displacements.Count; id++)
             //    {
@@ -125,7 +125,7 @@ namespace ISAAR.MSolve.FEM.Readers
             //            newElemNodes.Add(Model.Nodes[n.ID]);
             //        elem.NodesDictionary.Clear();
             //        elem.ElementType = elementFactory3D[domain].CreateElement(CellType.Tet4, newElemNodes);
-            //        elem.AddNodes(newElemNodes); 
+            //        elem.AddNodes(newElemNodes);
             //    }
             ConvectionDiffusionMaterial[] CDMaterial = new ConvectionDiffusionMaterial[diffusionCoeff.Length];
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];

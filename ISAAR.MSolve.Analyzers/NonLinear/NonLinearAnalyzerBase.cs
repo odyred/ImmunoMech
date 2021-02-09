@@ -34,6 +34,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
         protected Vector globalRhs; //TODO: This was originally readonly 
         protected double globalRhsNormInitial; //TODO: This can probably be a local variable.
         protected INonLinearParentAnalyzer parentAnalyzer = null;
+        public static IVector previousConvergedUplusdUSolution = null;
 
         internal NonLinearAnalyzerBase(IStructuralModel model, ISolver solver, INonLinearProvider provider,
             IReadOnlyDictionary<int, INonLinearSubdomainUpdater> subdomainUpdaters,
@@ -91,10 +92,11 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                 {
                     //TODO: instead of Clear() and then AddIntoThis(), use only CopyFromVector()
                     du[id].Clear();
-                    uPlusdu[id].Clear();
-                    du[id].AddIntoThis(linearSystem.Solution);
-                    uPlusdu[id].AddIntoThis(linearSystem.Solution);
-                    du[id].SubtractIntoThis(u[id]);
+                    //uPlusdu[id].Clear();
+                    //du[id].AddIntoThis(linearSystem.Solution);
+                    //uPlusdu[id].AddIntoThis(linearSystem.Solution);
+                    //du[id].SubtractIntoThis(u[id]);
+                    u[id] = uPlusdu[id].Copy();
                 }
                 else
                 {
@@ -122,7 +124,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                 internalRhsVectors.Add(id, internalRhs);
             }
 
-            return internalRhsVectors; 
+            return internalRhsVectors;
         }
 
         protected double UpdateResidualForcesAndNorm(int currentIncrement, Dictionary<int, IVector> internalRhs)
@@ -168,7 +170,12 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                 rhs.Add(id, r);
                 u.Add(id, linearSystem.CreateZeroVector());
                 du.Add(id, linearSystem.CreateZeroVector());
-                uPlusdu.Add(id, linearSystem.CreateZeroVector());
+                if (previousConvergedUplusdUSolution == null)
+                { uPlusdu.Add(id, linearSystem.CreateZeroVector()); }
+                else
+                {
+                    uPlusdu[id] = previousConvergedUplusdUSolution;
+                }
                 model.GlobalDofOrdering.AddVectorSubdomainToGlobal(linearSystem.Subdomain, linearSystem.RhsVector, globalRhs);
             }
             globalRhsNormInitial = provider.CalculateRhsNorm(globalRhs);

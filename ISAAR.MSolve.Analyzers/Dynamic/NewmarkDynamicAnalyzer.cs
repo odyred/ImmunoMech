@@ -301,7 +301,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
+                    var totalSolution = ChildAnalyzer.Responses[0][1]; //mesh446elem
+                    //var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
                     //var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m
@@ -318,7 +319,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     double currentTime = ((i + 1) * timeStep);
                     string strTimeStep = currentTime.ToString();
-                    var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
+                    var totalSolution = ChildAnalyzer.Responses[0][1]; //mesh446elem
+                    //var totalSolution = ChildAnalyzer.Responses[0][1]; //meshXXCoarse254elem
                     //var totalSolution = ChildAnalyzer.Responses[0][57]; //meshXXCoarse
                     //var totalSolution = ChildAnalyzer.Responses[0][0]; //106TetCube100m
                     //var totalSolution = ChildAnalyzer.Responses[0][19]; //261TetCube100m

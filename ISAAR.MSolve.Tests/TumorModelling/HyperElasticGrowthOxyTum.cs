@@ -325,7 +325,7 @@ namespace ISAAR.MSolve.Tests.FEM
             if (oxModel == null)
             {
                 Console.WriteLine("Creating Oxygen Model");
-                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                 modelReader = new ComsolMeshReader2(filename, k, U, L);
                 model = modelReader.CreateModelFromFile();
             }
@@ -387,7 +387,7 @@ namespace ISAAR.MSolve.Tests.FEM
             if (gModel == null)
             {
                 Console.WriteLine("Creating Growth Model");
-                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                 int[] modelDomains = new int[] { 0 };
                 int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
                 modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
@@ -436,7 +436,7 @@ namespace ISAAR.MSolve.Tests.FEM
             if (gModel == null)
             {
                 Console.WriteLine("Creating Growth Model");
-                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                 int[] modelDomains = new int[] { 0 };
                 int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
                 modelReader = new ComsolMeshReader4(filename, new double[] { k }, TumorCellsCoefficientsCalculation);
@@ -466,7 +466,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 C2[i] = 0;
                 bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
             }
-            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
+            string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
             ComsolMeshReader1 modelReader;
             if (lambdag == null)
             {
@@ -520,28 +520,24 @@ namespace ISAAR.MSolve.Tests.FEM
                     });
                 }
             }
-            boundaryIDs = new int[] { 6 };
-            foreach (int boundaryID in boundaryIDs)
+            int[] domainIDs = new int[] { 0, 1 };
+            foreach (int domainID in domainIDs)
             {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
+                foreach (Element element in modelReader.elementDomains[domainID])
                 {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationZ, Amount = 1e-4 });
-                }
-            }
-            boundaryIDs = new int[] { 8 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
-                {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationY, Amount = 1e-4 });
-                }
-            }
-            boundaryIDs = new int[] { 9 };
-            foreach (int boundaryID in boundaryIDs)
-            {
-                foreach (Node node in modelReader.nodeBoundaries[boundaryID])
-                {
-                    model.Loads.Add(new Load() { Node = node, DOF = StructuralDof.TranslationX, Amount = 1e-4 });
+                    var nodes = (IReadOnlyList<Node>)element.Nodes;
+                    var bodyLoadX = new GravityLoad(1d, -1d, StructuralDof.TranslationX);
+                    var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
+                    var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
+                    model.BodyLoads.Add(bodyLoadElementX);
+                    var bodyLoadY = new GravityLoad(1d, -1d, StructuralDof.TranslationY);
+                    var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
+                    var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
+                    model.BodyLoads.Add(bodyLoadElementY);
+                    var bodyLoadZ = new GravityLoad(1d, -1d, StructuralDof.TranslationZ);
+                    var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
+                    var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
+                    model.BodyLoads.Add(bodyLoadElementZ);
                 }
             }
             return new Tuple<Model, IModelReader>(model, modelReader);

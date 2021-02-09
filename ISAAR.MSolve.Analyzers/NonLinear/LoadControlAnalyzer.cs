@@ -13,11 +13,11 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
     {
         private LoadControlAnalyzer(IStructuralModel model, ISolver solver, INonLinearProvider provider,
             IReadOnlyDictionary<int, INonLinearSubdomainUpdater> subdomainUpdaters,
-            int numIncrements, int maxIterationsPerIncrement, int numIterationsForMatrixRebuild, double residualTolerance) : 
-            base(model, solver, provider, subdomainUpdaters, numIncrements, maxIterationsPerIncrement, 
+            int numIncrements, int maxIterationsPerIncrement, int numIterationsForMatrixRebuild, double residualTolerance) :
+            base(model, solver, provider, subdomainUpdaters, numIncrements, maxIterationsPerIncrement,
                 numIterationsForMatrixRebuild, residualTolerance)
         { }
-        
+
         public override void Solve()
         {
             InitializeLogs();
@@ -34,12 +34,19 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                 int iteration = 0;
                 for (iteration = 0; iteration < maxIterationsPerIncrement; iteration++)
                 {
+                    if (iteration == 0)
+                    {
+                        var vecs = CalculateInternalRhs(increment, iteration);
+                        UpdateResidualForcesAndNorm(increment, vecs);
+                    }
                     if (iteration == maxIterationsPerIncrement - 1) return;
                     if (Double.IsNaN(errorNorm)) return;
                     solver.Solve();
                     //double rhsNormIt = solver.LinearSystems.First().Value.RhsVector.Norm2();
                     //double xNormIt = solver.LinearSystems.First().Value.Solution.Norm2();
                     Dictionary<int, IVector> internalRhsVectors = CalculateInternalRhs(increment, iteration);
+                    Console.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
+                    Debug.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
                     double residualNormCurrent = UpdateResidualForcesAndNorm(increment, internalRhsVectors); // This also sets the rhs vectors in linear systems.
                     errorNorm = globalRhsNormInitial != 0 ? residualNormCurrent / globalRhsNormInitial : 0;// (rhsNorm*increment/increments) : 0;//TODOMaria this calculates the internal force vector and subtracts it from the external one (calculates the residual)
                     //Console.WriteLine($"Increment {increment}, iteration {iteration}: norm2(error) = {errorNorm}");
@@ -48,8 +55,9 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
 
                     if (TotalDisplacementsPerIterationLog != null) TotalDisplacementsPerIterationLog.StoreDisplacements(uPlusdu);
 
-                    if (errorNorm < residualTolerance )
+                    if (errorNorm < residualTolerance)
                     {
+                        previousConvergedUplusdUSolution = uPlusdu[0];
                         foreach (var subdomainLogPair in IncrementalLogs)
                         {
                             int subdomainID = subdomainLogPair.Key;
@@ -58,8 +66,8 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                                 uPlusdu[subdomainID], internalRhsVectors[subdomainID]);
                         }
                         break;
-                    }
 
+                    }
                     SplitResidualForcesToSubdomains();//TODOMaria scatter residuals to subdomains
                     if ((iteration + 1) % numIterationsForMatrixRebuild == 0) // Matrix rebuilding should be handled in another way. E.g. in modified NR, it must be done at each increment.
                     {
@@ -79,7 +87,7 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
             StoreLogResults(start, end);
         }
 
-        public class Builder: NonLinearAnalyzerBuilderBase
+        public class Builder : NonLinearAnalyzerBuilderBase
         {
             public Builder(IStructuralModel model, ISolver solver, INonLinearProvider provider, int numIncrements) :
                 base(model, solver, provider, numIncrements)

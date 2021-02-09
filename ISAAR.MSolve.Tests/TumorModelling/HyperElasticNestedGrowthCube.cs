@@ -236,7 +236,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 if (gModel == null)
                 {
                     Console.WriteLine("Creating Growth Model");
-                    string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse254elem.mphtxt");
+                    string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                     int[] modelDomains = new int[] { 0 };
                     int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
                     modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
@@ -293,7 +293,7 @@ namespace ISAAR.MSolve.Tests.FEM
                 }
 
                 ComsolMeshReader1 modelReader;
-                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse254elem.mphtxt");
+                string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                 if (lambdag == null)
                     modelReader = new ComsolMeshReader1(filename, C1, C2, bulkModulus, commonDynamicMaterialProperties);
                 else
