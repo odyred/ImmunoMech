@@ -108,7 +108,7 @@ namespace ISAAR.MSolve.FEM.Elements
             //convection.Scale(1);
             return convection;
         }
-        public Matrix BuildLoadFromUnknownConductivityMatrix()
+        public Matrix BuildLoadAbsorptionConductivityMatrix()
         {
             int numDofs = Nodes.Count;
             var conductivity = Matrix.CreateZero(numDofs, numDofs);
@@ -157,6 +157,42 @@ namespace ISAAR.MSolve.FEM.Elements
             //convection.Scale(1);
             return convection;
         }
+        public IReadOnlyList<Matrix> BuildFirstSpaceDerivativeMatrix()
+        {
+            int numDofs = Nodes.Count;
+            var firstDerivativeMatrix = new List<Matrix>();
+            for (int i = 0; i < 3; i++)
+            {
+                firstDerivativeMatrix.Add(Matrix.CreateZero(numDofs, numDofs));
+            }
+            IReadOnlyList<double[]> shapeFunctions =
+                Interpolation.EvaluateFunctionsAtGaussPoints(QuadratureForStiffness);
+            IReadOnlyList<Matrix> shapeGradientsNatural =
+                Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
+
+            for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
+            {
+                Vector shapeFunctionMatrix = BuildShapeFunctionMatrix(shapeFunctions[gp]);
+                var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
+                Matrix shapeGradientsCartesian =
+                   jacobian.TransformNaturalDerivativesToCartesian(shapeGradientsNatural[gp]);
+                Matrix deformation = BuildDeformationMatrix(shapeGradientsCartesian);
+                Vector deformationX = deformation.GetRow(0);
+                Vector deformationY = deformation.GetRow(1);
+                Vector deformationZ = deformation.GetRow(2);
+                Matrix partialKX = shapeFunctionMatrix.TensorProduct(deformationX);
+                Matrix partialKY = shapeFunctionMatrix.TensorProduct(deformationY);
+                Matrix partialKZ = shapeFunctionMatrix.TensorProduct(deformationZ);
+                double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
+                firstDerivativeMatrix[0].AxpyIntoThis(partialKX, -dA);
+                firstDerivativeMatrix[1].AxpyIntoThis(partialKY, -dA);
+                firstDerivativeMatrix[2].AxpyIntoThis(partialKZ, -dA);
+            }
+
+            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
+            //convection.Scale(1);
+            return firstDerivativeMatrix;
+        }
         public IReadOnlyList<Matrix> BuildSecondSpaceDerivativeMatrix()
         {
             int numDofs = Nodes.Count;
@@ -191,7 +227,7 @@ namespace ISAAR.MSolve.FEM.Elements
             return secondDerivativeMatrix;
         }
 
-        public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
+        public Matrix BuildStabilizingAbsorptionConductivityMatrix()
         {
             int numDofs = Nodes.Count;
             var convection = Matrix.CreateZero(numDofs, numDofs);
@@ -224,15 +260,29 @@ namespace ISAAR.MSolve.FEM.Elements
         public IMatrix StiffnessMatrix(IElement element)
         {
             return BuildDiffusionConductivityMatrix() + BuildMassTransportConductivityMatrix() +
-                BuildLoadFromUnknownConductivityMatrix();
+                BuildLoadAbsorptionConductivityMatrix();
         }
         public IMatrix DiffusionConductivityMatrix(IElement element)
         {
-            return BuildDiffusionConductivityMatrix() + BuildLoadFromUnknownConductivityMatrix();
+            return BuildDiffusionConductivityMatrix() + BuildLoadAbsorptionConductivityMatrix();
         }
         public IMatrix MassTransportConductivityMatrix(IElement element)
         {
             return BuildMassTransportConductivityMatrix();
+        }
+        public IMatrix FirstSpaceDerivativeXMatrix(IElement element)
+        {
+            return BuildFirstSpaceDerivativeMatrix()[0];
+        }
+
+        public IMatrix FirstSpaceDerivativeYMatrix(IElement element)
+        {
+            return BuildFirstSpaceDerivativeMatrix()[1];
+        }
+
+        public IMatrix FirstSpaceDerivativeZMatrix(IElement element)
+        {
+            return BuildFirstSpaceDerivativeMatrix()[2];
         }
         public IMatrix SecondSpaceDerivativeXMatrix(IElement element)
         {
@@ -344,7 +394,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public IMatrix DampingMatrix(IElement element)
         {
-            return BuildStabilizingConductivityMatrix() + BuildStabilizingLoadFromUnknownConductivityMatrix();
+            return BuildStabilizingConductivityMatrix() + BuildStabilizingAbsorptionConductivityMatrix();
         }
     }
 }

@@ -4,12 +4,12 @@ using ISAAR.MSolve.FEM.Interfaces;
 
 namespace ISAAR.MSolve.FEM.Providers
 {
-    public class ElementSecondSpaceDerivativeXProvider:IElementMatrixProvider
+    public class ElementFirstSpaceDerivativeXProvider : IElementMatrixProvider
     {
         public IMatrix Matrix(IElement element)
         {
             IConvectionDiffusionElement elementType = (IConvectionDiffusionElement)element.ElementType;
-            return elementType.SecondSpaceDerivativeXMatrix(element);
+            return elementType.FirstSpaceDerivativeXMatrix(element);
         }
     }
 }

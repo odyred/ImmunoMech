@@ -31,15 +31,14 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] stabilizingRhs;//TODO: has to be implemented, pertains to domain loads
         private readonly Dictionary<int, IVector>[] rhsPrevious;//TODO: at the moment domain loads are not implemented in this
         private readonly Dictionary<int, IVector>[] temperature;
-        private readonly Dictionary<int, IMatrix>[] secondSpaceDerivatives;
         private readonly Dictionary<int, IVector>[] temperatureFromPreviousStaggeredStep;
         private readonly Dictionary<int, IVector>[] capacityTimesTemperature;
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
-        private readonly Action<Dictionary<int, IVector>[], Dictionary<int, IMatrix>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
+        private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
 
-        public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], Dictionary<int, IMatrix>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator,
-            IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime,
-            int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialTemperature = null)
+        public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], 
+            IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, 
+            IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialTemperature = null)
         {
             this.CreateNewModel = modelCreator;
             this.maxStaggeredSteps = maxStaggeredSteps;
@@ -50,7 +49,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             stabilizingRhs = new Dictionary<int, IVector>[solvers.Length];
             rhsPrevious = new Dictionary<int, IVector>[solvers.Length];
             temperature = new Dictionary<int, IVector>[solvers.Length];
-            secondSpaceDerivatives = new Dictionary<int, IMatrix>[solvers.Length];
             temperatureFromPreviousStaggeredStep = new Dictionary<int, IVector>[solvers.Length];
             capacityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
             stabilizingConductivityTimesTemperature = new Dictionary<int, IVector>[solvers.Length];
@@ -61,7 +59,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 stabilizingRhs[i] = new Dictionary<int, IVector>();//TODO: has to be implemented, pertains to domain loads
                 rhsPrevious[i] = new Dictionary<int, IVector>();//TODO: at the moment domain loads are not implemented in this
                 temperature[i] = new Dictionary<int, IVector>();
-                secondSpaceDerivatives[i] = new Dictionary<int, IMatrix>();
                 temperatureFromPreviousStaggeredStep[i] = new Dictionary<int, IVector>();
                 capacityTimesTemperature[i] = new Dictionary<int, IVector>();
                 stabilizingConductivityTimesTemperature[i] = new Dictionary<int, IVector>();
@@ -295,7 +292,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                 staggeredStep++;
 
-                CreateNewModel(temperature, secondSpaceDerivatives, models, solvers, providers, childAnalyzers);
+                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
             }
             while (staggeredStep < maxStaggeredSteps && error > tolerance);
 
@@ -365,8 +362,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
                     if (temperature[i].ContainsKey(id) == false)
                         temperature[i].Add(id, initialTemperature[i].Copy());
-                    if (secondSpaceDerivatives[i].ContainsKey(id) == false)
-                        secondSpaceDerivatives[i].Add(id, Matrix.CreateZero(initialTemperature[i].Length,3));
 
                     //// Account for initial conditions coming from a previous solution. 
                     ////TODO: This doesn't work as intended. The solver (previously the LinearSystem) initializes the solution to zero.
@@ -414,7 +409,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     int id = linearSystem.Subdomain.ID;
                     temperature[i][id].CopyFrom(linearSystem.Solution);
-                    secondSpaceDerivatives[i][id] = providers[i].GetSecondSpaceDerivatives(linearSystem.Subdomain,temperature[i][id]);
                     //temperature[i][id].AddIntoThis(linearSystem.Solution);
                     if ((timeStep + 1) % 1 == 0)
                     {

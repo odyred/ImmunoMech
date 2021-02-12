@@ -23,6 +23,7 @@ namespace ISAAR.MSolve.Problems
     public class ProblemConvectionDiffusion2 : IConvectionDiffusionIntegrationProvider, IStaticProvider, INonLinearProvider
     {
         private Dictionary<int, IMatrix> capacity, diffusionConductivityFreeFree, massTransportConductivityFreeFree, stabilizingConductivity,
+            firstSpaceDerivativeXMatrix, firstSpaceDerivativeYMatrix, firstSpaceDerivativeZMatrix, 
             secondSpaceDerivativeXMatrix, secondSpaceDerivativeYMatrix, secondSpaceDerivativeZMatrix;
         private Dictionary<int, IVector> stabilizingDomainLoad;
         private Dictionary<int, IMatrixView> diffusionConductivityFreeConstr, diffusionConductivityConstrFree, diffusionConductivityConstrConstr,
@@ -35,6 +36,9 @@ namespace ISAAR.MSolve.Problems
         private ElementStructuralStiffnessProvider conductivityProvider = new ElementStructuralStiffnessProvider();
         private ElementStructuralMassProvider capacityProvider = new ElementStructuralMassProvider();
         private ElementStructuralDampingProvider stabilizingConductivityProvider = new ElementStructuralDampingProvider();
+        private ElementFirstSpaceDerivativeXProvider firstSpaceDerivativeXProvider = new ElementFirstSpaceDerivativeXProvider();
+        private ElementFirstSpaceDerivativeYProvider firstSpaceDerivativeYProvider = new ElementFirstSpaceDerivativeYProvider();
+        private ElementFirstSpaceDerivativeZProvider firstSpaceDerivativeZProvider = new ElementFirstSpaceDerivativeZProvider();
         private ElementSecondSpaceDerivativeXProvider secondSpaceDerivativeXProvider = new ElementSecondSpaceDerivativeXProvider();
         private ElementSecondSpaceDerivativeYProvider secondSpaceDerivativeYProvider = new ElementSecondSpaceDerivativeYProvider();
         private ElementSecondSpaceDerivativeZProvider secondSpaceDerivativeZProvider = new ElementSecondSpaceDerivativeZProvider();
@@ -99,6 +103,30 @@ namespace ISAAR.MSolve.Problems
             {
                 if (secondSpaceDerivativeXMatrix == null) BuildSecondSpaceDerivativeX();
                 return secondSpaceDerivativeXMatrix;
+            }
+        }
+        private IDictionary<int, IMatrix> FirstDerivativeYMatrix
+        {
+            get
+            {
+                if (firstSpaceDerivativeYMatrix == null) BuildFirstSpaceDerivativeY();
+                return firstSpaceDerivativeYMatrix;
+            }
+        }
+        private IDictionary<int, IMatrix> FirstDerivativeZMatrix
+        {
+            get
+            {
+                if (firstSpaceDerivativeZMatrix == null) BuildFirstSpaceDerivativeZ();
+                return firstSpaceDerivativeZMatrix;
+            }
+        }
+        private IDictionary<int, IMatrix> FirstDerivativeXMatrix
+        {
+            get
+            {
+                if (firstSpaceDerivativeXMatrix == null) BuildFirstSpaceDerivativeX();
+                return firstSpaceDerivativeXMatrix;
             }
         }
         private IDictionary<int, IMatrix> SecondDerivativeYMatrix
@@ -194,6 +222,9 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) subdomain.ResetMaterialsModifiedProperty();
         }
 
+        private void BuildFirstSpaceDerivativeX() => firstSpaceDerivativeXMatrix = solver.BuildGlobalMatrices(firstSpaceDerivativeXProvider);
+        private void BuildFirstSpaceDerivativeY() => firstSpaceDerivativeYMatrix = solver.BuildGlobalMatrices(firstSpaceDerivativeYProvider);
+        private void BuildFirstSpaceDerivativeZ() => firstSpaceDerivativeZMatrix = solver.BuildGlobalMatrices(firstSpaceDerivativeZProvider);
         private void BuildSecondSpaceDerivativeX() => secondSpaceDerivativeXMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeXProvider);
         private void BuildSecondSpaceDerivativeY() => secondSpaceDerivativeYMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeYProvider);
         private void BuildSecondSpaceDerivativeZ() => secondSpaceDerivativeZMatrix = solver.BuildGlobalMatrices(secondSpaceDerivativeZProvider);
@@ -274,6 +305,27 @@ namespace ISAAR.MSolve.Problems
             foreach (ISubdomain subdomain in model.Subdomains) rhsVectors.Add(subdomain.ID, subdomain.Forces.Copy());
             return rhsVectors;
         }
+        public IMatrix GetFirstSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            var ndofs = model.Subdomains[subdomain.ID].Nodes.Count;
+            var v1 = new double[] { 1, 0, 0 };
+            var v2 = new double[] { 0, 1, 0 };
+            var v3 = new double[] { 0, 0, 1 };
+            var i1 = Vector.CreateFromArray(v1);
+            var i2 = Vector.CreateFromArray(v2);
+            var i3 = Vector.CreateFromArray(v3);
+            var firstSpaceDerivatives = Matrix.CreateZero(ndofs, 1);
+            var dX = (Vector)SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
+            var dY = (Vector)SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
+            var dZ = (Vector)SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
+            var dMX = dX.TensorProduct(i1);
+            var dMY = dY.TensorProduct(i2);
+            var dMZ = dZ.TensorProduct(i3);
+            dMX.AddIntoThis(dMY);
+            dMX.AddIntoThis(dMZ);
+            firstSpaceDerivatives = dMX;
+            return firstSpaceDerivatives;
+        }
         public IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
         {
             var ndofs = model.Subdomains[subdomain.ID].Nodes.Count;
@@ -283,10 +335,10 @@ namespace ISAAR.MSolve.Problems
             var i1 = Vector.CreateFromArray(v1);
             var i2 = Vector.CreateFromArray(v2);
             var i3 = Vector.CreateFromArray(v3);
-            var secondSpaceDerivatives = Matrix.CreateZero(ndofs,1);
-                var ddX = (Vector)SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
-                var ddY = (Vector)SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
-                var ddZ = (Vector)SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
+            var secondSpaceDerivatives = Matrix.CreateZero(ndofs, 1);
+            var ddX = (Vector)SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
+            var ddY = (Vector)SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
+            var ddZ = (Vector)SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
             var ddMX = ddX.TensorProduct(i1);
             var ddMY = ddY.TensorProduct(i2);
             var ddMZ = ddZ.TensorProduct(i3);

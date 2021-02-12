@@ -178,12 +178,21 @@ namespace ISAAR.MSolve.FEM.Elements
             return DofEnumerator.GetTransformedMatrix(BuildDiffusionConductivityMatrix());
         }
 
-        public IReadOnlyList<IMatrix> SecondSpaceDerivativeXMatrix(IElement element)
+        public IMatrix FirstSpaceDerivativeXMatrix(IElement element)
         {
             throw new NotImplementedException();
         }
 
-        IMatrix IConvectionDiffusionElement.SecondSpaceDerivativeXMatrix(IElement element)
+        public IMatrix FirstSpaceDerivativeYMatrix(IElement element)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IMatrix FirstSpaceDerivativeZMatrix(IElement element)
+        {
+            throw new NotImplementedException();
+        }
+        public IMatrix SecondSpaceDerivativeXMatrix(IElement element)
         {
             throw new NotImplementedException();
         }

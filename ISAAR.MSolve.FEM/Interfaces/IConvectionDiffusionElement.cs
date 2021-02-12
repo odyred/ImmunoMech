@@ -8,6 +8,9 @@ namespace ISAAR.MSolve.FEM.Interfaces
     {
         IMatrix MassTransportConductivityMatrix(IElement element);
         IMatrix DiffusionConductivityMatrix(IElement element);
+        IMatrix FirstSpaceDerivativeXMatrix(IElement element);
+        IMatrix FirstSpaceDerivativeYMatrix(IElement element);
+        IMatrix FirstSpaceDerivativeZMatrix(IElement element);
         IMatrix SecondSpaceDerivativeXMatrix(IElement element);
         IMatrix SecondSpaceDerivativeYMatrix(IElement element);
         IMatrix SecondSpaceDerivativeZMatrix(IElement element);

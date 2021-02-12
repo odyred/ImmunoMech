@@ -159,7 +159,7 @@ namespace ISAAR.MSolve.Tests.FEM
             Assert.True(CompareResults(solutions[0]));
         }
 
-        private static void UpdateModels(Dictionary<int, IVector>[] prevStepSolutions, Dictionary<int, IMatrix>[] derivatives, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
+        private static void UpdateModels(Dictionary<int, IVector>[] prevStepSolutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
             IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
         {
             c_oxNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
