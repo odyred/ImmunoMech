@@ -398,6 +398,5 @@ namespace ISAAR.MSolve.FEM.Elements
 			}
 			return shapeFunctionMatrix;
 		}
-
     }
 }
