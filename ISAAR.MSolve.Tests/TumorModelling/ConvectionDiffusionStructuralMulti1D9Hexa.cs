@@ -29,7 +29,7 @@ using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ConvectionDiffusionStructuralMulti1D9Hexa
     {

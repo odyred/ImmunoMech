@@ -22,7 +22,7 @@ using System.Runtime.CompilerServices;
 using System;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ConvectionDiffusion1DTetrahedral
     {

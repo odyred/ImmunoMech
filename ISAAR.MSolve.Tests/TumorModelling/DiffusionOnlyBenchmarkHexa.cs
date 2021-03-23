@@ -12,7 +12,7 @@ using ISAAR.MSolve.Solvers.Direct;
 using Xunit;
 using ISSAR.MSolve.Discretization.Loads;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class DiffusionOnlyBenchmarkHexa
     {

@@ -27,7 +27,7 @@ using System;
 using ISSAR.MSolve.Discretization.Loads;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ConvectionDiffusionMulti1D9Hexa
     {

@@ -31,7 +31,7 @@ using System.Reflection;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class HyperElastiGrowthCube2
     {

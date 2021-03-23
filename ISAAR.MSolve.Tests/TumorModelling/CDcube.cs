@@ -28,7 +28,7 @@ using ISAAR.MSolve.LinearAlgebra.Output.Formatting;
 using MathNet.Numerics.LinearAlgebra;
 using System.Text;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class CDcube
     {

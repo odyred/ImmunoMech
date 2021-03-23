@@ -121,8 +121,8 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
                               Math.Pow(Nodes[i].Y - x.Y, 2) + Math.Pow(Nodes[i].Z - x.Z, 2))).Min();
                 dist[i] = minDist;
             }
-            //double kappa = kappaCoef * material.DiffusionCoeff/ dist.Min();
-            double kappa = material.DiffusionCoeff / .05;
+            double kappa = kappaCoef * material.DiffusionCoeff/ dist.Min();
+            //double kappa = material.DiffusionCoeff / .05;
 
             for (int gp = 0; gp < QuadratureForStiffness.IntegrationPoints.Count; ++gp)
             {
@@ -286,31 +286,31 @@ namespace ISAAR.MSolve.FEM.Elements.BoundaryConditionElements
 
         public IMatrix FirstSpaceDerivativeXMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
 
         public IMatrix FirstSpaceDerivativeYMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
 
         public IMatrix FirstSpaceDerivativeZMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
         public IMatrix SecondSpaceDerivativeXMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
 
         public IMatrix SecondSpaceDerivativeYMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
 
         public IMatrix SecondSpaceDerivativeZMatrix(IElement element)
         {
-            throw new NotImplementedException();
+            return Matrix.CreateZero(element.Nodes.Count, element.Nodes.Count);
         }
     }
 }

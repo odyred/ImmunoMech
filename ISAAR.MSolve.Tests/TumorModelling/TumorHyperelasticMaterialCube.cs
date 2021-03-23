@@ -17,7 +17,7 @@ using ISAAR.MSolve.Solvers.Direct;
 using ISSAR.MSolve.Discretization.Loads;
 using Xunit;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public static class TumorHyperelasticMaterialCube
     {

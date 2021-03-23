@@ -24,7 +24,7 @@ using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
 using ISSAR.MSolve.Discretization.Loads;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ConvectionDiffusion1D9HexaBDF
     {

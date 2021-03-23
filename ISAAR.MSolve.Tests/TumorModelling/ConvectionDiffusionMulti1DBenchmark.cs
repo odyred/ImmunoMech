@@ -19,7 +19,7 @@ using System.Linq;
 using ISAAR.MSolve.Solvers;
 using ISSAR.MSolve.Discretization.Loads;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ConvectionDiffusionMulti1DBenchmark
     {

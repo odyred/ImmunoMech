@@ -26,7 +26,7 @@ using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using System;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class Coupled9Hexa
     {

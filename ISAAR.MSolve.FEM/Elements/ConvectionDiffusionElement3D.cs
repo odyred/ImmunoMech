@@ -123,7 +123,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
-                conductivity.AxpyIntoThis(partial, dA * material.LoadFromUnknownCoeff);
+                conductivity.AxpyIntoThis(partial, dA * material.AbsorptionRate);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
@@ -189,8 +189,6 @@ namespace ISAAR.MSolve.FEM.Elements
                 firstDerivativeMatrix[2].AxpyIntoThis(partialKZ, -dA);
             }
 
-            //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.
-            //convection.Scale(1);
             return firstDerivativeMatrix;
         }
         public IReadOnlyList<Matrix> BuildSecondSpaceDerivativeMatrix()
@@ -245,9 +243,9 @@ namespace ISAAR.MSolve.FEM.Elements
                 Vector deformationX = deformation.GetRow(0);
                 Vector deformationY = deformation.GetRow(1);
                 Vector deformationZ = deformation.GetRow(2);
-                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) * material.ConvectionCoeff[0] * material.LoadFromUnknownCoeff +
-                    shapeFunctionMatrix.TensorProduct(deformationY) * material.ConvectionCoeff[1] * material.LoadFromUnknownCoeff +
-                    shapeFunctionMatrix.TensorProduct(deformationZ) * material.ConvectionCoeff[2] * material.LoadFromUnknownCoeff;
+                Matrix partialK = shapeFunctionMatrix.TensorProduct(deformationX) * material.ConvectionCoeff[0] * material.AbsorptionRate +
+                    shapeFunctionMatrix.TensorProduct(deformationY) * material.ConvectionCoeff[1] * material.AbsorptionRate +
+                    shapeFunctionMatrix.TensorProduct(deformationZ) * material.ConvectionCoeff[2] * material.AbsorptionRate;
                 double dA = jacobian.DirectDeterminant * QuadratureForStiffness.IntegrationPoints[gp].Weight;
                 convection.AxpyIntoThis(partialK, -0.5 * dA );
             }

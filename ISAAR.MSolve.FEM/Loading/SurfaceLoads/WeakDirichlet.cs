@@ -57,7 +57,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                               Math.Pow(nodes[i].Y - x.Y, 2) + Math.Pow(nodes[i].Z - x.Z, 2))).Min();
                 dist[i] = minDist;
             }
-            //double kappa = kappaCoef * _diffusionCoeff / dist.Min();
+            double kappa = kappaCoef * _diffusionCoeff / dist.Min();
             //double[] kappa = new double[nodes.Count];
             for (int gp = 0; gp < integration.IntegrationPoints.Count; ++gp)
             {
@@ -93,7 +93,7 @@ namespace ISAAR.MSolve.FEM.Loading.SurfaceLoads
                 //Vector deformationZ = deformation.GetRow(2);
                 //Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix)
                 //    -_diffusionCoeff * deformationNormal.TensorProduct(shapeFunctionMatrix);
-                double kappa = _diffusionCoeff / .05;
+                //double kappa = _diffusionCoeff / .05;
                 Matrix partial = kappa * shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
 
                 //Vector surfaceBasisVector1 = Vector.CreateZero(3);

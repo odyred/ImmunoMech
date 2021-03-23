@@ -23,7 +23,7 @@ using System;
 using ISAAR.MSolve.FEM.Elements.BoundaryConditionElements;
 using ISAAR.MSolve.FEM.Loading.BodyLoads;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class ODE1D9Hexa
     {

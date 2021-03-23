@@ -37,7 +37,7 @@ using MathNet.Numerics;
 using ISAAR.MSolve.Discretization.Integration.Quadratures;
 using System.Reflection;
 
-namespace ISAAR.MSolve.Tests.FEM
+namespace ISAAR.MSolve.Tests
 {
     public class HyperElasticStrechCube
     {

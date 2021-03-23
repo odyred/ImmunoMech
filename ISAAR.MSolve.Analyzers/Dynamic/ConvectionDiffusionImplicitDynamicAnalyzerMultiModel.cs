@@ -275,6 +275,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
                     foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
                     InitializeRhs(i);
+                    
                     CalculateRhsImplicit(i);
 
                     childAnalyzers[i].Solve();

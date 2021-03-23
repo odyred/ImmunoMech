@@ -82,7 +82,7 @@ namespace ISAAR.MSolve.FEM.Elements
         public Matrix BuildLoadFromUnknownConductivityMatrix()
         {
 
-            double conA = material.LoadFromUnknownCoeff * CrossSectionArea * Length;
+            double conA = material.AbsorptionRate * CrossSectionArea * Length;
             double[,] conductivity = { { conA / 3.0, conA / 6.0 }, { conA / 6.0, conA / 3.0 } };
             return Matrix.CreateFromArray(conductivity);
         }
@@ -95,7 +95,7 @@ namespace ISAAR.MSolve.FEM.Elements
         }
         public Matrix BuildStabilizingLoadFromUnknownConductivityMatrix()
         {
-            double conA = -.5 * material.LoadFromUnknownCoeff * material.ConvectionCoeff[0] * CrossSectionArea / 2;
+            double conA = -.5 * material.AbsorptionRate * material.ConvectionCoeff[0] * CrossSectionArea / 2;
             double[,] conductivity = { { -conA, conA }, { -conA, conA } };
             return Matrix.CreateFromArray(conductivity);
         }

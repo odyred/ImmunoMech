@@ -314,17 +314,15 @@ namespace ISAAR.MSolve.Problems
             var i1 = Vector.CreateFromArray(v1);
             var i2 = Vector.CreateFromArray(v2);
             var i3 = Vector.CreateFromArray(v3);
-            var firstSpaceDerivatives = Matrix.CreateZero(ndofs, 1);
-            var dX = (Vector)SecondDerivativeXMatrix[subdomain.ID].Multiply(vector);
-            var dY = (Vector)SecondDerivativeYMatrix[subdomain.ID].Multiply(vector);
-            var dZ = (Vector)SecondDerivativeZMatrix[subdomain.ID].Multiply(vector);
+            var dX = (Vector)FirstDerivativeXMatrix[subdomain.ID].Multiply(vector);
+            var dY = (Vector)FirstDerivativeYMatrix[subdomain.ID].Multiply(vector);
+            var dZ = (Vector)FirstDerivativeZMatrix[subdomain.ID].Multiply(vector);
             var dMX = dX.TensorProduct(i1);
             var dMY = dY.TensorProduct(i2);
             var dMZ = dZ.TensorProduct(i3);
             dMX.AddIntoThis(dMY);
             dMX.AddIntoThis(dMZ);
-            firstSpaceDerivatives = dMX;
-            return firstSpaceDerivatives;
+            return dMX;
         }
         public IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
         {
@@ -344,8 +342,7 @@ namespace ISAAR.MSolve.Problems
             var ddMZ = ddZ.TensorProduct(i3);
             ddMX.AddIntoThis(ddMY);
             ddMX.AddIntoThis(ddMZ);
-            secondSpaceDerivatives = ddMX;
-            return secondSpaceDerivatives;
+            return ddMX;
         }
         public IVector ConductivityMatrixVectorProduct(ISubdomain subdomain, IVectorView vector)
         {
