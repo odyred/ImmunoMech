@@ -104,6 +104,7 @@ namespace ISAAR.MSolve.Tests
         private static Dictionary<int, IVector> Velocities;
         private static double[][] PreviousSpaceDerivatives;
         private static double[][] SpaceDerivatives;
+        private static Dictionary<int, double[]> uXT;
         private static Dictionary<int, IVector> Displacements;
         private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csModel, structModel;
         private static int pressureModelFreeDOFs = 0;
@@ -241,11 +242,11 @@ namespace ISAAR.MSolve.Tests
             }
             return true;
         }
-        private static double[][] GetStrains(int elementsNo)
+        private static Dictionary<int, double[]> GetStrains(int elementsNo, Dictionary<int, IVector> vectorsDictionary)
         {
             if (structModel == null)
             {
-                double[][] strains = new double[elementsNo][];
+                Dictionary<int,double[]> strains = new Dictionary<int, double[]>();
                 for (int i = 0; i < elementsNo; i++)
                 {
                     strains[i] = new double[6];
@@ -255,15 +256,15 @@ namespace ISAAR.MSolve.Tests
             else
             {
                 IList<Element> elements = structModel.Item1.Elements;
-                double[][] strains = new double[elements.Count][];
-                if (Displacements == null)
+                Dictionary<int, double[]> strains = new Dictionary<int, double[]>();
+                if (vectorsDictionary == null)
                 {
-                    Displacements = new Dictionary<int, IVector>();
-                    Displacements.Add(0, Vector.CreateZero(structModel.Item1.GlobalDofOrdering.NumGlobalFreeDofs));
+                    vectorsDictionary = new Dictionary<int, IVector>();
+                    vectorsDictionary.Add(0, Vector.CreateZero(structModel.Item1.GlobalDofOrdering.NumGlobalFreeDofs));
                 }
                 foreach (Element e in elements)
                 {
-                    double[] localVector = e.Subdomain.FreeDofOrdering.ExtractVectorElementFromSubdomain(e, Displacements[0]);
+                    double[] localVector = e.Subdomain.FreeDofOrdering.ExtractVectorElementFromSubdomain(e, vectorsDictionary[0]);
                     var strainStresses = e.ElementType.CalculateStresses(e, localVector,
                         new double[e.ElementType.GetElementDofTypes(e).SelectMany(x => x).Count()]);
                     strains[e.ID] = new double[strainStresses.Item1.Length];
@@ -592,6 +593,16 @@ namespace ISAAR.MSolve.Tests
                 }
             }
             if (dcoxdvf == null) dcoxdvf = new double[model.Elements.Count];
+            if (uXT == null) uXT = new Dictionary<int, double[]>();
+            for (int i = 0; i < model.Elements.Count; i++)
+            {
+                uXT[i] = new double[6];
+            }
+            if (vElement == null) vElement = new Dictionary<int, double[]>();
+            for (int i = 0; i < model.Elements.Count; i++)
+            {
+                vElement[i] = new double[6];
+            }
             double[] fox = new double[model.Elements.Count];
             int[] domainIDs = new int[] { 0, 1 };
             foreach (int domainID in domainIDs)
@@ -601,6 +612,12 @@ namespace ISAAR.MSolve.Tests
                     uof[element.ID] = -khy[0] * dpElement[element.ID][0] / .7 + vElement[element.ID][0];
                     vof[element.ID] = -khy[0] * dpElement[element.ID][1] / .7 + vElement[element.ID][1];
                     wof[element.ID] = -khy[0] * dpElement[element.ID][2] / .7 + vElement[element.ID][2];
+                    duof[element.ID] = -khy[0] * ddpElement[element.ID][0] / .7 + uXT[element.ID][0];
+                    dvof[element.ID] = -khy[0] * ddpElement[element.ID][1] / .7 + uXT[element.ID][1];
+                    dwof[element.ID] = -khy[0] * ddpElement[element.ID][2] / .7 + uXT[element.ID][2];
+                    dcoxdvf[element.ID] = dcoxElement[element.ID][0] * uof[element.ID] +
+                        dcoxElement[element.ID][1] * vof[element.ID] +
+                        dcoxElement[element.ID][2] * wof[element.ID] + c_oxElement[element.ID] * (duof[element.ID] + dvof[element.ID] + dwof[element.ID]);
                     if (domainID == 0)
                     {
                         fox[element.ID] = (Dox[domainID] / Lwv * 7e3 - ((Aox[domainID] * c_oxElement[element.ID]) / (kox[domainID] + c_oxElement[element.ID] * cvox))
@@ -783,9 +800,7 @@ namespace ISAAR.MSolve.Tests
                     PressureL.Add(i, 0d);
                 }
             }
-            PreviousSpaceDerivatives = SpaceDerivatives.Clone() as double[][];
-            SpaceDerivatives = GetStrains(model.Elements.Count);
-            var timeSpaceDerivatives = StructuralSpaceTimeDerivatives(SpaceDerivatives, PreviousSpaceDerivatives);
+            uXT = GetStrains(model.Elements.Count, Velocities);
 
             int[] domainIDs = new int[] { 0, 1 };
             foreach (int domainID in domainIDs)
@@ -795,7 +810,7 @@ namespace ISAAR.MSolve.Tests
                     var prMaterial = new ConvectionDiffusionMaterial(1, k[domainID], conv0[0], PressureL[element.ID]);
                     Grox[element.ID] = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
                     RTumc[element.ID] = 24d * 3600d * Grox[element.ID];
-                    var fp = RTumc[element.ID] + pv * PressureL[element.ID] - timeSpaceDerivatives[element.ID].Sum();
+                    var fp = RTumc[element.ID] + pv * PressureL[element.ID] - uXT[element.ID].Sum();
                     var nodes = (IReadOnlyList<Node>)element.Nodes;
                     var domainLoad = new ConvectionDiffusionDomainLoad(prMaterial, fp, ThermalDof.Temperature);
                     var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -975,7 +990,7 @@ namespace ISAAR.MSolve.Tests
             
             Vector[] initialValues = new Vector[models.Length];
             var value0 = new Dictionary<int, double[]>();
-            for (int i = 0; i < models.Length - 1; i++)
+            for (int i = 0; i < models.Length; i++)
             {
                 double[] v0 = new double[models[i].Nodes.Count];
                 value0.Add(i, v0);
@@ -996,6 +1011,10 @@ namespace ISAAR.MSolve.Tests
             for (int i = 0; i < pressureModelFreeDOFs; i++)
             {
                 value0[3][i] = 0; /* 0.96733;*/
+            }
+            foreach (Node node in models[4].Nodes)
+            {
+                value0[4][node.ID] = 0;
             }
 
             IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
