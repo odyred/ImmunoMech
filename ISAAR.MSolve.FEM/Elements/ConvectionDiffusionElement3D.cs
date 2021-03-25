@@ -73,7 +73,7 @@ namespace ISAAR.MSolve.FEM.Elements
                 Matrix partial = shapeFunctionMatrix.TensorProduct(shapeFunctionMatrix);
                 var jacobian = new IsoparametricJacobian3D(Nodes, shapeGradientsNatural[gp]);
                 double dA = jacobian.DirectDeterminant * QuadratureForConsistentMass.IntegrationPoints[gp].Weight;
-                capacity.AxpyIntoThis(partial, dA);
+                capacity.AxpyIntoThis(partial, dA * material.CapacityCoeff);
             }
 
             //WARNING: the following needs to change for non uniform density. Perhaps the integration order too.

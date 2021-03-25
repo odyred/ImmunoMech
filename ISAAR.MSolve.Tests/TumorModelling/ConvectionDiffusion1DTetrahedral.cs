@@ -54,7 +54,7 @@ namespace ISAAR.MSolve.Tests
         private static Tuple<Model, ComsolMeshReader2> CreateModel(double k, double[] U, double L)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "240tet.mphtxt");
-            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
+            ComsolMeshReader2 modelReader = new ComsolMeshReader2(filename, new double[] { 1, }, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
             //Boundary Conditions
             var flux1 = new FluxLoad(1);
@@ -73,7 +73,7 @@ namespace ISAAR.MSolve.Tests
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var fluxFactory2 = new SurfaceLoadElementFactory(flux2);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-                new ConvectionDiffusionMaterial(k, new double[]{0,0,0}, 0));
+                new ConvectionDiffusionMaterial(1, k, new double[]{0,0,0}, 0));
 
             int[] boundaryIDs = new int[] { 0 };
             //int numberOfQuadElements = 0; 

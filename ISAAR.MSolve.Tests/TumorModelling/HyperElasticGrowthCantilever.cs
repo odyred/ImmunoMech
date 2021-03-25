@@ -210,9 +210,9 @@ namespace ISAAR.MSolve.Tests
         private static Tuple<Model, IModelReader> CreateConvectionDiffusionModel2(double k, double[] U, double L, double b, double f, double bl)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "9hexa.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
+            var modelReader = new ComsolMeshReader2(filename, new double[] { 1,}, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
-            var material = new ConvectionDiffusionMaterial(k, U, L);
+            var material = new ConvectionDiffusionMaterial(1, k, U, L);
             //Boundary Conditions
             var flux1 = new FluxLoad(f);
             var dir1 = new DirichletDistribution(list => {
@@ -229,7 +229,7 @@ namespace ISAAR.MSolve.Tests
             //var dirichletFactory2 = new SurfaceLoadElementFactory(weakDirichlet2);
             var fluxFactory1 = new SurfaceLoadElementFactory(flux1);
             var boundaryFactory3D = new SurfaceBoundaryFactory3D(0,
-                new ConvectionDiffusionMaterial(k, new double[] { 0, 0, 0 }, 0));
+                new ConvectionDiffusionMaterial(1, k, new double[] { 0, 0, 0 }, 0));
 
 
             int[] domainIDs = new int[] { 0, };

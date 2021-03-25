@@ -29,6 +29,7 @@ namespace ISAAR.MSolve.FEM.Readers
         public IList<IList<IList<Node>>> quadBoundaries { get; private set; }
         private Dictionary<int, IVector> displacements;
         public IList<IList<IList<Node>>> triBoundaries { get; private set; }
+        private double[] capacityCoeff;
         private double[] diffusionCoeff;
         private double[][] convectionCoeff;
         private double[] loadFromUnknownCoeff;
@@ -48,9 +49,10 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader2(string filename, double[] k, double[][] U, double[] L)
+        public ComsolMeshReader2(string filename, double[] c, double[] k, double[][] U, double[] L)
         {
             Filename = filename;
+            capacityCoeff = c;
             diffusionCoeff = k;
             convectionCoeff = U;
             loadFromUnknownCoeff = L;
@@ -110,7 +112,7 @@ namespace ISAAR.MSolve.FEM.Readers
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
             for (int i = 0; i < diffusionCoeff.Length; i++)
             {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                CDMaterial[i] = new ConvectionDiffusionMaterial(capacityCoeff[i], diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
                 elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
             }
             for (int domain = 0; domain < elementDomains.Count; domain++)
@@ -145,7 +147,7 @@ namespace ISAAR.MSolve.FEM.Readers
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
             for (int i = 0; i < diffusionCoeff.Length; i++)
             {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                CDMaterial[i] = new ConvectionDiffusionMaterial(capacityCoeff[i], diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
                 elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
             }
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] {0,0,0}, 0));

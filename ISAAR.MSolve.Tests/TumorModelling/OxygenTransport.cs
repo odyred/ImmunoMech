@@ -194,9 +194,9 @@ namespace ISAAR.MSolve.Tests
         private static Tuple<Model, IModelReader> CreateOxygenTransportModel(double[] k, double[][] U, double[] L, double[] cox)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, k, U, L);
+            var modelReader = new ComsolMeshReader2(filename, new double[] { 1, 1 }, k, U, L);
             Model model = modelReader.CreateModelFromFile();
-            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1]) };
+            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(1, k[0], U[0], L[0]), new ConvectionDiffusionMaterial(1, k[1], U[1], L[1]) };
             //Boundary Conditions
             //var flux1 = new FluxLoad(f);
             //var dir1 = new DirichletDistribution(list => {

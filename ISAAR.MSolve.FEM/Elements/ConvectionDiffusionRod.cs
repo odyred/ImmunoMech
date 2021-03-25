@@ -60,7 +60,7 @@ namespace ISAAR.MSolve.FEM.Elements
 
         public Matrix BuildCapacityMatrix()
         {
-            double kdAL =  CrossSectionArea * Length;
+            double kdAL = material.CapacityCoeff * CrossSectionArea * Length;
             double[,] capacity = { { kdAL / 3.0, kdAL / 6.0 }, { kdAL / 6.0, kdAL / 3.0 } };
             return Matrix.CreateFromArray(capacity);
         }

@@ -70,7 +70,7 @@ namespace ISAAR.MSolve.Tests
             model.SubdomainsDictionary.Add(0, new Subdomain(subdomainID));
 
             double crossSectionArea = 1;
-            var material = new ConvectionDiffusionMaterial(k, U, L);
+            var material = new ConvectionDiffusionMaterial(1, k, U, L);
 
             // Nodes
             int numNodes = 10;

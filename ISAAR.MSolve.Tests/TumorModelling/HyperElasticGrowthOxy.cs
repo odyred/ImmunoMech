@@ -248,7 +248,7 @@ namespace ISAAR.MSolve.Tests
             {
                 Console.WriteLine("Creating Oxygen Model");
                 string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
-                modelReader = new ComsolMeshReader2(filename, k, U, L);
+                modelReader = new ComsolMeshReader2(filename, new double[] { 1, 1 }, k, U, L);
                 model = modelReader.CreateModelFromFile();
             }
             else
@@ -259,7 +259,7 @@ namespace ISAAR.MSolve.Tests
                 model = modelReader.UpdateModel();
             }
 
-            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(k[0], U[0], L[0]), new ConvectionDiffusionMaterial(k[1], U[1], L[1])};
+            var materials = new ConvectionDiffusionMaterial[] { new ConvectionDiffusionMaterial(1, k[0], U[0], L[0]), new ConvectionDiffusionMaterial(1, k[1], U[1], L[1])};
             if (coxElement == null)
             {
                 c_oxElement = new double[model.Elements.Count];
@@ -302,14 +302,14 @@ namespace ISAAR.MSolve.Tests
                 string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshXXCoarse.mphtxt");
                 int[] modelDomains = new int[] { 0 };
                 int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-                modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                 model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
             }
             else
             {
                 Console.WriteLine("Updating Growth Model...");
                 modelReader = (ComsolMeshReader3)gModel.Item2;
-                modelReader = modelReader.UpdateModelReader(new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                 model = modelReader.UpdateModel(structModel.Item1,Displacements, false);
             }
 
@@ -322,7 +322,7 @@ namespace ISAAR.MSolve.Tests
                 }
             }
 
-            var materialODE = new ConvectionDiffusionMaterial(k, U, L);
+            var materialODE = new ConvectionDiffusionMaterial(1, k, U, L);
             double[] Grox = new double[model.Elements.Count];
             double[] fg = new double[model.Elements.Count];
             int[] domainIDs = new int[] { 0, };

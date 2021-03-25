@@ -226,7 +226,7 @@ namespace ISAAR.MSolve.Tests
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double[] lgr)
         {
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "meshCoarse.mphtxt");
-            var modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+            var modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1}, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
             int[] modelDomains = new int[] { 0 };
             int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
             Model model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
@@ -239,7 +239,7 @@ namespace ISAAR.MSolve.Tests
                 }
             }
 
-            var materialODE = new ConvectionDiffusionMaterial(k, U, L);
+            var materialODE = new ConvectionDiffusionMaterial(1, k, U, L);
             double[] Grox = new double[model.Elements.Count];
             double[] fg = new double[model.Elements.Count];
             foreach (Element element in modelReader.elementDomains[0])

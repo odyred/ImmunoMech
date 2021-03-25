@@ -64,7 +64,7 @@ namespace ISAAR.MSolve.Tests
             double L = 0;
             double h = 1;
             double crossSectionArea = 1;
-            var material = new ConvectionDiffusionMaterial(k, U, L);
+            var material = new ConvectionDiffusionMaterial(1, k, U, L);
 
             // Nodes
             int numNodes = 10;

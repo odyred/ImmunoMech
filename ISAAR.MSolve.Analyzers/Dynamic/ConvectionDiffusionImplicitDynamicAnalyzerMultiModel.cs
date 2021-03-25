@@ -27,6 +27,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly IChildAnalyzer[] childAnalyzers;
         private readonly IConvectionDiffusionIntegrationProvider[] providers;
         private readonly IVector[] initialTemperature;
+        private readonly NewmarkDynamicAnalyzer structuralParentAnalyzer;
         private readonly Dictionary<int, IVector>[] rhs;
         private readonly Dictionary<int, IVector>[] stabilizingRhs;//TODO: has to be implemented, pertains to domain loads
         private readonly Dictionary<int, IVector>[] rhsPrevious;//TODO: at the moment domain loads are not implemented in this
@@ -38,7 +39,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
         public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], 
             IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, 
-            IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, IVector[] initialTemperature = null)
+            IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, NewmarkDynamicAnalyzer structuralParentAnalyzer = null,
+            IVector[] initialTemperature = null)
         {
             this.CreateNewModel = modelCreator;
             this.maxStaggeredSteps = maxStaggeredSteps;
@@ -68,6 +70,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             this.providers = providers;
             this.ChildAnalyzer = childAnalyzers[0];
             this.childAnalyzers = childAnalyzers;
+            this.structuralParentAnalyzer = structuralParentAnalyzer;
             this.timeStep = timeStep;
             this.totalTime = totalTime;
             this.ChildAnalyzer.ParentAnalyzer = this;
@@ -282,6 +285,16 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 }
 
                 temperatureNorm = 0;
+                if (structuralParentAnalyzer!=null)
+                {
+                    temperatureNorm = 0;
+                    structuralParentAnalyzer.SolveTimestep(t);
+                    foreach (var linearSystem in structuralParentAnalyzer.linearSystems.Values)
+                    {
+                        temperatureNorm += linearSystem.Solution.Norm2();
+                    }
+                }
+
                 for (int i = 0; i < linearSystems.Length; i++)
                 {
                     foreach (var linearSystem in linearSystems[i].Values)

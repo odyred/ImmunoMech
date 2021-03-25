@@ -239,14 +239,14 @@ namespace ISAAR.MSolve.Tests
                     string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
                     int[] modelDomains = new int[] { 0 };
                     int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-                    modelReader = new ComsolMeshReader3(filename, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                    modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                     model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
                 }
                 else
                 {
                     Console.WriteLine("Updating Growth Model...");
                     modelReader = (ComsolMeshReader3)gModel.Item2;
-                    modelReader = modelReader.UpdateModelReader(new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                    modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
                     model = modelReader.UpdateModel(structModel.Item1, Displacements, false);
                 }
 
@@ -259,7 +259,7 @@ namespace ISAAR.MSolve.Tests
                     }
                 }
 
-                var materialODE = new ConvectionDiffusionMaterial(k, U, L);
+                var materialODE = new ConvectionDiffusionMaterial(1, k, U, L);
                 double[] Grox = new double[model.Elements.Count];
                 double[] fg = new double[model.Elements.Count];
                 int[] domainIDs = new int[] { 0, };

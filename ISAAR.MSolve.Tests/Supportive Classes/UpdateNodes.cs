@@ -74,7 +74,7 @@ namespace ISAAR.MSolve.Tests.Supportive_Classes
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
             for (int i = 0; i < diffusionCoeff.Length; i++)
             {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                CDMaterial[i] = new ConvectionDiffusionMaterial(1, diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
                 elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
             }
             for (int domain = 0; domain < elementDomains.Count; domain++)
@@ -90,7 +90,7 @@ namespace ISAAR.MSolve.Tests.Supportive_Classes
             ConvectionDiffusionElement3DFactory[] elementFactory3D = new ConvectionDiffusionElement3DFactory[diffusionCoeff.Length];
             for (int i = 0; i < diffusionCoeff.Length; i++)
             {
-                CDMaterial[i] = new ConvectionDiffusionMaterial(diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
+                CDMaterial[i] = new ConvectionDiffusionMaterial(1, diffusionCoeff[i], convectionCoeff[i], loadFromUnknownCoeff[i]);
                 elementFactory3D[i] = new ConvectionDiffusionElement3DFactory(CDMaterial[i]);
             }
             //var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(diffusionCoeff, new double[] {0,0,0}, 0));

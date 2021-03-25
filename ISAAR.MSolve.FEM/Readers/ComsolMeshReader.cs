@@ -52,12 +52,13 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public Model CreateModelFromFile()
         {
-            double[] U = {1.0,1,1};
+            double c = 1.0;
+            double[] U = { 1.0, 1, 1 };
             double k = 1.0;
             double L = .0;
             diffusionCeoff = k;
-            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(k, U, L));
-            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(k, U, L));
+            var elementFactory3D = new ConvectionDiffusionElement3DFactory(new ConvectionDiffusionMaterial(c, k, U, L));
+            var boundaryFactory3D = new SurfaceBoundaryFactory3D(0, new ConvectionDiffusionMaterial(c, k, U, L));
             var model = new Model();
             model.SubdomainsDictionary[0] = new Subdomain(0);
             // Material

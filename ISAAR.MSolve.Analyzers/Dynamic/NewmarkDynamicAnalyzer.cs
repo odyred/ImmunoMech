@@ -22,7 +22,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly double beta, gamma, timeStep, totalTime;
         private readonly double a0, a1, a2, a3, a4, a5, a6, a7;
         private IStructuralModel model;
-        private IReadOnlyDictionary<int, ILinearSystem> linearSystems;
+        public IReadOnlyDictionary<int, ILinearSystem> linearSystems;
         private ISolver solver;
         private IImplicitIntegrationProvider provider;
         private Dictionary<int, IVector> rhs = new Dictionary<int, IVector>();

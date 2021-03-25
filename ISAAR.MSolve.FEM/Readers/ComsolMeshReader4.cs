@@ -31,6 +31,7 @@ namespace ISAAR.MSolve.FEM.Readers
         private Dictionary<int, IVector> displacements;
         private double initialValue1;
         private double initialValue2;
+        private double[] capacityCoeff;
         private double[] diffusionCoeff;
         private Dictionary<int,double[]> convectionCoeff = new Dictionary<int, double[]>();
         private Dictionary<int, double> loadFromUnknownCoeff = new Dictionary<int, double>();
@@ -51,11 +52,12 @@ namespace ISAAR.MSolve.FEM.Readers
 
         public string Filename { get; private set; }
 
-        public ComsolMeshReader4(string filename, double[] k, 
+        public ComsolMeshReader4(string filename, double[] c, double[] k,
             Action<Dictionary<int, double[]>, Dictionary<int, double>> coefficientsCalculation)
         {
             this.CalculateCoefficients = coefficientsCalculation;
             Filename = filename;
+            capacityCoeff = c;
             diffusionCoeff = k;
         }
 
@@ -65,9 +67,10 @@ namespace ISAAR.MSolve.FEM.Readers
         int NumberOfHexElements;
         int NumberOfQuadElements;
 
-        public ComsolMeshReader4 UpdateModelReader(double[] k, Dictionary<int,double[]> U, Dictionary<int, double> L)
+        public ComsolMeshReader4 UpdateModelReader(double[] c, double[] k, Dictionary<int,double[]> U, Dictionary<int, double> L)
         {
             //CalculateCoefficients(U, L);
+            capacityCoeff = c;
             diffusionCoeff = k;
             convectionCoeff = U;
             loadFromUnknownCoeff = L;
@@ -113,7 +116,7 @@ namespace ISAAR.MSolve.FEM.Readers
             for (int domain = 0; domain < elementDomains.Count; domain++)
                 foreach (Element elem in elementDomains[domain])
                 {
-                    var CDMaterial = new ConvectionDiffusionMaterial(diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID]);
+                    var CDMaterial = new ConvectionDiffusionMaterial(capacityCoeff[domain], diffusionCoeff[domain], convectionCoeff[elem.ID], loadFromUnknownCoeff[elem.ID]);
                     var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                     var oldElemNodes = elem.Nodes.ToList();
                     var newElemNodes = new List<Node>();
@@ -368,7 +371,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             {
                                 IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
                                 var CDMaterial = new ConvectionDiffusionMaterial
-                                    (diffusionCoeff[elementDomainID-1], convectionCoeff[TetID], loadFromUnknownCoeff[TetID]);
+                                    (capacityCoeff[elementDomainID-1], diffusionCoeff[elementDomainID-1], convectionCoeff[TetID], loadFromUnknownCoeff[TetID]);
                                 var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                                 var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodesTet);
                                 var element = new Element();
@@ -431,7 +434,7 @@ namespace ISAAR.MSolve.FEM.Readers
                             {
                                 IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
                                 var CDMaterial = new ConvectionDiffusionMaterial
-                                    (diffusionCoeff[elementDomainID], convectionCoeff[HexID], loadFromUnknownCoeff[HexID]);
+                                    (capacityCoeff[elementDomainID], diffusionCoeff[elementDomainID], convectionCoeff[HexID], loadFromUnknownCoeff[HexID]);
                                 var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                                 var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodesHex);
                                 var element = new Element();

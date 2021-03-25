@@ -206,9 +206,9 @@ namespace ISAAR.MSolve.Tests
         private static Tuple<Model, IModelReader> CreateGrowthModel(double k, double[] U, double L, double b, double f, double bl)
         {   
             string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "106TetCube100m.mphtxt");
-            var modelReader = new ComsolMeshReader2(filename, new double[] { k }, new double[][] { U }, new double[] { L });
+            var modelReader = new ComsolMeshReader2(filename, new double[] { 1.0 }, new double[] { k }, new double[][] { U }, new double[] { L });
             Model model = modelReader.CreateModelFromFile();
-            var material = new ConvectionDiffusionMaterial(k, U, L);
+            var material = new ConvectionDiffusionMaterial(1.0, k, U, L);
 
 
             int[] domainIDs = new int[] { 0, };
