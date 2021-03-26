@@ -46,10 +46,15 @@ namespace ISAAR.MSolve.Tests
         private static readonly double[] Dcell = new double[] { 5.4e-3, 1.8e-4 }; //m^2/s
         private static readonly double[] khy = new double[] { 6.5e-11, 6.5e-11 };  //m^3*d/kg};
         private static readonly double[] lp = new double[] { 2.7e-12, 2.7e-12 };  //m^2*s/kg;
+        private static double T0 = 1; //kg/m^3
+        private static double Cv0 = 1; //kg/m^3
+        private static double Cs0 = 1; //kg/m^3
+        private static double l10 = 6.8e-9; //1/s
+        private static double l13 = 4e-9; //1/s
         private static double cvox = 0.2; //mol/m^3
         private static double Lwv = 5e-6; //m
         private static double mtox = 8e-3 * 1.1 * 1e-6 / 3600; //m^2/s
-        private static double pv = 4000; //Pa
+        private static double pv = 4000; //kg/m/s^2
         private static double Svin = 7000; //1/m
         private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
         //private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
@@ -128,7 +133,7 @@ namespace ISAAR.MSolve.Tests
             ctModel = CreateCancerTransportModel(DcellDays[0]);
             gModel = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgNode);
             prModel = CreatePressureModel(khy);
-            csModel = CreateCsModel(0,conv0[0], 0, CsNode);
+            csModel = CreateCsModel();
             var models = new[] { oxModel.Item1, ctModel.Item1, gModel.Item1, prModel.Item1, csModel.Item1 };
             var modelReaders = new[] { oxModel.Item2, ctModel.Item2, gModel.Item2, prModel.Item2, csModel.Item2 };
             IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
@@ -183,6 +188,13 @@ namespace ISAAR.MSolve.Tests
                 outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"pressure\" NumberOfComponents=\"1\" format=\"ascii\">");
                 for (int i = 0; i < numberOfPoints; i++)
                     outputFile.WriteLine($"{pNode[i]} ");
+                outputFile.WriteLine("              </DataArray>");
+
+                outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"Cs\" NumberOfComponents=\"1\" format=\"ascii\">");
+                for (int i = 0; i < CsNode.Length; i++)
+                    outputFile.WriteLine($"{CsNode[i]} ");
+                for (int i = CsNode.Length; i < numberOfPoints; i++)
+                    outputFile.WriteLine($"0 ");
                 outputFile.WriteLine("              </DataArray>");
 
                 outputFile.WriteLine("          </PointData>");
@@ -458,11 +470,22 @@ namespace ISAAR.MSolve.Tests
                     tumcElement[e.ID] += tumcNode[e.Nodes[i].ID] / (e.Nodes.Count);
                 }
             }
+
+            if (CsElement == null) CsElement = new double[modelsToReplace[4].Elements.Count];
+            foreach (var e in modelsToReplace[4].Elements)
+            {
+                CsElement[e.ID] = 0;
+                for (int i = 0; i < e.Nodes.Count; i++)
+                {
+                    CsElement[e.ID] += CsNode[e.Nodes[i].ID] / (e.Nodes.Count);
+                }
+            }
+
             modelsToReplace[0] = CreateOxygenTransportModel(Dox, conv0, new double[] { Dox[0] / Lwv * 7e3 * 24 * 3600, Dox[1] / Lwv * 7e3 * 24 * 3600 }).Item1;
             modelsToReplace[1] = CreateCancerTransportModel(Dcell[0]).Item1;
             modelsToReplace[2] = CreateGrowthModel(0, new double[] { 0, 0, 0 }, 0, lgElement).Item1;
             modelsToReplace[3] = CreatePressureModel(khy).Item1;
-            modelsToReplace[4] = CreateCsModel(0, new double[] { 0, 0, 0 }, 0, CsElement).Item1;
+            modelsToReplace[4] = CreateCsModel().Item1;
 
             for (int i = 0; i < modelsToReplace.Length; i++)
             {
@@ -708,7 +731,14 @@ namespace ISAAR.MSolve.Tests
                 model = modelReader.UpdateModel(structModel.Item1, Displacements);
             }
             //double[] Grox = new double[model.Elements.Count];
-            //double[] RTumc = new double[model.Elements.Count];
+            if (RTumc == null) 
+            {
+                RTumc = new Dictionary<int, double>();
+                for (int i = 0; i < model.Elements.Count; i++)
+                {
+                    RTumc[i] = 0d;
+                }
+            }
             int[] domainIDs = new int[] { 0, };
             foreach (int domainID in domainIDs)
             {
@@ -820,7 +850,7 @@ namespace ISAAR.MSolve.Tests
             }
             return new Tuple<Model, IModelReader>(model, modelReader);
         }
-        private static Tuple<Model, IModelReader> CreateCsModel(double k, double[] U, double L, double[] Cs)
+        private static Tuple<Model, IModelReader> CreateCsModel()
         {
             ComsolMeshReader3 modelReader;
             Model model;
@@ -829,40 +859,32 @@ namespace ISAAR.MSolve.Tests
             {
                 Console.WriteLine("Creating Cs Model");
                 string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
-                int[] modelDomains = new int[] { 0 };
-                int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-                modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                int[] modelDomains = new int[] { 0, 1 };
+                int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+                modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 }, conv0, new double[] { l13, 0 });
                 model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
             }
             else
             {
                 Console.WriteLine("Updating Cs Model...");
                 modelReader = (ComsolMeshReader3)gModel.Item2;
-                modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { k, k }, new double[][] { U, U }, new double[] { L, 0 });
+                modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { 0, 0 }, conv0, new double[] { l13, 0 });
                 model = modelReader.UpdateModel(structModel.Item1, Displacements);
             }
 
-            if (Cs == null)
-            {
-                Cs = new double[model.Elements.Count];
-                for (int i = 0; i < model.Elements.Count; i++)
-                {
-                    Cs[i] = 1;
-                }
-            }
-
-            var materialODE = new ConvectionDiffusionMaterial(1, k, U, L);
-            double[] Grox = new double[model.Elements.Count];
-            double[] fg = new double[model.Elements.Count];
-            int[] domainIDs = new int[] { 0, };
+            var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], l13);
+            int[] domainIDs = new int[] { 0,};
             foreach (int domainID in domainIDs)
             {
                 foreach (Element element in modelReader.elementDomains[domainID])
                 {
-                    Grox[element.ID] = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
-                    fg[element.ID] = 24d * 3600d * Grox[element.ID] * Cs[element.ID] / 3d;
+                    double Ga = 0d;
+                    if (c_oxElement[element.ID] <= 0.5 & c_oxElement[element.ID] > 0d) Ga = 3;
+                    else if (c_oxElement[element.ID] > 0.5 & c_oxElement[element.ID] <= 1) Ga = 2 - c_oxElement[element.ID];
+                    else if (c_oxElement[element.ID] > 1d) Ga = 0.5*c_oxElement[element.ID];
+                    var Cs_stD = (l10 * Ga * tumcElement[element.ID] * T0 * 100 / Cs0) / 2 + (l10 * 0.5 * 100 * Cv0) / 2;
                     var nodes = (IReadOnlyList<Node>)element.Nodes;
-                    var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg[element.ID], ThermalDof.Temperature);
+                    var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, Cs_stD, ThermalDof.Temperature);
                     var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
                     var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Tet4, nodes);
                     model.BodyLoads.Add(bodyLoadElement);
