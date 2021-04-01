@@ -497,14 +497,6 @@ namespace ISAAR.MSolve.Tests
             Velocities = velocities;
             Displacements = displacements;
             if (lgElement == null) lgElement = new double[modelsToReplace[0].Elements.Count];
-            //foreach (var e in modelsToReplace[2].Elements)
-            //{
-            //    lgElement[e.ID] = 0;
-            //    for (int i = 0; i < e.Nodes.Count; i++)
-            //    {
-            //        lgElement[e.ID] += lgNode[e.Nodes[i].ID] / (e.Nodes.Count);
-            //    }
-            //}
             foreach (Element e in structModel.Item2.elementDomains[1])
             {
                 lgElement[e.ID] = 1d;
@@ -559,6 +551,7 @@ namespace ISAAR.MSolve.Tests
                 lgElement[e.ID] = 1d;
             }
             ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
+            UpdateStructuralLoads();
             solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
             providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
             //solversToReplace[0].HandleMatrixWillBeSet();
