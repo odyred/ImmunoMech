@@ -46,7 +46,7 @@ namespace ISAAR.MSolve.Tests
 		private static readonly double[] Koxc = new double[] { 0.0083, 0.0083 }; //mol/m^3
 		private static readonly double[] Dcell = new double[] { 5.4e-3, 1.8e-4 }; //m^2/s
 		private static readonly double[] Dvegf = new double[] { 3.1e-11, 3.1e-11 }; //m^2/s
-		private static readonly double[] khy = new double[] { 6.5e-11, 6.5e-11 };  //m^3*d/kg};
+		private static readonly double[] khy = new double[] { 8.7e-21, 8.7e-21 };  //m^3*d/kg};
 		private static readonly double[] lp = new double[] { 2.7e-12, 2.7e-12 };  //m^2*s/kg;
 		private static double T0 = 1; //kg/m^3
 		private static double Cv0 = 1; //kg/m^3
@@ -77,11 +77,11 @@ namespace ISAAR.MSolve.Tests
 		private static double b2 = 18240d / 3600d; //1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
-		//private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder();
-		private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
+		private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder();
+		//private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
 		private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder();
-		//private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder();
-		private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
+		private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder();
+		//private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
 		private static double[] lgNode;
 		private static double[] lgElement;
 		private static double[] CsNode;
@@ -1138,7 +1138,7 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
-					var fg = 24d * 3600d * Grox * lgElement[element.ID] / 3d;
+					var fg = 24d * 3600d * Grox * tumcElement[element.ID] *lgElement[element.ID] / 3d;
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1283,7 +1283,7 @@ namespace ISAAR.MSolve.Tests
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
 					double RTumc;
 					if (domainID == 0)
-						RTumc = 24d * 3600d * Grox;
+						RTumc = 24d * 3600d * Grox * tumcElement[element.ID];
 					else
 						RTumc = 0;
 					var fp = RTumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();

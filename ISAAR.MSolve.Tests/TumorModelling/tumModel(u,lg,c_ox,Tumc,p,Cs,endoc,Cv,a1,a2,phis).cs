@@ -99,7 +99,7 @@ namespace ISAAR.MSolve.Tests
 		private static double[] tumcElement;
 		private static double[] pNode;
 		private static double[] pElement;
-		private static double[] SvDNode;
+		private static double[] endocNode;
 		private static double[] endocElement;
 		private static double[] a1Node;
 		private static double[] a1Element;
@@ -176,7 +176,7 @@ namespace ISAAR.MSolve.Tests
 				DcellDays[i] = 24 * 3600 * Dcell[i];
 			}
 
-			SvDModel = CreateSvDModel();
+			SvDModel = CreateEndocModel();
 			oxModel = CreateOxygenTransportModel(DoxDays);
 			ctModel = CreateCancerTransportModel(DcellDays[0]);
 			gModel = CreateGrowthModel();
@@ -261,8 +261,8 @@ namespace ISAAR.MSolve.Tests
 				outputFile.WriteLine("              </DataArray>");
 
 				outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"SvD\" NumberOfComponents=\"1\" format=\"ascii\">");
-				for (int i = 0; i < SvDNode.Length; i++)
-					outputFile.WriteLine($"{SvDNode[i]} ");
+				for (int i = 0; i < endocNode.Length; i++)
+					outputFile.WriteLine($"{endocNode[i]} ");
 				outputFile.WriteLine("              </DataArray>");
 
 				outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"Cv\" NumberOfComponents=\"1\" format=\"ascii\">");
@@ -551,7 +551,7 @@ namespace ISAAR.MSolve.Tests
 				}
 			CancerTransportL = l;
 		}
-		private static void SvDCoefficientsCalculation(IList<IList<Element>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
+		private static void endocCoefficientsCalculation(IList<IList<Element>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
 		{
 			if (endocElement == null)
 			{
@@ -645,7 +645,7 @@ namespace ISAAR.MSolve.Tests
 		private static void UpdateModels(Dictionary<int, IVector>[] prevStepSolutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
 			IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
 		{
-			SvDNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
+			endocNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
 			coxNode = solversToReplace[1].LinearSystems[0].Solution.CopyToArray();
 			tumcNode = solversToReplace[2].LinearSystems[0].Solution.CopyToArray();
 			lgNode = solversToReplace[3].LinearSystems[0].Solution.CopyToArray();
@@ -673,7 +673,7 @@ namespace ISAAR.MSolve.Tests
 				endocElement[e.ID] = 0;
 				for (int i = 0; i < e.Nodes.Count; i++)
 				{
-					endocElement[e.ID] += SvDNode[e.Nodes[i].ID] / (e.Nodes.Count);
+					endocElement[e.ID] += endocNode[e.Nodes[i].ID] / (e.Nodes.Count);
 				}
 			}
 
@@ -864,7 +864,7 @@ namespace ISAAR.MSolve.Tests
 			}
 
 			//
-			modelsToReplace[0] = CreateSvDModel().Item1;
+			modelsToReplace[0] = CreateEndocModel().Item1;
 			modelsToReplace[1] = CreateOxygenTransportModel(new double[] { Dox[0] * 24d * 3600d, Dox[1] * 24d * 3600d }).Item1;
 			modelsToReplace[2] = CreateCancerTransportModel(Dcell[0]).Item1;
 			modelsToReplace[3] = CreateGrowthModel().Item1;
@@ -976,7 +976,7 @@ namespace ISAAR.MSolve.Tests
 			childAnalyzerBuilder.NumIterationsForMatrixRebuild = 5;
 			childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
 		}
-		private static Tuple<Model, IModelReader> CreateSvDModel()
+		private static Tuple<Model, IModelReader> CreateEndocModel()
 		{
 			ComsolMeshReader5 modelReader;
 			Model model;
@@ -986,14 +986,14 @@ namespace ISAAR.MSolve.Tests
 				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, SvDCoefficientsCalculation);
+				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, endocCoefficientsCalculation);
 				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
 			}
 			else
 			{
 				Console.WriteLine("Updating SvD Model...");
 				modelReader = (ComsolMeshReader5)SvDModel.Item2;
-				SvDCoefficientsCalculation(modelReader.elementDomains, SvDK, SvDU, SvDL);
+				endocCoefficientsCalculation(modelReader.elementDomains, SvDK, SvDU, SvDL);
 				modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, SvDK, SvDU, SvDL);
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
