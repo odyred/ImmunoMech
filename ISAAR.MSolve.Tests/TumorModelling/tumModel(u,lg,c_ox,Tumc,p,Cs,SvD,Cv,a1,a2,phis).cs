@@ -78,8 +78,10 @@ namespace ISAAR.MSolve.Tests
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
 		private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder();
+		//private static CSparseCholeskySolver.Builder builder = new CSparseCholeskySolver.Builder();
 		//private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
 		private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder();
+		//private static CSparseCholeskySolver.Builder structuralBuilder = new CSparseCholeskySolver.Builder();
 		private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder();
 		//private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
 		private static double[] lgNode;
@@ -153,7 +155,7 @@ namespace ISAAR.MSolve.Tests
 		private static double[][] SpaceDerivatives;
 		private static Dictionary<int, double[]> uXt;
 		private static Dictionary<int, IVector> Displacements;
-		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csModel, 
+		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csModel,
 			SvDModel, cvModel, a1Model, a2Model, phisModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
 
@@ -182,9 +184,9 @@ namespace ISAAR.MSolve.Tests
 			a1Model = CreateAng1Model();
 			a2Model = CreateAng2Model();
 			phisModel = CreatePhisModel();
-			var models = new[] { SvDModel.Item1, oxModel.Item1, ctModel.Item1, gModel.Item1, 
+			var models = new[] { SvDModel.Item1, oxModel.Item1, ctModel.Item1, gModel.Item1,
 				prModel.Item1, csModel.Item1, csModel.Item1, a1Model.Item1, a2Model.Item1, phisModel.Item1 };
-			var modelReaders = new[] { SvDModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2, 
+			var modelReaders = new[] { SvDModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2,
 				prModel.Item2, csModel.Item2, cvModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2 };
 			IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
 
@@ -216,12 +218,12 @@ namespace ISAAR.MSolve.Tests
 					outputFile.WriteLine($"{i + 1}");
 				outputFile.WriteLine("              </DataArray>");
 
-				
+
 				outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"totalDisplacement\" NumberOfComponents=\"1\" format =\"ascii\">");
 				for (int i = 0; i < numberOfPoints; i++)
 				{
-					double dist = Math.Sqrt(Math.Pow(oxModel.Item1.Nodes[i].X - structModel.Item1.Nodes[i].X, 2) + 
-						Math.Pow(oxModel.Item1.Nodes[i].Y - structModel.Item1.Nodes[i].Y, 2) + 
+					double dist = Math.Sqrt(Math.Pow(oxModel.Item1.Nodes[i].X - structModel.Item1.Nodes[i].X, 2) +
+						Math.Pow(oxModel.Item1.Nodes[i].Y - structModel.Item1.Nodes[i].Y, 2) +
 						Math.Pow(oxModel.Item1.Nodes[i].Z - structModel.Item1.Nodes[i].Z, 2));
 					outputFile.WriteLine($"{dist} ");
 				}
@@ -377,8 +379,8 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < current.Length; i++)
 			{
 				spaceTimeDerivatives[i] = new double[3];
-                for (int j = 0; j < 3; j++)
-                {
+				for (int j = 0; j < 3; j++)
+				{
 					spaceTimeDerivatives[i][j] = (current[i][j] - previous[i][j]) / timestep;
 				}
 				//var temp = current[i];
@@ -464,9 +466,9 @@ namespace ISAAR.MSolve.Tests
 				var dd = (-2e-10) * tumcElement[element.ID] / (4 * Math.PI * Math.Pow(ri, 2)) + 1;
 				dd0[element.ID] = dd >= 0 ? dd : 0;
 			}
-			if (uXt == null) 
+			if (uXt == null)
 			{
-				uXt = new Dictionary<int, double[]>(); 
+				uXt = new Dictionary<int, double[]>();
 				for (int i = 0; i < SvDModel.Item1.Elements.Count; i++)
 				{
 					uXt[i] = new double[3];
@@ -630,15 +632,15 @@ namespace ISAAR.MSolve.Tests
 				}
 			}
 
-			if (uXt == null) 
+			if (uXt == null)
 			{
-				uXt = new Dictionary<int, double[]>(); 
+				uXt = new Dictionary<int, double[]>();
 				for (int i = 0; i < SvDModel.Item1.Elements.Count; i++)
 				{
 					uXt[i] = new double[3];
 				}
 			}
-			for (int i=0; i < l.Count; i++)
+			for (int i = 0; i < l.Count; i++)
 			{
 				l[i] = uXt[i].Sum();
 			}
@@ -1138,7 +1140,7 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
-					var fg = 24d * 3600d * Grox * tumcElement[element.ID] *lgElement[element.ID] / 3d;
+					var fg = 24d * 3600d * Grox * tumcElement[element.ID] * lgElement[element.ID] / 3d;
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1393,9 +1395,9 @@ namespace ISAAR.MSolve.Tests
 			{
 				Console.WriteLine("Creating Ang1 Model");
 				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh.mphtxt");
-				int[] modelDomains = new int[] { 0,1 };
+				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-				modelReader = new ComsolMeshReader3(filename, new double[] { 1,1 }, new double[] { 0, 0 }, 
+				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 },
 					conv0, new double[] { m1 / 2d * 24d * 3600d, m1 / 2d * 24d * 3600d });
 				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
 			}
@@ -1403,16 +1405,16 @@ namespace ISAAR.MSolve.Tests
 			{
 				Console.WriteLine("Updating Ang1 Model...");
 				modelReader = (ComsolMeshReader3)a1Model.Item2;
-				modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { 0, 0 }, 
+				modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, new double[] { 0, 0 },
 					conv0, new double[] { m1 / 2d * 24d * 3600d, m1 / 2d * 24d * 3600d });
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
 
 			if (a1Element == null) a1Element = new double[model.Elements.Count];
 
-			var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], m1/2d * 24d * 3600d);
+			var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], m1 / 2d * 24d * 3600d);
 			//double[] Grox = new double[model.Elements.Count];
-			int[] domainIDs = new int[] { 0, 1};
+			int[] domainIDs = new int[] { 0, 1 };
 			foreach (int domainID in domainIDs)
 			{
 				foreach (Element element in modelReader.elementDomains[domainID])
@@ -1426,7 +1428,7 @@ namespace ISAAR.MSolve.Tests
 						Sv = Svin * dd0[element.ID] * SvDElement[element.ID];
 					else
 						Sv = Svin * SvDElement[element.ID];
-					var A1sd = 24d * 3600d *((b1 * 1e-10 * Ga * Sv / a10) + m1) / 2;
+					var A1sd = 24d * 3600d * ((b1 * 1e-10 * Ga * Sv / a10) + m1) / 2;
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, A1sd, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1513,7 +1515,7 @@ namespace ISAAR.MSolve.Tests
 
 			if (phisElement == null)
 			{
-				phisElement = new double[SvDModel.Item1.Elements.Count]; 
+				phisElement = new double[SvDModel.Item1.Elements.Count];
 				for (int i = 0; i < phisElement.Length; i++)
 				{
 					phisElement[i] = 0.3;
@@ -1521,7 +1523,7 @@ namespace ISAAR.MSolve.Tests
 			}
 			if (dphisElement == null)
 			{
-				dphisElement = new Dictionary<int, double[]>(); 
+				dphisElement = new Dictionary<int, double[]>();
 				for (int i = 0; i < phisElement.Length; i++)
 				{
 					dphisElement[i] = new double[3];
@@ -1535,7 +1537,7 @@ namespace ISAAR.MSolve.Tests
 				{
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
 					var materialODE = new ConvectionDiffusionMaterial(1, 0, phisU[element.ID], phisL[element.ID]);
-					var fphis = 24 * 3600 * (Grox - (vElement[element.ID][0] * dphisElement[element.ID][0] + 
+					var fphis = 24 * 3600 * (Grox - (vElement[element.ID][0] * dphisElement[element.ID][0] +
 						vElement[element.ID][1] * dphisElement[element.ID][1] + vElement[element.ID][2] * dphisElement[element.ID][2]));
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fphis, ThermalDof.Temperature);

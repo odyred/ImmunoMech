@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.Diagnostics;
-using System.Text;
-using ISAAR.MSolve.Discretization.Interfaces;
-using ISAAR.MSolve.LinearAlgebra.Matrices;
-using ISAAR.MSolve.LinearAlgebra.Triangulation;
-using ISAAR.MSolve.LinearAlgebra.Vectors;
-using ISAAR.MSolve.Solvers.Assemblers;
-using ISAAR.MSolve.Solvers.Ordering;
-using ISAAR.MSolve.Solvers.Ordering.Reordering;
+using MGroup.LinearAlgebra.Matrices;
+using MGroup.LinearAlgebra.Triangulation;
+using MGroup.LinearAlgebra.Vectors;
+using MGroup.MSolve.Discretization;
+using MGroup.MSolve.Solution;
+using MGroup.Solvers.Assemblers;
+using MGroup.Solvers.DofOrdering;
+using MGroup.Solvers.DofOrdering.Reordering;
 
-namespace ISAAR.MSolve.Solvers.Direct
+namespace MGroup.Solvers.Direct
 {
 	public class CSparseCholeskySolver : SingleSubdomainSolverBase<SymmetricCscMatrix>
 	{
@@ -18,7 +17,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 		private bool mustFactorize = true;
 		private CholeskyCSparseNet factorization;
 
-		private CSparseCholeskySolver(IStructuralModel model, IDofOrderer dofOrderer)
+		private CSparseCholeskySolver(IModel model, IDofOrderer dofOrderer)
 			: base(model, dofOrderer, new SymmetricCscAssembler(true), "CSparseCholeskySolver")
 		{
 		}
@@ -106,7 +105,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 				= new DofOrderer(new NodeMajorDofOrderingStrategy(), AmdReordering.CreateWithCSparseAmd());
 
 
-			public CSparseCholeskySolver BuildSolver(IStructuralModel model)
+			public CSparseCholeskySolver BuildSolver(IModel model)
 			{
 				return new CSparseCholeskySolver(model, DofOrderer);
 			}

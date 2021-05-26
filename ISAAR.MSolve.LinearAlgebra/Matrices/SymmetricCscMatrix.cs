@@ -16,7 +16,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
     /// explicitly stored. This matrix format is better used for factorizations using SuiteSparse or CSparse libraries.
     /// Authors: Serafeim Bakalakos
     /// </summary>
-    public class SymmetricCscMatrix: IMatrix
+    public class SymmetricCscMatrix : IMatrix
     {
         /// <summary>
         /// values.Length = number of non zeros in upper triangle.
@@ -150,7 +150,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
             if ((otherMatrix is SymmetricCscMatrix otherCSC) && HaveSameIndexArrays(otherCSC))
             {
                 // Unneeded if the indexers are identical, but worth it
-                Preconditions.CheckSameMatrixDimensions(this, otherMatrix); 
+                Preconditions.CheckSameMatrixDimensions(this, otherMatrix);
 
                 //TODO: Perhaps this should be done using mkl_malloc and BLAS copy. 
                 double[] resultValues = new double[values.Length];
@@ -159,7 +159,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
                 Blas.Daxpy(values.Length, otherCoefficient, otherCSC.values, 0, 1, resultValues, 0, 1);
 
                 // Do not copy the index arrays, since they are already spread around. TODO: is this a good idea?
-                return new SymmetricCscMatrix(NumRows, NumColumns, resultValues, this.rowIndices, this.colOffsets);
+                return new SymmetricCscMatrix(NumRows, NumNonZerosUpper, resultValues, this.rowIndices, this.colOffsets);
             }
             else return DoEntrywise(otherMatrix, (thisEntry, otherEntry) => thisEntry + otherCoefficient * otherEntry);
         }
@@ -371,9 +371,9 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
                 }
 
                 // Do not copy the index arrays, since they are already spread around. TODO: is this a good idea?
-                return new SymmetricCscMatrix(NumRows, NumColumns, resultValues, this.rowIndices, this.colOffsets);
+                return new SymmetricCscMatrix(NumRows, NumNonZerosUpper, resultValues, this.rowIndices, this.colOffsets);
             }
-            else return DoEntrywise(otherMatrix, 
+            else return DoEntrywise(otherMatrix,
                 (thisEntry, otherEntry) => thisCoefficient * thisEntry + otherCoefficient * otherEntry);
         }
 
@@ -437,8 +437,8 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
                 int colEnd = colOffsets[j + 1]; //exclusive
                 for (int k = colStart; k < colEnd; ++k)
                 {
-                    
-                    if (rowIndices[k] == j) 
+
+                    if (rowIndices[k] == j)
                     {
                         aggregator = processEntry(values[k], aggregator);
                         ++numNonZeros;
@@ -462,6 +462,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
         {
             // Only apply the operation on non zero entries
             var resultValues = new double[values.Length];
+            Array.Copy(this.values, resultValues, values.Length);
             Blas.Dscal(NumNonZerosUpper, scalar, resultValues, 0, 1);
 
             //TODO: Perhaps I should also copy the indexers
