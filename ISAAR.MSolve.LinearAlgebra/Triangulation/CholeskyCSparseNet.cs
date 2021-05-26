@@ -45,7 +45,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
         /// </summary>
         public int Order { get; }
 
-        
+
         /// <summary>
         /// Performs the Cholesky factorization: A = L * L^T of a symmetric positive definite matrix A. 
         /// Only the upper triangle of the original matrix is required and is provided in symmetric CSC format by 
@@ -81,6 +81,10 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
             }
             catch (Exception ex) //TODO: how can I make sure this exception was thrown because of an indefinite matrix?
             {
+                var writer = new Output.MatlabWriter();
+                var matrix = CscMatrix.CreateFromArrays(order, order, cscValues, cscRowIndices, cscColOffsets, false);
+                writer.WriteToFile(matrix, @"C:\Users\cluster\Desktop\problematic_matrix_tumor.txt");
+
                 throw new IndefiniteMatrixException(ex.Message);
             }
         }
@@ -92,7 +96,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
         /// <param name="matrix">The matrix in symmetric (only upper triangle) CSC format.</param>
         /// <exception cref="IndefiniteMatrixException">Thrown if the original matrix is not positive definite.</exception>
         public static CholeskyCSparseNet Factorize(SymmetricCscMatrix matrix)
-            => Factorize(matrix.NumColumns, matrix.NumNonZerosUpper, matrix.RawValues, matrix.RawRowIndices, 
+            => Factorize(matrix.NumColumns, matrix.NumNonZerosUpper, matrix.RawValues, matrix.RawRowIndices,
                 matrix.RawColOffsets);
 
         /// <summary>

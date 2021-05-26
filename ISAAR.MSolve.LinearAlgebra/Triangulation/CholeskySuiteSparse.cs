@@ -135,7 +135,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
         /// if there is not sufficient memory to perform the factorization.
         /// </exception>
         public static CholeskySuiteSparse Factorize(SymmetricCscMatrix matrix, bool superNodal)
-            => Factorize(matrix.NumColumns, matrix.NumNonZerosUpper, matrix.RawValues, matrix.RawRowIndices, 
+            => Factorize(matrix.NumColumns, matrix.NumNonZerosUpper, matrix.RawValues, matrix.RawRowIndices,
                 matrix.RawColOffsets, false);
 
         /// <summary>
@@ -196,18 +196,18 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
             return Vector.CreateFromArray(solution);
         }
 
-    /// <summary>
-    /// Solves a series of linear systems L^T * x = b (or  D * L^T * x = b), where L is the lower triangular factor (and D  
-    /// the diagonal factor) of the Cholesky factorization: A = L * L^T (or A = L * D * L^T).
-    /// </summary>
-    /// <param name="rhsVectors">A matrix whose columns are the right hand side vectors b of the linear systems. Constraints:
-    ///     <paramref name="rhsVectors"/>.<see cref="IIndexable2D.NumRows"/> == this.<see cref="Order"/>.</param>
-    /// <exception cref="NonMatchingDimensionsException">Thrown if <paramref name="rhsVectors"/> violates the described 
-    ///     constraints.</exception>
-    /// <exception cref="AccessViolationException">Thrown if the unmanaged memory that holds the factorization data has been 
-    ///     released.</exception>
-    /// <exception cref="SuiteSparseException">Thrown if the call to SuiteSparse library fails.</exception>
-    public Matrix BackSubstitutions(Matrix rhsVectors) => SolveInternal(SystemType.BackSubstitution, rhsVectors);
+        /// <summary>
+        /// Solves a series of linear systems L^T * x = b (or  D * L^T * x = b), where L is the lower triangular factor (and D  
+        /// the diagonal factor) of the Cholesky factorization: A = L * L^T (or A = L * D * L^T).
+        /// </summary>
+        /// <param name="rhsVectors">A matrix whose columns are the right hand side vectors b of the linear systems. Constraints:
+        ///     <paramref name="rhsVectors"/>.<see cref="IIndexable2D.NumRows"/> == this.<see cref="Order"/>.</param>
+        /// <exception cref="NonMatchingDimensionsException">Thrown if <paramref name="rhsVectors"/> violates the described 
+        ///     constraints.</exception>
+        /// <exception cref="AccessViolationException">Thrown if the unmanaged memory that holds the factorization data has been 
+        ///     released.</exception>
+        /// <exception cref="SuiteSparseException">Thrown if the call to SuiteSparse library fails.</exception>
+        public Matrix BackSubstitutions(Matrix rhsVectors) => SolveInternal(SystemType.BackSubstitution, rhsVectors);
 
         /// <summary>
         /// See <see cref="ITriangulation.CalcDeterminant"/>.
@@ -324,12 +324,12 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
         /// Perhaps I should use SafeHandle (thread safety, etc). 
         /// Also perhaps there should be dedicated objects for closing each handle.
         /// </summary>
-        private void ReleaseResources() 
+        private void ReleaseResources()
         {
             if (common != IntPtr.Zero)
             {
                 // Supposedly throwing in destructors and Dispose() is poor practice.
-                if (factorizedMatrix == IntPtr.Zero) 
+                if (factorizedMatrix == IntPtr.Zero)
                 {
                     throw new AccessViolationException("The matrix in unmanaged memory has already been cleared or lost");
                 }

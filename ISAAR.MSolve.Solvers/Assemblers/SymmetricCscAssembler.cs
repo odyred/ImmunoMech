@@ -67,7 +67,7 @@ namespace ISAAR.MSolve.Solvers.Assemblers
             }
 
 
-            return SymmetricCscMatrix.CreateFromArrays(numFreeDofs, values, cachedRowIndices, cachedColOffsets, false);
+            return SymmetricCscMatrix.CreateFromArrays(numFreeDofs, values, cachedRowIndices, cachedColOffsets, true);
         }
 
         public (SymmetricCscMatrix matrixFreeFree, IMatrixView matrixFreeConstr, IMatrixView matrixConstrFree,

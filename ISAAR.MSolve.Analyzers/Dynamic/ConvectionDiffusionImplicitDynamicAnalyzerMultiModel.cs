@@ -37,8 +37,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
         private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
 
-        public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], 
-            IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers, 
+        public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[],
+            IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers,
             IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, NewmarkDynamicAnalyzer structuralParentAnalyzer = null,
             IVector[] initialTemperature = null)
         {
@@ -95,7 +95,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             {
                 foreach (ILinearSystem linearSystem in linearSystems[i].Values)
                 {
-                     linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
+                    linearSystem.Matrix = providers[i].LinearCombinationOfMatricesIntoStiffness(coeffs, linearSystem.Subdomain);
                 }
             }
         }
@@ -278,14 +278,14 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
                     foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
                     InitializeRhs(i);
-                    
+
                     CalculateRhsImplicit(i);
 
                     childAnalyzers[i].Solve();
                 }
 
                 temperatureNorm = 0;
-                if (structuralParentAnalyzer!=null)
+                if (structuralParentAnalyzer != null)
                 {
                     temperatureNorm = 0;
                     structuralParentAnalyzer.SolveTimestep(t);
