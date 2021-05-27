@@ -10,6 +10,7 @@ using ISAAR.MSolve.Solvers.Assemblers;
 using ISAAR.MSolve.Solvers.Ordering;
 using ISAAR.MSolve.Solvers.Ordering.Reordering;
 
+namespace ISAAR.MSolve.Solvers.Direct
 {
 	public class CSparseCholeskySolver : SingleSubdomainSolverBase<SymmetricCscMatrix>
 	{
@@ -17,6 +18,7 @@ using ISAAR.MSolve.Solvers.Ordering.Reordering;
 		private bool mustFactorize = true;
 		private CholeskyCSparseNet factorization;
 
+		private CSparseCholeskySolver(IStructuralModel model, IDofOrderer dofOrderer)
 			: base(model, dofOrderer, new SymmetricCscAssembler(true), "CSparseCholeskySolver")
 		{
 		}
@@ -104,6 +106,7 @@ using ISAAR.MSolve.Solvers.Ordering.Reordering;
 				= new DofOrderer(new NodeMajorDofOrderingStrategy(), AmdReordering.CreateWithCSparseAmd());
 
 
+			public CSparseCholeskySolver BuildSolver(IStructuralModel model)
 			{
 				return new CSparseCholeskySolver(model, DofOrderer);
 			}
