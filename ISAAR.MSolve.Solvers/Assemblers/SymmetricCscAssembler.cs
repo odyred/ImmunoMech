@@ -1,128 +1,115 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using ISAAR.MSolve.Discretization.FreedomDegrees;
+using System.Text;
 using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
-using ISAAR.MSolve.LinearAlgebra.Matrices.Builders;
-using ISAAR.MSolve.Solvers.Commons;
+using ISAAR.MSolve.LinearAlgebra.Triangulation;
+using ISAAR.MSolve.LinearAlgebra.Vectors;
+using ISAAR.MSolve.Solvers.Assemblers;
+using ISAAR.MSolve.Solvers.Ordering;
+using ISAAR.MSolve.Solvers.Ordering.Reordering;
 
-//TODO: Instead of storing the raw CSC arrays, use a reusable DOK or SymmCscIndexer class. That class should provide methods to 
-//      assemble the values part of the global matrix more efficiently than the general purpose DOK. The general purpose DOK 
-//      should only be used to assemble the first global matrix and whenever the dof ordering changes. Now it is used everytime 
-//      and the indexing arrays are discarded.
-//TODO: I could also cache the symbolic factorization of SuiteSparse and reuse it. That would really speed up things.
-namespace ISAAR.MSolve.Solvers.Assemblers
+namespace ISAAR.MSolve.Solvers.Direct
 {
-    /// <summary>
-    /// Builds the global matrix of the linear system that will be solved. This matrix is in symmetric CSC format, namely only 
-    /// the upper triangle is explicitly stored. This format is suitable for the SuiteSparse library and solvers that use it.
-    /// Authors: Serafeim Bakalakos
-    /// </summary>
-    public class SymmetricCscAssembler : IGlobalMatrixAssembler<SymmetricCscMatrix>
-    {
-        private const string name = "SymmetricCscAssembler"; // for error messages
-        private readonly bool sortColsOfEachRow;
-        private ConstrainedMatricesAssembler constrainedAssembler = new ConstrainedMatricesAssembler();
+	public class CSparseCholeskySolver : SingleSubdomainSolverBase<SymmetricCscMatrix>
+	{
+		private bool factorizeInPlace = true;
+		private bool mustFactorize = true;
+		private CholeskyCSparseNet factorization;
 
-        bool isIndexerCached = false;
-        private int[] cachedRowIndices, cachedColOffsets;
+		private CSparseCholeskySolver(IStructuralModel model, IDofOrderer dofOrderer)
+			: base(model, dofOrderer, new SymmetricCscAssembler(true), "CSparseCholeskySolver")
+		{
+		}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="sortColsOfEachRow">
-        /// Sorting the columns of each row in the CSC storage format may increase performance of the factorization and 
-        /// back/forward substitutions. It is recommended to set it to true.
-        /// </param>
-        public SymmetricCscAssembler(bool sortColsOfEachRow = true)
-        {
-            this.sortColsOfEachRow = sortColsOfEachRow;
-        }
+		public override void HandleMatrixWillBeSet()
+		{
+			mustFactorize = true;
+			factorization = null;
+		}
 
-        public SymmetricCscMatrix BuildGlobalMatrix(ISubdomainFreeDofOrdering dofOrdering, IEnumerable<IElement> elements,
-            IElementMatrixProvider matrixProvider)
-        {
-            int numFreeDofs = dofOrdering.NumFreeDofs;
-            var subdomainMatrix = DokSymmetric.CreateEmpty(numFreeDofs);
+		public override void Initialize() { }
 
-            foreach (IElement element in elements)
-            {
-                // TODO: perhaps that could be done and cached during the dof enumeration to avoid iterating over the dofs twice
-                (int[] elementDofIndices, int[] subdomainDofIndices) = dofOrdering.MapFreeDofsElementToSubdomain(element);
-                IMatrix elementMatrix = matrixProvider.Matrix(element);
-                subdomainMatrix.AddSubmatrixSymmetric(elementMatrix, elementDofIndices, subdomainDofIndices);
-            }
+		public override void PreventFromOverwrittingSystemMatrices() => factorizeInPlace = false;
 
-            (double[] values, int[] rowIndices, int[] colOffsets) = subdomainMatrix.BuildSymmetricCscArrays(sortColsOfEachRow);
-            if (!isIndexerCached)
-            {
-                cachedRowIndices = rowIndices;
-                cachedColOffsets = colOffsets;
-                isIndexerCached = true;
-            }
-            else
-            {
-                Debug.Assert(Utilities.AreEqual(cachedRowIndices, rowIndices));
-                Debug.Assert(Utilities.AreEqual(cachedColOffsets, colOffsets));
-            }
+		/// <summary>
+		/// Solves the linear system with back-forward substitution. If the matrix has been modified, it will be refactorized.
+		/// </summary>
+		public override void Solve()
+		{
+			var watch = new Stopwatch();
+			if (linearSystem.SolutionConcrete == null) linearSystem.SolutionConcrete = linearSystem.CreateZeroVectorConcrete();
+			//else linearSystem.Solution.Clear(); // no need to waste computational time on this in a direct solver
+
+			// Factorization
+			if (mustFactorize)
+			{
+				watch.Start();
+				factorization = CholeskyCSparseNet.Factorize(linearSystem.Matrix);
+				watch.Stop();
+				Logger.LogTaskDuration("Matrix factorization", watch.ElapsedMilliseconds);
+				watch.Reset();
+				mustFactorize = false;
+			}
+
+			// Substitutions
+			watch.Start();
+			factorization.SolveLinearSystem(linearSystem.RhsConcrete, linearSystem.SolutionConcrete);
+			watch.Stop();
+			Logger.LogTaskDuration("Back/forward substitutions", watch.ElapsedMilliseconds);
+			Logger.IncrementAnalysisStep();
+		}
 
 
             return SymmetricCscMatrix.CreateFromArrays(numFreeDofs, values, cachedRowIndices, cachedColOffsets, true);
         }
 
-        public (SymmetricCscMatrix matrixFreeFree, IMatrixView matrixFreeConstr, IMatrixView matrixConstrFree,
-            IMatrixView matrixConstrConstr) BuildGlobalSubmatrices(
-            ISubdomainFreeDofOrdering freeDofOrdering, ISubdomainConstrainedDofOrdering constrainedDofOrdering,
-            IEnumerable<IElement> elements, IElementMatrixProvider matrixProvider)
-        {
-            int numFreeDofs = freeDofOrdering.NumFreeDofs;
-            var subdomainMatrix = DokSymmetric.CreateEmpty(numFreeDofs);
+			// Factorization
+			if (mustFactorize)
+			{
+				watch.Start();
+				factorization = CholeskyCSparseNet.Factorize(linearSystem.Matrix);
+				watch.Stop();
+				Logger.LogTaskDuration("Matrix factorization", watch.ElapsedMilliseconds);
+				watch.Reset();
+				mustFactorize = false;
+			}
 
-            //TODO: also reuse the indexers of the constrained matrices.
-            constrainedAssembler.InitializeNewMatrices(freeDofOrdering.NumFreeDofs, constrainedDofOrdering.NumConstrainedDofs);
+			// Substitutions
+			watch.Start();
 
-            // Process the stiffness of each element
-            foreach (IElement element in elements)
-            {
-                // TODO: perhaps that could be done and cached during the dof enumeration to avoid iterating over the dofs twice
-                (int[] elementDofsFree, int[] subdomainDofsFree) = freeDofOrdering.MapFreeDofsElementToSubdomain(element);
-                (int[] elementDofsConstrained, int[] subdomainDofsConstrained) =
-                    constrainedDofOrdering.MapConstrainedDofsElementToSubdomain(element);
+			// Solve each linear system separately, to avoid copying the RHS matrix to a dense one.
+			int systemOrder = linearSystem.Matrix.NumColumns;
+			int numRhs = otherMatrix.NumColumns;
+			var solutionVectors = Matrix.CreateZero(systemOrder, numRhs);
+			Vector solutionVector = linearSystem.CreateZeroVectorConcrete();
+			for (int j = 0; j < numRhs; ++j)
+			{
+				if (j != 0) solutionVector.Clear();
+				Vector rhsVector = otherMatrix.GetColumn(j);
+				factorization.SolveLinearSystem(rhsVector, solutionVector);
+				solutionVectors.SetSubcolumn(j, solutionVector);
+			}
 
-                IMatrix elementMatrix = matrixProvider.Matrix(element);
-                subdomainMatrix.AddSubmatrixSymmetric(elementMatrix, elementDofsFree, subdomainDofsFree);
-                constrainedAssembler.AddElementMatrix(elementMatrix, elementDofsFree, subdomainDofsFree,
-                    elementDofsConstrained, subdomainDofsConstrained);
-            }
+			watch.Stop();
+			Logger.LogTaskDuration("Back/forward substitutions", watch.ElapsedMilliseconds);
+			Logger.IncrementAnalysisStep();
+			return solutionVectors;
+		}
 
-            // Create and cache the CSC arrays for the free dofs.
-            (double[] values, int[] rowIndices, int[] colOffsets) = subdomainMatrix.BuildSymmetricCscArrays(sortColsOfEachRow);
-            if (!isIndexerCached)
-            {
-                cachedRowIndices = rowIndices;
-                cachedColOffsets = colOffsets;
-                isIndexerCached = true;
-            }
-            else
-            {
-                Debug.Assert(Utilities.AreEqual(cachedRowIndices, rowIndices));
-                Debug.Assert(Utilities.AreEqual(cachedColOffsets, colOffsets));
-            }
+		public class Builder
+		{
+			public Builder() { }
 
-            // Create the free and constrained matrices. 
-            subdomainMatrix = null; // Let the DOK be garbaged collected early, in case there isn't sufficient memory.
-            var matrixFreeFree =
-                SymmetricCscMatrix.CreateFromArrays(numFreeDofs, values, cachedRowIndices, cachedColOffsets, false);
-            (CsrMatrix matrixConstrFree, CsrMatrix matrixConstrConstr) = constrainedAssembler.BuildMatrices();
-            return (matrixFreeFree, matrixConstrFree.TransposeToCSC(false), matrixConstrFree, matrixConstrConstr);
-        }
+			public IDofOrderer DofOrderer { get; set; }
+				= new DofOrderer(new NodeMajorDofOrderingStrategy(), AmdReordering.CreateWithCSparseAmd());
 
-        public void HandleDofOrderingWillBeModified()
-        {
-            //TODO: perhaps the indexer should be disposed altogether. Then again it could be in use by other matrices.
-            cachedRowIndices = null;
-            cachedColOffsets = null;
-            isIndexerCached = false;
-        }
-    }
+
+			public CSparseCholeskySolver BuildSolver(IStructuralModel model)
+			{
+				return new CSparseCholeskySolver(model, DofOrderer);
+			}
+		}
+	}
 }
