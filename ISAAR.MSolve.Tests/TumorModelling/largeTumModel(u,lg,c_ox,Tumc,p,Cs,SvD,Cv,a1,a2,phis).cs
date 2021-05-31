@@ -31,11 +31,12 @@ using System.Reflection;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.FEM.Loading.Interfaces;
-using ISAAR.MSolve.Discretization.Logging;
+using ISAAR.MSolve.Solvers.Ordering;
+using ISAAR.MSolve.Solvers.Ordering.Reordering;
 
 namespace ISAAR.MSolve.Tests
 {
-	public class tumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_Real
+	public class largeTumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_
 	{
 		private const double timestep = 1;
 		private const double time = 30;
@@ -77,15 +78,35 @@ namespace ISAAR.MSolve.Tests
 		private static double b1 = 2280d / 3600d; //1/s
 		private static double b2 = 18240d / 3600d; //1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
+		private static int solverSymmetric = 2, solverNonSymmetric = 1;
+		private static bool reordering = false;
+		private static ISolverBuilder builder, asymBuilder, structuralBuilder;
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
-		//private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder();
-		//private static CSparseCholeskySolver.Builder builder = new CSparseCholeskySolver.Builder();
-		private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
-		private static DenseMatrixSolver.Builder asymBuilder = new DenseMatrixSolver.Builder();
+		//private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder()
+		//{
+		//    DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+		//};
+		//private static CSparseCholeskySolver.Builder builder = new CSparseCholeskySolver.Builder()
+		//{
+		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+		//};
+		//private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
+		//private static DenseMatrixSolver.Builder asymBuilder = new DenseMatrixSolver.Builder();
 		//private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder();
-		//private static CSparseCholeskySolver.Builder structuralBuilder = new CSparseCholeskySolver.Builder();
-		//private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder();
-		private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
+		//private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder()
+		//{
+		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+		//};
+
+		//private static CSparseCholeskySolver.Builder structuralBuilder = new CSparseCholeskySolver.Builder()
+		//{
+		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+		//};
+		//private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder()
+		//       {
+		//           DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+		//       };
+		//private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
 		private static double[] lgNode;
 		private static double[] lgElement;
 		private static double[] CsNode;
@@ -160,6 +181,66 @@ namespace ISAAR.MSolve.Tests
 		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csModel,
 			SvDModel, cvModel, a1Model, a2Model, phisModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
+		private static string inputFile = "mesh.mphtxt";
+		static largeTumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_()
+		{
+			if (solverNonSymmetric == 0)
+			{
+				asymBuilder = new DenseMatrixSolver.Builder();
+			}
+			else
+			{
+				asymBuilder = new CSparseLUSolver.Builder()
+				{
+					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
+				};
+			}
+			if (solverSymmetric == 0)
+			{
+				builder = new SkylineSolver.Builder();
+				structuralBuilder = new SkylineSolver.Builder();
+			}
+			else if (solverSymmetric == 1)
+			{
+				IDofReorderingStrategy reorderingStrategy;
+				if (reordering)
+				{
+					reorderingStrategy = AmdReordering.CreateWithCSparseAmd();
+				}
+				else
+				{
+					reorderingStrategy = new NullReordering();
+				}
+				builder = new CSparseCholeskySolver.Builder()
+				{
+					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
+				};
+				structuralBuilder = new CSparseCholeskySolver.Builder()
+				{
+					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
+				};
+			}
+			else
+			{
+				IDofReorderingStrategy reorderingStrategy;
+				if (reordering)
+				{
+					reorderingStrategy = AmdReordering.CreateWithSuiteSparseAmd();
+				}
+				else
+				{
+					reorderingStrategy = new NullReordering();
+				}
+				builder = new SuiteSparseSolver.Builder()
+				{
+					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
+				};
+				structuralBuilder = new SuiteSparseSolver.Builder()
+				{
+					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
+				};
+			}
+		}
 
 		[Fact]
 		private static void RunTest()
@@ -169,9 +250,8 @@ namespace ISAAR.MSolve.Tests
 			{
 				Directory.CreateDirectory(path1);
 			}
-			var path2 = Path.Combine(path1, $"solutionNorm_{DateTime.Now.ToString()}.txt");
-			GlobalLogger.OpenOutputFile(path2);
-			GlobalLogger.WriteLine($"ha");
+			var path2 = Path.Combine(path1, $"solutionNorm.txt");
+			ISAAR.MSolve.Discretization.Logging.GlobalLogger.OpenOutputFile(path2);
 			var DoxDays = new double[Dox.Length];
 			for (int i = 0; i < Dox.Length; i++)
 			{
@@ -199,7 +279,7 @@ namespace ISAAR.MSolve.Tests
 			var modelReaders = new[] { SvDModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2,
 				prModel.Item2, csModel.Item2, cvModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2 };
 			IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
-			GlobalLogger.CloseCurrentOutputFile();
+			ISAAR.MSolve.Discretization.Logging.GlobalLogger.CloseCurrentOutputFile();
 			Assert.True(CompareResults(solutions[0]));
 
 		}
@@ -896,7 +976,7 @@ namespace ISAAR.MSolve.Tests
 			{
 				if (i == 0 || i == 1 || i == 2)
 				{
-					asymBuilder.IsMatrixPositiveDefinite = false;
+					//asymBuilder.IsMatrixPositiveDefinite = false;
 					solversToReplace[i] = asymBuilder.BuildSolver(modelsToReplace[i]);
 				}
 				else
@@ -1000,7 +1080,7 @@ namespace ISAAR.MSolve.Tests
 			if (SvDModel == null)
 			{
 				Console.WriteLine("Creating SvD Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, SvDCoefficientsCalculation);
@@ -1058,7 +1138,7 @@ namespace ISAAR.MSolve.Tests
 			if (oxModel == null)
 			{
 				Console.WriteLine("Creating Oxygen Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1, 1 }, k, OxygenTransportCoefficientsCalculation);
@@ -1169,7 +1249,7 @@ namespace ISAAR.MSolve.Tests
 			if (ctModel == null)
 			{
 				Console.WriteLine("Creating Cancer Transport Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { k }, TumorCellsCoefficientsCalculation);
@@ -1208,7 +1288,7 @@ namespace ISAAR.MSolve.Tests
 			if (prModel == null)
 			{
 				Console.WriteLine("Creating Pressure Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1, 1 },
@@ -1318,7 +1398,7 @@ namespace ISAAR.MSolve.Tests
 			if (csModel == null)
 			{
 				Console.WriteLine("Creating Cs Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 }, conv0, new double[] { l13 * 24 * 3600, 0 });
@@ -1363,7 +1443,7 @@ namespace ISAAR.MSolve.Tests
 			if (cvModel == null)
 			{
 				Console.WriteLine("Creating Cv Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, CvCoefficientsCalculation);
@@ -1406,7 +1486,7 @@ namespace ISAAR.MSolve.Tests
 			if (a1Model == null)
 			{
 				Console.WriteLine("Creating Ang1 Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 },
@@ -1458,7 +1538,7 @@ namespace ISAAR.MSolve.Tests
 			if (a2Model == null)
 			{
 				Console.WriteLine("Creating Ang2 Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 },
@@ -1510,7 +1590,7 @@ namespace ISAAR.MSolve.Tests
 			if (phisModel == null)
 			{
 				Console.WriteLine("Creating phis Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { 0 }, phisCoefficientsCalculation);
@@ -1573,7 +1653,7 @@ namespace ISAAR.MSolve.Tests
 				C2[i] = 0;
 				bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
 			}
-			string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+			string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 			ComsolMeshReader1 modelReader;
 			if (lambdag == null)
 			{
@@ -1768,7 +1848,7 @@ namespace ISAAR.MSolve.Tests
 				builder.IsMatrixPositiveDefinite = false;
 				if (i == 0 || i == 1 || i == 2)
 				{
-					asymBuilder.IsMatrixPositiveDefinite = false;
+					//asymBuilder.IsMatrixPositiveDefinite = false;
 					solvers[i] = asymBuilder.BuildSolver(models[i]);
 				}
 				else

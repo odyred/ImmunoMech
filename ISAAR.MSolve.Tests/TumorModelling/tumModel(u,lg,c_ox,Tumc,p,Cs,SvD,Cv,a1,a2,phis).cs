@@ -181,6 +181,7 @@ namespace ISAAR.MSolve.Tests
 		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csModel,
 			SvDModel, cvModel, a1Model, a2Model, phisModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
+		private static string inputFile = "mesh446elem.mphtxt";
 
 		static tumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_()
 			{
@@ -1080,7 +1081,7 @@ namespace ISAAR.MSolve.Tests
 			if (SvDModel == null)
 			{
 				Console.WriteLine("Creating SvD Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, SvDCoefficientsCalculation);
@@ -1138,7 +1139,7 @@ namespace ISAAR.MSolve.Tests
 			if (oxModel == null)
 			{
 				Console.WriteLine("Creating Oxygen Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1, 1 }, k, OxygenTransportCoefficientsCalculation);
@@ -1201,7 +1202,7 @@ namespace ISAAR.MSolve.Tests
 			if (gModel == null)
 			{
 				Console.WriteLine("Creating Growth Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { 0 });
@@ -1249,7 +1250,7 @@ namespace ISAAR.MSolve.Tests
 			if (ctModel == null)
 			{
 				Console.WriteLine("Creating Cancer Transport Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { k }, TumorCellsCoefficientsCalculation);
@@ -1288,7 +1289,7 @@ namespace ISAAR.MSolve.Tests
 			if (prModel == null)
 			{
 				Console.WriteLine("Creating Pressure Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1, 1 },
@@ -1398,7 +1399,7 @@ namespace ISAAR.MSolve.Tests
 			if (csModel == null)
 			{
 				Console.WriteLine("Creating Cs Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 }, conv0, new double[] { l13 * 24 * 3600, 0 });
@@ -1443,7 +1444,7 @@ namespace ISAAR.MSolve.Tests
 			if (cvModel == null)
 			{
 				Console.WriteLine("Creating Cv Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader5(filename, new double[] { 1, 1 }, CvCoefficientsCalculation);
@@ -1486,7 +1487,7 @@ namespace ISAAR.MSolve.Tests
 			if (a1Model == null)
 			{
 				Console.WriteLine("Creating Ang1 Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 },
@@ -1538,7 +1539,7 @@ namespace ISAAR.MSolve.Tests
 			if (a2Model == null)
 			{
 				Console.WriteLine("Creating Ang2 Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0, 1 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1, 1 }, new double[] { 0, 0 },
@@ -1590,7 +1591,7 @@ namespace ISAAR.MSolve.Tests
 			if (phisModel == null)
 			{
 				Console.WriteLine("Creating phis Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { 0 }, phisCoefficientsCalculation);
@@ -1653,7 +1654,7 @@ namespace ISAAR.MSolve.Tests
 				C2[i] = 0;
 				bulkModulus[i] = 2 * MuLame[i] * (1 + PoissonV[i]) / (3 * (1 - 2 * PoissonV[i]));
 			}
-			string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+			string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 			ComsolMeshReader1 modelReader;
 			if (lambdag == null)
 			{
