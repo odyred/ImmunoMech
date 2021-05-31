@@ -101,7 +101,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 			return solutionVectors;
 		}
 
-		public class Builder
+		public class Builder : ISolverBuilder
 		{
 			public Builder() { }
 
@@ -110,7 +110,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 
 			public double FactorizationPivotTolerance { get; set; } = 1E-15;
 
-			public CSparseLUSolver BuildSolver(IStructuralModel model)
+			public ISolver BuildSolver(IStructuralModel model)
 			{
 				return new CSparseLUSolver(model, FactorizationPivotTolerance, DofOrderer);
 			}

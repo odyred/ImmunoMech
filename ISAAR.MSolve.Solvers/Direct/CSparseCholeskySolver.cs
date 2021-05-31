@@ -98,7 +98,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 			return solutionVectors;
 		}
 
-		public class Builder
+		public class Builder : ISolverBuilder
 		{
 			public Builder() { }
 
@@ -106,7 +106,7 @@ namespace ISAAR.MSolve.Solvers.Direct
 				= new DofOrderer(new NodeMajorDofOrderingStrategy(), AmdReordering.CreateWithCSparseAmd());
 
 
-			public CSparseCholeskySolver BuildSolver(IStructuralModel model)
+			public ISolver BuildSolver(IStructuralModel model)
 			{
 				return new CSparseCholeskySolver(model, DofOrderer);
 			}

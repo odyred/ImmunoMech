@@ -13,7 +13,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
     /// </summary>
     public static class DenseStrategies
     {
-        public static void AddNonContiguouslyFrom(IVector thisVector, int[] thisIndices, IVectorView otherVector, 
+        public static void AddNonContiguouslyFrom(IVector thisVector, int[] thisIndices, IVectorView otherVector,
             int[] otherIndices)
         {
             Debug.Assert(thisIndices.Length == otherIndices.Length);
@@ -48,7 +48,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
             for (int i = 0; i < thisVector.Length; ++i) thisVector.Set(i, otherVector[otherIndices[i]]);
         }
 
-        public static void CopyNonContiguouslyFrom(IVector thisVector, int[] thisIndices, IVectorView otherVector, 
+        public static void CopyNonContiguouslyFrom(IVector thisVector, int[] thisIndices, IVectorView otherVector,
             int[] otherIndices)
         {
             Debug.Assert(thisIndices.Length == otherIndices.Length);
@@ -92,7 +92,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
             return result;
         }
 
-        public static Matrix DoEntrywise(IIndexable2D matrix1, IIndexable2D matrix2, 
+        public static Matrix DoEntrywise(IIndexable2D matrix1, IIndexable2D matrix2,
             Func<double, double, double> binaryOperation)
         {
             Preconditions.CheckSameMatrixDimensions(matrix1, matrix2);
@@ -131,7 +131,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
             return submatrix;
         }
 
-        public static Matrix GetSubmatrix(IIndexable2D matrix, int rowStartInclusive, int rowEndExclusive, 
+        public static Matrix GetSubmatrix(IIndexable2D matrix, int rowStartInclusive, int rowEndExclusive,
             int colStartInclusive, int colEndExclusive)
         {
             int numNewRows = rowEndExclusive - rowStartInclusive;
@@ -178,7 +178,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
             return result;
         }
 
-        public static Matrix LinearCombination(IIndexable2D matrix1, double coefficient1, IIndexable2D matrix2, 
+        public static Matrix LinearCombination(IIndexable2D matrix1, double coefficient1, IIndexable2D matrix2,
             double coefficient2)
         {
             Preconditions.CheckSameMatrixDimensions(matrix1, matrix2);
@@ -269,7 +269,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
                     {
                         for (int j = 0; j < result.NumColumns; ++j)
                         {
-                            for (int k = 0; k <matrix1.NumColumns; ++k)
+                            for (int k = 0; k < matrix1.NumColumns; ++k)
                             {
                                 result[i, j] = matrix1[i, k] * matrix2[k, j];
                             }
@@ -290,7 +290,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
                 {
                     for (int j = 0; j < vector.Length; ++j)
                     {
-                        result[i] = matrix[j, i] * vector[j];
+                        result[i] += matrix[j, i] * vector[j];
                     }
                 }
                 return result;
@@ -303,14 +303,14 @@ namespace ISAAR.MSolve.LinearAlgebra.Commons
                 {
                     for (int j = 0; j < vector.Length; ++j)
                     {
-                        result[i] = matrix[j, i] * vector[j];
+                        result[i] += matrix[i, j] * vector[j];
                     }
                 }
                 return result;
             }
         }
 
-        public static void MultiplyIntoResult(IMatrixView matrix, IVectorView lhsVector, IVector rhsVector, 
+        public static void MultiplyIntoResult(IMatrixView matrix, IVectorView lhsVector, IVector rhsVector,
             bool transposeMatrix)
         {
             if (transposeMatrix)

@@ -42,11 +42,12 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                     if (iteration == maxIterationsPerIncrement - 1) return;
                     if (Double.IsNaN(errorNorm)) return;
                     solver.Solve();
+                    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"structural linear system: incre:{increment}, iter:{iteration}, Solution Norm = {linearSystems[0].Solution.Norm2()}");
                     //double rhsNormIt = solver.LinearSystems.First().Value.RhsVector.Norm2();
                     //double xNormIt = solver.LinearSystems.First().Value.Solution.Norm2();
                     Dictionary<int, IVector> internalRhsVectors = CalculateInternalRhs(increment, iteration);
                     Console.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
-                    Debug.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
+                    //Debug.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
                     double residualNormCurrent = UpdateResidualForcesAndNorm(increment, internalRhsVectors); // This also sets the rhs vectors in linear systems.
                     errorNorm = globalRhsNormInitial != 0 ? residualNormCurrent / globalRhsNormInitial : 0;// (rhsNorm*increment/increments) : 0;//TODOMaria this calculates the internal force vector and subtracts it from the external one (calculates the residual)
                     //Console.WriteLine($"Increment {increment}, iteration {iteration}: norm2(error) = {errorNorm}");

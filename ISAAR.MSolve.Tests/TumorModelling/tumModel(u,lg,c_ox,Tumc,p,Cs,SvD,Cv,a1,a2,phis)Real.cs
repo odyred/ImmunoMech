@@ -31,12 +31,11 @@ using System.Reflection;
 using ISAAR.MSolve.FEM.Elements;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.FEM.Loading.Interfaces;
-using ISAAR.MSolve.Solvers.Ordering;
-using ISAAR.MSolve.Solvers.Ordering.Reordering;
+using ISAAR.MSolve.Discretization.Logging;
 
 namespace ISAAR.MSolve.Tests
 {
-	public class tumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_
+	public class tumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_Real
 	{
 		private const double timestep = 1;
 		private const double time = 30;
@@ -78,35 +77,15 @@ namespace ISAAR.MSolve.Tests
 		private static double b1 = 2280d / 3600d; //1/s
 		private static double b2 = 18240d / 3600d; //1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
-		private static int solverSymmetric=2, solverNonSymmetric=1;
-		private static bool reordering=false;
-		private static ISolverBuilder builder, asymBuilder, structuralBuilder;
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
-		//private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder()
-		//{
-		//    DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-		//};
-		//private static CSparseCholeskySolver.Builder builder = new CSparseCholeskySolver.Builder()
-		//{
-		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-		//};
-		//private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
-		//private static DenseMatrixSolver.Builder asymBuilder = new DenseMatrixSolver.Builder();
+		//private static SuiteSparseSolver.Builder builder = new SuiteSparseSolver.Builder();
+		//private static CSparseCholeskySolver.Builder builder = new CSparseCholeskySolver.Builder();
+		private static SkylineSolver.Builder builder = new SkylineSolver.Builder();
+		private static DenseMatrixSolver.Builder asymBuilder = new DenseMatrixSolver.Builder();
 		//private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder();
-		//private static CSparseLUSolver.Builder asymBuilder = new CSparseLUSolver.Builder()
-		//{
-		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-		//};
-
-		//private static CSparseCholeskySolver.Builder structuralBuilder = new CSparseCholeskySolver.Builder()
-		//{
-		//	DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-		//};
-		//private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder()
-		//       {
-		//           DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-		//       };
-		//private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
+		//private static CSparseCholeskySolver.Builder structuralBuilder = new CSparseCholeskySolver.Builder();
+		//private static SuiteSparseSolver.Builder structuralBuilder = new SuiteSparseSolver.Builder();
+		private static SkylineSolver.Builder structuralBuilder = new SkylineSolver.Builder();
 		private static double[] lgNode;
 		private static double[] lgElement;
 		private static double[] CsNode;
@@ -182,66 +161,6 @@ namespace ISAAR.MSolve.Tests
 			SvDModel, cvModel, a1Model, a2Model, phisModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
 
-		static tumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_()
-			{
-			if (solverNonSymmetric == 0)
-			{
-				asymBuilder = new DenseMatrixSolver.Builder();
-			}
-			else
-			{
-				asymBuilder = new CSparseLUSolver.Builder()
-				{
-					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-				};
-			}
-			if (solverSymmetric == 0)
-			{
-				builder = new SkylineSolver.Builder();
-				structuralBuilder = new SkylineSolver.Builder();
-			}
-			else if (solverSymmetric == 1)
-			{
-				IDofReorderingStrategy reorderingStrategy; 
-				if (reordering) 
-				{
-					reorderingStrategy = AmdReordering.CreateWithCSparseAmd();
-				} 
-				else 
-				{ 
-					reorderingStrategy = new NullReordering(); 
-				}
-				builder = new CSparseCholeskySolver.Builder()
-				{
-					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
-				};
-				structuralBuilder = new CSparseCholeskySolver.Builder()
-				{
-					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
-				};
-			}
-			else
-			{
-				IDofReorderingStrategy reorderingStrategy;
-				if (reordering)
-				{
-					reorderingStrategy = AmdReordering.CreateWithSuiteSparseAmd();
-				}
-				else
-				{
-					reorderingStrategy = new NullReordering();
-				}
-				builder = new SuiteSparseSolver.Builder()
-				{
-					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
-				};
-				structuralBuilder = new SuiteSparseSolver.Builder()
-				{
-					DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), reorderingStrategy)
-				};
-			}
-		}
-
 		[Fact]
 		private static void RunTest()
 		{
@@ -250,8 +169,9 @@ namespace ISAAR.MSolve.Tests
 			{
 				Directory.CreateDirectory(path1);
 			}
-			var path2 = Path.Combine(path1, $"solutionNorm.txt");
-			ISAAR.MSolve.Discretization.Logging.GlobalLogger.OpenOutputFile(path2);
+			var path2 = Path.Combine(path1, $"solutionNorm_{DateTime.Now.ToString()}.txt");
+			GlobalLogger.OpenOutputFile(path2);
+			GlobalLogger.WriteLine($"ha");
 			var DoxDays = new double[Dox.Length];
 			for (int i = 0; i < Dox.Length; i++)
 			{
@@ -279,9 +199,9 @@ namespace ISAAR.MSolve.Tests
 			var modelReaders = new[] { SvDModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2,
 				prModel.Item2, csModel.Item2, cvModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2 };
 			IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
-			ISAAR.MSolve.Discretization.Logging.GlobalLogger.CloseCurrentOutputFile();
-
+			GlobalLogger.CloseCurrentOutputFile();
 			Assert.True(CompareResults(solutions[0]));
+
 		}
 		private static void Paraview(int timeStep)
 		{
@@ -540,7 +460,7 @@ namespace ISAAR.MSolve.Tests
 				}
 			}
 			//if (dd0 == null) dd0 = new double[SvDModel.Item2.elementDomains[0].Count];
-			if (dd0 == null) dd0 = new Dictionary<int, double>(); 
+			if (dd0 == null) dd0 = new Dictionary<int, double>();
 			foreach (var element in SvDModel.Item2.elementDomains[0])
 			{
 				double sumX = 0;
@@ -976,7 +896,7 @@ namespace ISAAR.MSolve.Tests
 			{
 				if (i == 0 || i == 1 || i == 2)
 				{
-					//asymBuilder.IsMatrixPositiveDefinite = false;
+					asymBuilder.IsMatrixPositiveDefinite = false;
 					solversToReplace[i] = asymBuilder.BuildSolver(modelsToReplace[i]);
 				}
 				else
@@ -1232,7 +1152,7 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
-					var fg = 24d * 3600d * Grox * lgElement[element.ID] / 3d;
+					var fg = 24d * 3600d * Grox * tumcElement[element.ID] * lgElement[element.ID] / 3d;
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1271,7 +1191,7 @@ namespace ISAAR.MSolve.Tests
 				{
 					var CTmaterial = new ConvectionDiffusionMaterial(1, k, CancerTransportU[element.ID], CancerTransportL[element.ID]);
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
-					var RTumc = 24d * 3600d * Grox;
+					var RTumc = 24d * 3600d * Grox * tumcElement[element.ID];
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(CTmaterial, RTumc, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1793,23 +1713,23 @@ namespace ISAAR.MSolve.Tests
 					v0 = new double[models[i].Nodes.Count];
 				value0.Add(i, v0);
 			}
-			for (int i=0; i<modelReaders[0].nodeDomains[0].Count; i++)
+			for (int i = 0; i < modelReaders[0].nodeDomains[0].Count; i++)
 			{
 				value0[0][i] = 0.5;
 			}
-			for (int i= 0; i < modelReaders[0].nodeDomains[0].Count; i++)
+			for (int i = 0; i < modelReaders[0].nodeDomains[0].Count; i++)
 			{
 				value0[0][i] = 1;
 			}
-			for (int i=0;i <models[1].Nodes.Count; i++)
+			for (int i = 0; i < models[1].Nodes.Count; i++)
 			{
 				value0[1][i] = 0; /* 0.96733;*/
 			}
-			for (int i=0; i<models[2].Nodes.Count;  i++)
+			for (int i = 0; i < models[2].Nodes.Count; i++)
 			{
 				value0[2][i] = 0.96;
 			}
-			for (int i=0; i<models[3].Nodes.Count; i++)
+			for (int i = 0; i < models[3].Nodes.Count; i++)
 			{
 				value0[3][i] = 1;
 			}
@@ -1817,7 +1737,7 @@ namespace ISAAR.MSolve.Tests
 			{
 				value0[4][i] = 0; /* 0.96733;*/
 			}
-			for (int i= 0; i < models[5].Nodes.Count; i++)
+			for (int i = 0; i < models[5].Nodes.Count; i++)
 			{
 				value0[5][i] = 0;
 			}
@@ -1848,7 +1768,7 @@ namespace ISAAR.MSolve.Tests
 				builder.IsMatrixPositiveDefinite = false;
 				if (i == 0 || i == 1 || i == 2)
 				{
-					//asymBuilder.IsMatrixPositiveDefinite = false;
+					asymBuilder.IsMatrixPositiveDefinite = false;
 					solvers[i] = asymBuilder.BuildSolver(models[i]);
 				}
 				else

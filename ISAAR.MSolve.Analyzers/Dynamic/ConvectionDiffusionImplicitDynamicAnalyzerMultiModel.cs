@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using ISAAR.MSolve.Analyzers.Interfaces;
 using ISAAR.MSolve.Analyzers.NonLinear;
 using ISAAR.MSolve.Discretization.Interfaces;
@@ -36,12 +37,15 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] capacityTimesTemperature;
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
         private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
+        #region debug
+        private int i, stagSt;
+        #endregion
 
         public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[],
             IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers,
             IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, NewmarkDynamicAnalyzer structuralParentAnalyzer = null,
             IVector[] initialTemperature = null)
-        {
+            {
             this.CreateNewModel = modelCreator;
             this.maxStaggeredSteps = maxStaggeredSteps;
             this.tolerance = tolerance;
@@ -250,6 +254,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         {
             DateTime start = DateTime.Now;
             Debug.WriteLine("Implicit Integration step: {0}", t);
+            ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine("Implicit Integration step: " + t);
 
             int staggeredStep = 0;
             var temperatureNorm = 0d;
@@ -257,6 +262,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             var error = 1d;
             do
             {
+                ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine("Staggered step " + staggeredStep);
                 previousTemperatureNorm = temperatureNorm;
 
                 for (int i = 0; i < linearSystems.Length; i++)
@@ -266,6 +272,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     {
                         if (linearSystem.Solution != null)
                         {
+                            ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system {i}: solution norm = {linearSystem.Solution.Norm2()}");
                             temperatureFromPreviousStaggeredStep[i].Add(linearSystem.Subdomain.ID, linearSystem.Solution.Copy());
                         }
                         this.linearSystems[i] = solvers[i].LinearSystems;
@@ -277,10 +284,34 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
                     foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorHL = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
                     InitializeRhs(i);
-
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorIni = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
+                    this.i = i;
+                    this.stagSt = staggeredStep;
                     CalculateRhsImplicit(i);
-
+                    
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        var denseMatrix = Matrix.CreateFromArray(l.Matrix.CopytoArray2D());
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 matrixDet = {denseMatrix.CalcDeterminant()}");
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfter = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
                     childAnalyzers[i].Solve();
                 }
 
@@ -291,6 +322,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     structuralParentAnalyzer.SolveTimestep(t);
                     foreach (var linearSystem in structuralParentAnalyzer.linearSystems.Values)
                     {
+                        //Debug.WriteLine($"structural linear system: solution norm = {linearSystem.Solution.Norm2()}");
                         temperatureNorm += linearSystem.Solution.Norm2();
                     }
                 }
@@ -344,7 +376,20 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             double a1 = 1 / (2 * timeStep);
             double a2 = 1 / timeStep;
             int id = linearSystem.Subdomain.ID;
+            #region debug
+            if (this.i == 9 & this.stagSt == 2)
+            {
+                var l = linearSystem;
+            }
+            #endregion
             capacityTimesTemperature[modelNo][id] = providers[modelNo].CapacityMatrixVectorProduct(linearSystem.Subdomain, temperature[modelNo][id]);
+            #region debug
+            if (this.i == 9 & this.stagSt == 2)
+            {
+                var l = linearSystem;
+                ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfterMult = {capacityTimesTemperature[modelNo][id].Norm2()}");
+            }
+            #endregion
             capacityTimesTemperature[modelNo][id].ScaleIntoThis(a0);
             rhs[modelNo][id].ScaleIntoThis(a2);
             var rhsResult = capacityTimesTemperature[modelNo][id].Subtract(stabilizingRhs[modelNo][id]);

@@ -83,7 +83,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Triangulation
             {
                 var writer = new Output.MatlabWriter();
                 var matrix = CscMatrix.CreateFromArrays(order, order, cscValues, cscRowIndices, cscColOffsets, false);
-                writer.WriteToFile(matrix, @"C:\Users\cluster\Desktop\problematic_matrix_tumor.txt");
+                //writer.WriteToFile(matrix, @"C:\Users\cluster\Desktop\problematic_matrix_tumor.txt");
 
                 throw new IndefiniteMatrixException(ex.Message);
             }

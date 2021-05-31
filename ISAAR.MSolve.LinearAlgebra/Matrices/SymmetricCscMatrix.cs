@@ -49,7 +49,7 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
         /// column are consecutive. Its length is equal to the number of the upper triangle's non-zero entries. 
         /// It should only be used for passing the raw array to linear algebra libraries.
         /// </summary>
-        internal double[] RawValues => values;
+        public double[] RawValues => values;
 
         /// <summary>
         /// The internal array that stores the index into the arrays <see cref="RawValues"/> and <see cref="RawRowIndices"/> of  
@@ -58,14 +58,14 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
         /// <see cref="RawValues"/>.Length == <see cref="RawRowIndices"/>.Length.
         /// It should only be used for passing the raw array to linear algebra libraries.
         /// </summary>
-        internal int[] RawColOffsets => colOffsets;
+        public int[] RawColOffsets => colOffsets;
 
         /// <summary>
         /// The internal array that stores the row indices of the non-zero entries in <see cref="RawValues"/>.
         /// Its length is equal to the number of the upper triangle's non-zero entries. 
         /// It should only be used for passing the raw array to linear algebra libraries.
         /// </summary>
-        internal int[] RawRowIndices => rowIndices;
+        public int[] RawRowIndices => rowIndices;
 
         /// <summary>
         /// The number of columns of the matrix. 
@@ -406,13 +406,45 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
         /// See <see cref="IMatrixView.Multiply(IVectorView, bool)"/>.
         /// </summary>
         public IVector Multiply(IVectorView vector, bool transposeThis = false)
-            => DenseStrategies.Multiply(this, vector, transposeThis);
+        {
+            if (transposeThis)
+            {
+                return DenseStrategies.Multiply(this, vector, true);
+            }
+            else
+            {
+                var result = new double[NumRows];
+                Preconditions.CheckMultiplicationDimensions(NumColumns, vector.Length);
+                CsrMultiplications.CscSymmTimesVector(NumColumns, values, colOffsets, rowIndices, vector, result);
+                return Vector.CreateFromArray(result, false);
+            }
+        }
+
 
         /// <summary>
         /// See <see cref="IMatrixView.MultiplyIntoResult(IVectorView, IVector, bool)"/>.
         /// </summary>
         public void MultiplyIntoResult(IVectorView lhsVector, IVector rhsVector, bool transposeThis)
-            => DenseStrategies.MultiplyIntoResult(this, lhsVector, rhsVector, transposeThis);
+        {
+            if (transposeThis)
+            {
+                DenseStrategies.MultiplyIntoResult(this, lhsVector, rhsVector, transposeThis);
+            }
+            else
+            {
+                if (rhsVector is Vector denseVector)
+                {
+                    double[] result = denseVector.RawData;
+                    Preconditions.CheckMultiplicationDimensions(NumColumns, rhsVector.Length);
+                    CsrMultiplications.CscSymmTimesVector(NumColumns, values, colOffsets, rowIndices, lhsVector, result);
+                }
+                else
+                {
+                    DenseStrategies.MultiplyIntoResult(this, lhsVector, rhsVector, transposeThis);
+                }
+            }
+
+        }
 
         /// <summary>
         /// Matrix-vector multiplication, with the vector on the right: matrix * vector or transpose(matrix) * vector.
@@ -422,7 +454,19 @@ namespace ISAAR.MSolve.LinearAlgebra.Matrices
         ///     more than one multiplications, setting this flag to true is usually preferable to creating the transpose.</param>
         /// <returns></returns>
         public Vector MultiplyRight(Vector vector, bool transposeThis = false)
-            => DenseStrategies.Multiply(this, vector, transposeThis);
+        {
+            if (transposeThis)
+            {
+                return DenseStrategies.Multiply(this, vector, true);
+            }
+            else
+            {
+                var result = new double[NumRows];
+                Preconditions.CheckMultiplicationDimensions(NumColumns, vector.Length);
+                CsrMultiplications.CscSymmTimesVector(NumColumns, values, colOffsets, rowIndices, vector, result);
+                return Vector.CreateFromArray(result, false);
+            }
+        }
 
         /// <summary>
         /// See <see cref="IReducible.Reduce(double, ProcessEntry, ProcessZeros, Reduction.Finalize)"/>.
