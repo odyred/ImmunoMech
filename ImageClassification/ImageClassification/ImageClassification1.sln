@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.852
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "ImageClassification1", "ImageClassification1.pyproj", "{44F483E0-EB73-4AE5-8D61-D29BA0B103D8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{44F483E0-EB73-4AE5-8D61-D29BA0B103D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44F483E0-EB73-4AE5-8D61-D29BA0B103D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5151EE2C-9BEA-44CE-AC42-F5619806D8EA}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.852
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "DMGeneralMetric", "DMGeneralMetric\DMGeneralMetric.pyproj", "{C9CC9AD3-CE14-4318-96CA-29536EE425AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C9CC9AD3-CE14-4318-96CA-29536EE425AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9CC9AD3-CE14-4318-96CA-29536EE425AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FF175A42-4C39-4285-8B98-057436BC8542}
+	EndGlobalSection
+EndGlobal
