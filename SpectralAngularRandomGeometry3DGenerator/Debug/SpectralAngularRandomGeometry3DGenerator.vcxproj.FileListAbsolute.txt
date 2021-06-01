@@ -1,2 +1,0 @@
-C:\Users\Ody\source\repos\SpectralAngularRandomGeometry3DGenerator\Debug\SpectralAngularRandomGeometry3DGenerator.exe
-C:\Users\Ody\source\repos\SpectralAngularRandomGeometry3DGenerator\Debug\SpectralAngularRandomGeometry3DGenerator.pdb
