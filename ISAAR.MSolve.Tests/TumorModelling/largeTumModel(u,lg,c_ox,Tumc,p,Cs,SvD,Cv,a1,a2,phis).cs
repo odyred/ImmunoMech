@@ -78,7 +78,7 @@ namespace ISAAR.MSolve.Tests
 		private static double b1 = 2280d / 3600d; //1/s
 		private static double b2 = 18240d / 3600d; //1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
-		private static int solverSymmetric = 2, solverNonSymmetric = 1;
+		private static int solverSymmetric = 0, solverNonSymmetric = 0;
 		private static bool reordering = false;
 		private static ISolverBuilder builder, asymBuilder, structuralBuilder;
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
@@ -1201,7 +1201,7 @@ namespace ISAAR.MSolve.Tests
 			if (gModel == null)
 			{
 				Console.WriteLine("Creating Growth Model");
-				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", "mesh446elem.mphtxt");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
 				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { 0 });
@@ -1844,8 +1844,8 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < models.Length; i++)
 			{
 				initialValues[i] = Vector.CreateFromArray(value0[i]);
-				var builder = new DenseMatrixSolver.Builder();
-				builder.IsMatrixPositiveDefinite = false;
+				//var builder = new DenseMatrixSolver.Builder();
+				//builder.IsMatrixPositiveDefinite = false;
 				if (i == 0 || i == 1 || i == 2)
 				{
 					//asymBuilder.IsMatrixPositiveDefinite = false;

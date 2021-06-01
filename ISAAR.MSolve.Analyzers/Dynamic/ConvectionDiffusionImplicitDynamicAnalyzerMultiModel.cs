@@ -37,9 +37,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] capacityTimesTemperature;
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
         private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
-        //#region debug
-        //private int i, stagSt;
-        //#endregion
+        #region debug
+        private int i, stagSt;
+        #endregion
 
         public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[],
             IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers,
@@ -284,35 +284,35 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 {
                     IDictionary<int, IVector> rhsVectors = providers[i].GetRhsFromHistoryLoad(t);
                     foreach (var l in linearSystems[i].Values) l.RhsVector = rhsVectors[l.Subdomain.ID];
-                    //#region debug
-                    //if (i == 9 & staggeredStep == 2)
-                    //{
-                    //    var l = linearSystems[i].Values.First();
-                    //    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorHL = {l.RhsVector.Norm2()}");
-                    //}
-                    //#endregion
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorHL = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
                     InitializeRhs(i);
-                    //#region debug
-                    //if (i == 9 & staggeredStep == 2)
-                    //{
-                    //    var l = linearSystems[i].Values.First();
-                    //    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorIni = {l.RhsVector.Norm2()}");
-                    //}
-                    //#endregion
-                    //# region debug
-                    //this.i = i;
-                    //this.stagSt = staggeredStep;
-                    //CalculateRhsImplicit(i);
-                    //#endregion
-                    //#region debug
-                    //if (i == 9 & staggeredStep == 2)
-                    //{
-                    //    var l = linearSystems[i].Values.First();
-                    //    var denseMatrix = Matrix.CreateFromArray(l.Matrix.CopytoArray2D());
-                    //    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 matrixDet = {denseMatrix.CalcDeterminant()}");
-                    //    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfter = {l.RhsVector.Norm2()}");
-                    //}
-                    //#endregion
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorIni = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
+                    # region debug
+                    this.i = i;
+                    this.stagSt = staggeredStep;
+                    CalculateRhsImplicit(i);
+                    #endregion
+                    #region debug
+                    if (i == 9 & staggeredStep == 2)
+                    {
+                        var l = linearSystems[i].Values.First();
+                        var denseMatrix = Matrix.CreateFromArray(l.Matrix.CopytoArray2D());
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 matrixDet = {denseMatrix.CalcDeterminant()}");
+                        ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfter = {l.RhsVector.Norm2()}");
+                    }
+                    #endregion
                     childAnalyzers[i].Solve();
                 }
 
@@ -377,20 +377,20 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             double a1 = 1 / (2 * timeStep);
             double a2 = 1 / timeStep;
             int id = linearSystem.Subdomain.ID;
-            //#region debug
-            //if (this.i == 9 & this.stagSt == 2)
-            //{
-            //    var l = linearSystem;
-            //}
-            //#endregion
+            #region debug
+            if (this.i == 9 & this.stagSt == 2)
+            {
+                var l = linearSystem;
+            }
+            #endregion
             capacityTimesTemperature[modelNo][id] = providers[modelNo].CapacityMatrixVectorProduct(linearSystem.Subdomain, temperature[modelNo][id]);
-            //#region debug
-            //if (this.i == 9 & this.stagSt == 2)
-            //{
-            //    var l = linearSystem;
-            //    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfterMult = {capacityTimesTemperature[modelNo][id].Norm2()}");
-            //}
-            //#endregion
+            #region debug
+            if (this.i == 9 & this.stagSt == 2)
+            {
+                var l = linearSystem;
+                ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"linear system 9 rhsVectorAfterMult = {capacityTimesTemperature[modelNo][id].Norm2()}");
+            }
+            #endregion
             capacityTimesTemperature[modelNo][id].ScaleIntoThis(a0);
             rhs[modelNo][id].ScaleIntoThis(a2);
             var rhsResult = capacityTimesTemperature[modelNo][id].Subtract(stabilizingRhs[modelNo][id]);

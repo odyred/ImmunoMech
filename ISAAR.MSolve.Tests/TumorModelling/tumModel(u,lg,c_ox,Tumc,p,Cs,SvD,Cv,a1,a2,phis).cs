@@ -1845,8 +1845,8 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < models.Length; i++)
 			{
 				initialValues[i] = Vector.CreateFromArray(value0[i]);
-				var builder = new DenseMatrixSolver.Builder();
-				builder.IsMatrixPositiveDefinite = false;
+				//var builder = new DenseMatrixSolver.Builder();
+				//builder.IsMatrixPositiveDefinite = false;
 				if (i == 0 || i == 1 || i == 2)
 				{
 					//asymBuilder.IsMatrixPositiveDefinite = false;
