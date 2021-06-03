@@ -15,7 +15,7 @@ namespace ISAAR.MSolve.Materials
     /// NeoHookian hyperelastic material for 
     /// Authors Gerasimos Sotiropoulos
     /// </summary>
-    public class HyperElasticMaterial3DDefGrad : IContinuumMaterial3DDefGrad
+    public class HyperElasticMaterial3DDefGrad_new : IContinuumMaterial3DDefGrad
     {
         private readonly double[] strains = new double[6];
         private double[] stresses = new double[6];
@@ -60,35 +60,7 @@ namespace ISAAR.MSolve.Materials
         public double YoungModulus => throw new NotImplementedException();
 
         public double PoissonRatio => throw new NotImplementedException();
-        public double[,] DefGradMultiplyDefGradTranspose(double[] DefGradVec)
-        {
-            var a00 = DefGradVec[0];
-            var a01 = DefGradVec[3];
-            var a02 = DefGradVec[6];
 
-            var a10 = DefGradVec[7];
-            var a11 = DefGradVec[1];
-            var a12 = DefGradVec[4];
-
-            var a20 = DefGradVec[5];
-            var a21 = DefGradVec[8];
-            var a22 = DefGradVec[2];
-
-
-            return new double[3, 3]
-            {
-                {a00*a00 + a01*a01 + a02*a02, 
-                 a00*a10+a01*a11+a02*a12,
-                a00*a20+a01*a21+a02*a22},
-                { a10*a00+a11*a01+a12*a02,
-                  a10*a10+a11*a11+a12*a12,
-                a10*a20+a11*a21+a12*a21
-                },
-                { a20*a00+a21*a01+a22*a02,
-                a20*a10+a21*a11+a22*a12,
-                a20*a20+a21*a21+a22*a22}
-                };
-        }
         public void UpdateMaterial(double[] DefGradVec)
         {
             var deformationGradient = Matrix.CreateFromArray(new double[3, 3] { { DefGradVec [0], DefGradVec[3], DefGradVec[6] },
@@ -99,7 +71,7 @@ namespace ISAAR.MSolve.Materials
 
             var rCGvec = Vector.CreateFromArray(new double[] { rCG[0, 0], rCG[1, 1], rCG[2, 2], rCG[0, 1], rCG[1, 2], rCG[2, 0] });
             var rCG_inv = rCG.Invert();
-            //var rCG_inv_Vec = Vector.CreateFromArray(new double[] { rCG_inv[0, 0], rCG_inv[1, 1], rCG_inv[2, 2], rCG_inv[0, 1], rCG_inv[1, 2], rCG_inv[2, 0] });
+            var rCG_inv_Vec = Vector.CreateFromArray(new double[] { rCG_inv[0, 0], rCG_inv[1, 1], rCG_inv[2, 2], rCG_inv[0, 1], rCG_inv[1, 2], rCG_inv[2, 0] });
 
             var I_1 = rCG[0, 0] + rCG[1, 1] + rCG[2, 2];
             var vec_12 = new double[3]; var vec_22 = new double[3];

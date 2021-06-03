@@ -78,7 +78,7 @@ namespace ISAAR.MSolve.Tests
 		private static double b1 = 2280d / 3600d; //1/s
 		private static double b2 = 18240d / 3600d; //1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
-		private static int solverSymmetric=2, solverNonSymmetric=1;
+		private static int solverSymmetric=0, solverNonSymmetric=0;
 		private static bool reordering=false;
 		private static ISolverBuilder builder, asymBuilder, structuralBuilder;
 		//private static double fox = -((Aox * c_ox) / (kox + c_ox * cvox)) * 0.3;
@@ -1378,7 +1378,7 @@ namespace ISAAR.MSolve.Tests
 					var Grox = (loxc[domainID] * cvox * c_oxElement[element.ID]) / (cvox * c_oxElement[element.ID] + Koxc[domainID]);
 					double RTumc;
 					if (domainID == 0)
-						RTumc = 24d * 3600d * Grox * tumcElement[element.ID];
+						RTumc = 24d * 3600d * Grox;
 					else
 						RTumc = 0;
 					var fp = RTumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();
@@ -1794,49 +1794,49 @@ namespace ISAAR.MSolve.Tests
 					v0 = new double[models[i].Nodes.Count];
 				value0.Add(i, v0);
 			}
-			for (int i=0; i<modelReaders[0].nodeDomains[0].Count; i++)
+			foreach (Node node in models[0].Nodes)
 			{
-				value0[0][i] = 0.5;
+				value0[0][node.ID] = 1;
 			}
-			for (int i= 0; i < modelReaders[0].nodeDomains[0].Count; i++)
+			foreach (Node node in modelReaders[0].nodeDomains[0])
 			{
-				value0[0][i] = 1;
+				value0[0][node.ID] = 0.5;
 			}
-			for (int i=0;i <models[1].Nodes.Count; i++)
+			foreach (Node node in models[1].Nodes)
 			{
-				value0[1][i] = 0; /* 0.96733;*/
+				value0[1][node.ID] = 0; /* 0.96733;*/
 			}
-			for (int i=0; i<models[2].Nodes.Count;  i++)
+			foreach (Node node in models[2].Nodes)
 			{
-				value0[2][i] = 0.96;
+				value0[2][node.ID] = 0.96;
 			}
-			for (int i=0; i<models[3].Nodes.Count; i++)
+			foreach (Node node in models[3].Nodes)
 			{
-				value0[3][i] = 1;
+				value0[3][node.ID] = 1;
 			}
 			for (int i = 0; i < pressureModelFreeDOFs; i++)
 			{
 				value0[4][i] = 0; /* 0.96733;*/
 			}
-			for (int i= 0; i < models[5].Nodes.Count; i++)
+			foreach (Node node in models[5].Nodes)
 			{
-				value0[5][i] = 0;
+				value0[5][node.ID] = 0;
 			}
-			for (int i = 0; i < models[6].Nodes.Count; i++)
+			foreach (Node node in models[6].Nodes)
 			{
-				value0[6][i] = 0;
+				value0[6][node.ID] = 0;
 			}
-			for (int i = 0; i < models[7].Nodes.Count; i++)
+			foreach (Node node in models[7].Nodes)
 			{
-				value0[7][i] = 0;
+				value0[7][node.ID] = 0;
 			}
-			for (int i = 0; i < models[8].Nodes.Count; i++)
+			foreach (Node node in models[8].Nodes)
 			{
-				value0[8][i] = 0;
+				value0[8][node.ID] = 0;
 			}
-			for (int i = 0; i < models[9].Nodes.Count; i++)
+			foreach (Node node in models[9].Nodes)
 			{
-				value0[9][i] = 0.3;
+				value0[9][node.ID] = 0.3;
 			}
 
 			IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
