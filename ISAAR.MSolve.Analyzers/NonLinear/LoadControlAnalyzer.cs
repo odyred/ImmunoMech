@@ -42,7 +42,11 @@ namespace ISAAR.MSolve.Analyzers.NonLinear
                     if (iteration == maxIterationsPerIncrement - 1) return;
                     if (Double.IsNaN(errorNorm)) return;
                     solver.Solve();
+                    #region debug
                     //ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"structural linear system: incre:{increment}, iter:{iteration}, Solution Norm = {linearSystems[0].Solution.Norm2()}");
+                    ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"Increment {increment}, iteration {iteration}: norm2(error) = {errorNorm}");
+                    //ISAAR.MSolve.Discretization.Logging.GlobalLogger.WriteLine($"incre:{increment}, iter:{iteration}, total Solution Norm{uPlusdu[0].Norm2()}");
+                    #endregion
                     //double rhsNormIt = solver.LinearSystems.First().Value.RhsVector.Norm2();
                     //double xNormIt = solver.LinearSystems.First().Value.Solution.Norm2();
                     Dictionary<int, IVector> internalRhsVectors = CalculateInternalRhs(increment, iteration);

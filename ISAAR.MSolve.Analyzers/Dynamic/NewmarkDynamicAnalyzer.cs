@@ -273,7 +273,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
 
             if (CreateNewModel != null)
             {
-                CreateNewModel(uu, uc, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+                CreateNewModel(v2, v1, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
                 model = modelsForReplacement[0];
                 solver = solversForReplacement[0];
                 linearSystems = solver.LinearSystems;
