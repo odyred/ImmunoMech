@@ -187,7 +187,7 @@ namespace ISAAR.MSolve.Tests
 		private static int NewtonRaphsonIncrements = 5;
 		private static int NewtonRaphosnIterations = 10;
 		private static double NewtonRaphsonTolerarance = 1e-3;
-		private static int NewtonRaphsonIterForMatrixRebuild = 5;
+		private static int NewtonRaphsonIterForMatrixRebuild = 2;
 		private static double MultiModelAnalyzerTolerance = 5e-3;
 		static largeTumModel_u_lg_c_ox_Tumc_p_Cs_SvD_Cv_a1_a2_phis_2()
 		{
@@ -1780,11 +1780,11 @@ namespace ISAAR.MSolve.Tests
 					var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
 					var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementX);
-					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationY);
+					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][1], StructuralDof.TranslationY);
 					var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
 					var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementY);
-					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationZ);
+					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][2], StructuralDof.TranslationZ);
 					var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
 					var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementZ);

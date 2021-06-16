@@ -11,6 +11,7 @@
     <None Remove="Integration\**" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Elements\HyperElasticMaterial3DDefGrad _new.cs" />
     <Compile Remove="Elements\Quad4NL.cs" />
   </ItemGroup>
   <ItemGroup>

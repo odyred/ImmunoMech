@@ -58,6 +58,13 @@ namespace ISAAR.MSolve.Tests
             [Fact]
             private static void RunTest()
             {
+                var path1 = Path.Combine(Directory.GetCurrentDirectory(), $"solutionNorms");
+                if (!Directory.Exists(path1))
+                {
+                    Directory.CreateDirectory(path1);
+                }
+                var path2 = Path.Combine(path1, $"solutionNorm.txt");
+                ISAAR.MSolve.Discretization.Logging.GlobalLogger.OpenOutputFile(path2);
                 var DoxDays = new double[Dox.Length];
                 for (int i = 0; i < Dox.Length; i++)
                 {
@@ -267,7 +274,7 @@ namespace ISAAR.MSolve.Tests
                 {
                     foreach (Element element in modelReader.elementDomains[domainID])
                     {
-                        Grox[element.ID] = loxc[domainID]  / (1d + Koxc[domainID]);
+                        Grox[element.ID] = loxc[domainID] / (1d + Koxc[domainID]);
                         fg[element.ID] = 24d * 3600d * Grox[element.ID] * lgr[element.ID] / 3d;
                         var nodes = (IReadOnlyList<Node>)element.Nodes;
                         var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, fg[element.ID], ThermalDof.Temperature);
@@ -331,7 +338,7 @@ namespace ISAAR.MSolve.Tests
                         });
                     }
                 }
-                boundaryIDs = new int[] { 3, 7 };
+                boundaryIDs = new int[] { 2, 7 };
                 foreach (int boundaryID in boundaryIDs)
                 {
                     foreach (Node node in modelReader.nodeBoundaries[boundaryID])
@@ -343,26 +350,26 @@ namespace ISAAR.MSolve.Tests
                         });
                     }
                 }
-                int[] domainIDs = new int[] { 0, 1 };
-                foreach (int domainID in domainIDs)
-                {
-                    foreach (Element element in modelReader.elementDomains[domainID])
-                    {
-                        var nodes = (IReadOnlyList<Node>)element.Nodes;
-                        var bodyLoadX = new GravityLoad(1d, -1d, StructuralDof.TranslationX);
-                        var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
-                        var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
-                        model.BodyLoads.Add(bodyLoadElementX);
-                        var bodyLoadY = new GravityLoad(1d, -1d, StructuralDof.TranslationY);
-                        var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
-                        var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
-                        model.BodyLoads.Add(bodyLoadElementY);
-                        var bodyLoadZ = new GravityLoad(1d, -1d, StructuralDof.TranslationZ);
-                        var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
-                        var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
-                        model.BodyLoads.Add(bodyLoadElementZ);
-                    }
-                }
+                //int[] domainIDs = new int[] { 0, 1 };
+                //foreach (int domainID in domainIDs)
+                //{
+                //    foreach (Element element in modelReader.elementDomains[domainID])
+                //    {
+                //        var nodes = (IReadOnlyList<Node>)element.Nodes;
+                //        var bodyLoadX = new GravityLoad(1d, -1d, StructuralDof.TranslationX);
+                //        var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
+                //        var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
+                //        model.BodyLoads.Add(bodyLoadElementX);
+                //        var bodyLoadY = new GravityLoad(1d, -1d, StructuralDof.TranslationY);
+                //        var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
+                //        var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
+                //        model.BodyLoads.Add(bodyLoadElementY);
+                //        var bodyLoadZ = new GravityLoad(1d, -1d, StructuralDof.TranslationZ);
+                //        var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
+                //        var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
+                //        model.BodyLoads.Add(bodyLoadElementZ);
+                //    }
+                //}
                 return new Tuple<Model, IModelReader>(model, modelReader);
             }
 
@@ -401,7 +408,7 @@ namespace ISAAR.MSolve.Tests
                 parentAnalyzer.Initialize();
                 double[] muLame = new double[] { 6e4, 2.1e4 };
                 double[] poissonV = new double[] { .45, .2 };
-                IDynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(1, 0, 0, true), new DynamicMaterial(1, 0, 0, true) };
+                IDynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true), new DynamicMaterial(.001, 0, 0, true) };
                 structModel = CreateStructuralModel(muLame, poissonV, dynamicMaterials, 0, new double[] { 0, 0, 0 }, lgElement);//.Item1; // new Model();
                 var structuralModel = structModel.Item1;
                 var structuralSolver = structuralBuilder.BuildSolver(structuralModel);

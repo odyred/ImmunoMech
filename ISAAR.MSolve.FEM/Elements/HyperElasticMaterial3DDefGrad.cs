@@ -60,35 +60,6 @@ namespace ISAAR.MSolve.Materials
         public double YoungModulus => throw new NotImplementedException();
 
         public double PoissonRatio => throw new NotImplementedException();
-        public double[,] DefGradMultiplyDefGradTranspose(double[] DefGradVec)
-        {
-            var a00 = DefGradVec[0];
-            var a01 = DefGradVec[3];
-            var a02 = DefGradVec[6];
-
-            var a10 = DefGradVec[7];
-            var a11 = DefGradVec[1];
-            var a12 = DefGradVec[4];
-
-            var a20 = DefGradVec[5];
-            var a21 = DefGradVec[8];
-            var a22 = DefGradVec[2];
-
-
-            return new double[3, 3]
-            {
-                {a00*a00 + a01*a01 + a02*a02, 
-                 a00*a10+a01*a11+a02*a12,
-                a00*a20+a01*a21+a02*a22},
-                { a10*a00+a11*a01+a12*a02,
-                  a10*a10+a11*a11+a12*a12,
-                a10*a20+a11*a21+a12*a21
-                },
-                { a20*a00+a21*a01+a22*a02,
-                a20*a10+a21*a11+a22*a12,
-                a20*a20+a21*a21+a22*a22}
-                };
-        }
         public void UpdateMaterial(double[] DefGradVec)
         {
             var deformationGradient = Matrix.CreateFromArray(new double[3, 3] { { DefGradVec [0], DefGradVec[3], DefGradVec[6] },

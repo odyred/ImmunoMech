@@ -1726,11 +1726,11 @@ namespace ISAAR.MSolve.Tests
 					var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
 					var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementX);
-					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationY);
+					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][1], StructuralDof.TranslationY);
 					var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
 					var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementY);
-					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationZ);
+					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][2], StructuralDof.TranslationZ);
 					var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
 					var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementZ);
