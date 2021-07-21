@@ -511,18 +511,18 @@ namespace ISAAR.MSolve.Tests
 				}
 			CancerTransportL = l;
 		}
-		private static void SvDCoefficientsCalculation(IList<IList<Element>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
+		private static void SvDCoefficientsCalculation(IList<IList<int>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
 		{
 			if (SvDElement == null)
 			{
 				SvDElement = new double[u.Count];
-				foreach (var e in elementDomains[0])
+				foreach (var id in elementDomains[0])
 				{
-					SvDElement[e.ID] = 0.5;
+					SvDElement[id] = 0.5;
 				}
-				foreach (var e in elementDomains[1])
+				foreach (var id in elementDomains[1])
 				{
-					SvDElement[e.ID] = 1;
+					SvDElement[id] = 1;
 				}
 			}
 			
@@ -558,20 +558,20 @@ namespace ISAAR.MSolve.Tests
 				}
 			SvDL = l;
 		}
-		private static void CvCoefficientsCalculation(IList<IList<Element>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
+		private static void CvCoefficientsCalculation(IList<IList<int>> elementDomains, Dictionary<int, double> k, Dictionary<int, double[]> u, Dictionary<int, double> l)
 		{
-			foreach (IList<Element> domain in elementDomains)
+			foreach (IList<int> domain in elementDomains)
 			{
-				foreach (var elem in domain)
+				foreach (var id in domain)
 				{
-					k[elem.ID] = Dvegf[elementDomains.IndexOf(domain)] * 24 * 3600;
+					k[id] = Dvegf[elementDomains.IndexOf(domain)] * 24 * 3600;
 				}
 			}
 			CvK = k;
 			CvU = u;
-			foreach (var elem in elementDomains[0])
+			foreach (var id in elementDomains[0])
 			{
-				l[elem.ID] = 24 * 3600 * (l11 * Svin * SvDElement[elem.ID] + l13);
+				l[id] = 24 * 3600 * (l11 * Svin * SvDElement[id] + l13);
 			}
 			CvL = l;
 		}
@@ -609,11 +609,11 @@ namespace ISAAR.MSolve.Tests
 			}
 			//c_ox
 			var c_oxSubdomain = solversToReplace[1].LinearSystems[0].Subdomain;
-			var c_oxFirstDerivatives = providersToReplace[1].GetFirstSpaceDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
+			var c_oxFirstDerivatives = providersToReplace[1].GetFirstSpaceXDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
 			var c_oxSecondDerivatives = providersToReplace[1].GetSecondSpaceDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
 			for (int i = 0; i < c_oxSecondDerivatives.NumRows; i++)
 			{
-				dcoxNode[i] = c_oxFirstDerivatives.GetRow(i).CopyToArray();
+				dcoxNode[i] = c_oxFirstDerivatives.CopyToArray();
 				ddcoxNode[i] = c_oxSecondDerivatives.GetRow(i).CopyToArray();
 			}
 			if (c_oxElement == null) c_oxElement = new double[modelsToReplace[1].Elements.Count];
@@ -654,11 +654,11 @@ namespace ISAAR.MSolve.Tests
 			}
 			//pressure
 			var pSubdomain = solversToReplace[4].LinearSystems[0].Subdomain;
-			var pFirstDerivatives = providersToReplace[4].GetFirstSpaceDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
+			var pFirstDerivatives = providersToReplace[4].GetFirstSpaceXDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
 			var pSecondDerivatives = providersToReplace[4].GetSecondSpaceDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
-			for (int i = 0; i < pFirstDerivatives.NumRows; i++)
+			for (int i = 0; i < pFirstDerivatives.Length; i++)
 			{
-				dpSolution[i] = pFirstDerivatives.GetRow(i).CopyToArray();
+				dpSolution[i] = pFirstDerivatives.CopyToArray();
 				ddpSolution[i] = pSecondDerivatives.GetRow(i).CopyToArray();
 			}
 			freeDofNo = 0;
@@ -691,11 +691,11 @@ namespace ISAAR.MSolve.Tests
 			}
 			//Cs
 			var CsSubdomain = solversToReplace[5].LinearSystems[0].Subdomain;
-			var CsFirstDerivatives = providersToReplace[5].GetFirstSpaceDerivatives(CsSubdomain, Vector.CreateFromArray(CsNode));
+			var CsFirstDerivatives = providersToReplace[5].GetFirstSpaceXDerivatives(CsSubdomain, Vector.CreateFromArray(CsNode));
 			var CsSecondDerivatives = providersToReplace[5].GetSecondSpaceDerivatives(CsSubdomain, Vector.CreateFromArray(CsNode));
 			for (int i = 0; i < CsSecondDerivatives.NumRows; i++)
 			{
-				dCsNode[i] = CsFirstDerivatives.GetRow(i).CopyToArray();
+				dCsNode[i] = CsFirstDerivatives.CopyToArray();
 				ddCsNode[i] = CsSecondDerivatives.GetRow(i).CopyToArray();
 			}
 			if (CsElement == null) CsElement = new double[modelsToReplace[5].Elements.Count];
@@ -719,11 +719,11 @@ namespace ISAAR.MSolve.Tests
 
 			//Cv
 			var CvSubdomain = solversToReplace[6].LinearSystems[0].Subdomain;
-			var CvFirstDerivatives = providersToReplace[6].GetFirstSpaceDerivatives(CvSubdomain, Vector.CreateFromArray(CvNode));
+			var CvFirstDerivatives = providersToReplace[6].GetFirstSpaceXDerivatives(CvSubdomain, Vector.CreateFromArray(CvNode));
 			var CvSecondDerivatives = providersToReplace[6].GetSecondSpaceDerivatives(CsSubdomain, Vector.CreateFromArray(CvNode));
 			for (int i = 0; i < CsSecondDerivatives.NumRows; i++)
 			{
-				dCvNode[i] = CvFirstDerivatives.GetRow(i).CopyToArray();
+				dCvNode[i] = CvFirstDerivatives.CopyToArray();
 				ddCvNode[i] = CvSecondDerivatives.GetRow(i).CopyToArray();
 			}
 			if (CvElement == null) CvElement = new double[modelsToReplace[6].Elements.Count];
@@ -880,7 +880,7 @@ namespace ISAAR.MSolve.Tests
 			{
 				Console.WriteLine("Updating SvD Model...");
 				modelReader = (ComsolMeshReader5)SvDModel.Item2;
-				SvDCoefficientsCalculation(modelReader.elementDomains, SvDK, SvDU, SvDL);
+				SvDCoefficientsCalculation(modelReader.elementIDsPerDomain, SvDK, SvDU, SvDL);
 				modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, SvDK, SvDU, SvDL);
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
@@ -1236,7 +1236,7 @@ namespace ISAAR.MSolve.Tests
 			{
 				Console.WriteLine("Updating Cv Model...");
 				modelReader = (ComsolMeshReader5)cvModel.Item2;
-				CvCoefficientsCalculation(modelReader.elementDomains, CvK, CvU, CvL);
+				CvCoefficientsCalculation(modelReader.elementIDsPerDomain, CvK, CvU, CvL);
 				modelReader = modelReader.UpdateModelReader(new double[] { 1, 1 }, CvK, CvU, CvL);
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}

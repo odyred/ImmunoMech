@@ -20,7 +20,9 @@ namespace ISAAR.MSolve.Analyzers.Interfaces
         IDictionary<int, IVector> GetVelocitiesOfTimeStep(int timeStep);
 
         IDictionary<int, IVector> GetRhsFromHistoryLoad(int timeStep);
-        IMatrix GetFirstSpaceDerivatives(ISubdomain subdomain, IVectorView vector);
+        IVector GetFirstSpaceXDerivatives(ISubdomain subdomain, IVectorView vector);
+        IVector GetFirstSpaceYDerivatives(ISubdomain subdomain, IVectorView vector);
+        IVector GetFirstSpaceZDerivatives(ISubdomain subdomain, IVectorView vector);
         IMatrix GetSecondSpaceDerivatives(ISubdomain subdomain, IVectorView vector);
 
         //TODO: what about thermal? There is no mass matrix there. Define these as 1st order matrix coeff, 2nd order ...

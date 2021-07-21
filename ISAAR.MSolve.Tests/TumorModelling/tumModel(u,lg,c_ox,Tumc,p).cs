@@ -381,11 +381,11 @@ namespace ISAAR.MSolve.Tests
             }
 
             var c_oxSubdomain = solversToReplace[0].LinearSystems[0].Subdomain;
-            var c_oxFirstDerivatives = providersToReplace[0].GetFirstSpaceDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
+            var c_oxFirstDerivatives = providersToReplace[0].GetFirstSpaceXDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
             var c_oxSecondDerivatives = providersToReplace[0].GetSecondSpaceDerivatives(c_oxSubdomain, Vector.CreateFromArray(c_oxNode));
             for (int i = 0; i < c_oxSecondDerivatives.NumRows; i++)
             {
-                dcoxNode[i] = c_oxFirstDerivatives.GetRow(i).CopyToArray();
+                dcoxNode[i] = c_oxFirstDerivatives.CopyToArray();
                 ddcoxNode[i] = c_oxSecondDerivatives.GetRow(i).CopyToArray();
             }
             if (c_oxElement == null) c_oxElement = new double[modelsToReplace[0].Elements.Count];
@@ -406,11 +406,11 @@ namespace ISAAR.MSolve.Tests
             }
 
             var pSubdomain = solversToReplace[3].LinearSystems[0].Subdomain;
-            var pFirstDerivatives = providersToReplace[3].GetFirstSpaceDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
+            var pFirstDerivatives = providersToReplace[3].GetFirstSpaceXDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
             var pSecondDerivatives = providersToReplace[3].GetSecondSpaceDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
-            for (int i = 0; i < pFirstDerivatives.NumRows; i++)
+            for (int i = 0; i < pFirstDerivatives.Length; i++)
             {
-                dpSolution[i] = pFirstDerivatives.GetRow(i).CopyToArray();
+                dpSolution[i] = pFirstDerivatives.CopyToArray();
                 ddpSolution[i] = pSecondDerivatives.GetRow(i).CopyToArray();
             }
             freeDofNo = 0;

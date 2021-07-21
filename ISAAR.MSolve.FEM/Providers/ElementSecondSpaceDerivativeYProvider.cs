@@ -1,7 +1,6 @@
 ﻿using ISAAR.MSolve.Discretization.Interfaces;
 using ISAAR.MSolve.LinearAlgebra.Matrices;
 using ISAAR.MSolve.FEM.Interfaces;
-using System.Collections.Generic;
 
 namespace ISAAR.MSolve.FEM.Providers
 {

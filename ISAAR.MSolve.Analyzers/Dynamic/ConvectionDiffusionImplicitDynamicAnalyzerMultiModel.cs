@@ -318,11 +318,14 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     childAnalyzers[i].Solve();
                 }
 
+                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
+
                 temperatureNorm = 0;
                 if (structuralParentAnalyzer != null)
                 {
                     temperatureNorm = 0;
-                    structuralParentAnalyzer.SolveTimestep(t);
+                    
+                    structuralParentAnalyzer.SolveTimestep(t, staggeredStep);
                     foreach (var linearSystem in structuralParentAnalyzer.linearSystems.Values)
                     {
                         //Debug.WriteLine($"structural linear system: solution norm = {linearSystem.Solution.Norm2()}");
@@ -340,8 +343,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 error = temperatureNorm != 0 ? Math.Abs(temperatureNorm - previousTemperatureNorm) / temperatureNorm : 0;
                 Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                 staggeredStep++;
-
-                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
             }
             while (staggeredStep < maxStaggeredSteps && error > tolerance);
 
@@ -372,7 +373,6 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private IVector CalculateRhsImplicit(ILinearSystem linearSystem, int modelNo, bool addRhs)
         {
             //TODO: what is the meaning of addRhs? Do we need this when solving dynamic thermal equations?
-            //TODO: stabilizingRhs has not been implemented
 
             // result = -dt(conductuvity*temperature + rhs -dt(stabilizingConductivity*temperature + StabilizingRhs)) 
             double a0 = 1 / Math.Pow(timeStep, 2);

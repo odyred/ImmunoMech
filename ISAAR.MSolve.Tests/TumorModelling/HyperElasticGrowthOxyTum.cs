@@ -245,11 +245,11 @@ namespace ISAAR.MSolve.Tests
             lgNode = solversToReplace[1].LinearSystems[0].Solution.CopyToArray();
             tumcNode = solversToReplace[2].LinearSystems[0].Solution.CopyToArray();
             var subdomain = solversToReplace[0].LinearSystems[0].Subdomain;
-            var firstDerivatives = providersToReplace[0].GetFirstSpaceDerivatives(subdomain, Vector.CreateFromArray(c_oxNode));
+            var firstDerivatives = providersToReplace[0].GetFirstSpaceXDerivatives(subdomain, Vector.CreateFromArray(c_oxNode));
             var secondDerivatives = providersToReplace[0].GetSecondSpaceDerivatives(subdomain, Vector.CreateFromArray(c_oxNode));
             for (int i = 0; i < secondDerivatives.NumRows; i++)
             {
-                dcoxNode[i] = firstDerivatives.GetRow(i).CopyToArray();
+                dcoxNode[i] = firstDerivatives.CopyToArray();
                 ddcoxNode[i] = secondDerivatives.GetRow(i).CopyToArray();
             }
             if (c_oxElement == null) c_oxElement = new double[modelsToReplace[0].Elements.Count];

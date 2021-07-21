@@ -40,6 +40,8 @@ namespace ISAAR.MSolve.FEM.Elements
         private double[] integrationCoeffs;
 
         private double[][] strainsVec;
+        private double[][] stressesVec;
+        private double[][] displacementGradientVec;
         //private double[][] strainsVec_last_converged;
         private double[][] DefGradVec;
         private double lambdag = 1;
@@ -397,6 +399,7 @@ namespace ISAAR.MSolve.FEM.Elements
         private void CalculateStrains(double[] localdisplacements, IElement element, double[][] deformedCoordinates)
         {
             strainsVec = new double[nGaussPoints][];
+            displacementGradientVec = new double[nGaussPoints][];
             IReadOnlyList<Matrix> shapeFunctionNaturalDerivatives;
             shapeFunctionNaturalDerivatives = Interpolation.EvaluateNaturalGradientsAtGaussPoints(QuadratureForStiffness);
             var jacobians = shapeFunctionNaturalDerivatives.Select(x => new IsoparametricJacobian3D(element.Nodes, x));
@@ -531,17 +534,19 @@ namespace ISAAR.MSolve.FEM.Elements
                     defGradElasticDeterminant = defGradElasticDeterminant + (defGradElasticTransposed[0, i] * (defGradElasticTransposed[1, (i + 1) % 3]
                         * defGradElasticTransposed[2, (i + 2) % 3] - defGradElasticTransposed[1, (i + 2) % 3] * defGradElasticTransposed[2, (i + 1) % 3]));
 
+                var detFg = Math.Pow(lambdag, 3);
+
                 //var firstPiola = new double[3, 3];
                 //for (int i = 0; i < 3; i++)
                 //{
                 //    for (int j = 0; j < 3; j++)
                 //    {
-                //        //firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag;
-                //        firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
+                //        firstPiola[i, j] = defGradDeterminant * firstPiolaElastic[i, j];
+                //        //firstPiola[i, j] = defGradDeterminant * firstPiolaElastic[i, j] / lambdag;
+                //        //firstPiola[i, j] = defGradDeterminant / defGradElasticDeterminant * firstPiolaElastic[i, j] / lambdag / defGradElasticDeterminant;
                 //    }
                 //}
 
-                var detFg = Math.Pow(lambdag, 3);
 
                 double[,] defGrad_lamdag_inv = new double[3, 3] { { (double)1 / lambdag, 0, 0 }, { 0, (double)1 / lambdag, 0 }, { 0, 0, (double)1 / lambdag } };
 
@@ -912,36 +917,17 @@ namespace ISAAR.MSolve.FEM.Elements
         {
             this.UpdateCoordinateData(localTotalDisplacements, out double[][] deformedCoordinates);
             this.CalculateStrains(localTotalDisplacements, element, deformedCoordinates);
-            //double[] strainsVec_strain_minus_last_converged_value = new double[6];
             for (int npoint = 0; npoint < materialsAtGaussPoints.Length; npoint++)
             {
-                //strainsVec_strain_minus_last_converged_value = new double[6] 
-                //{
-                //    strainsVec[npoint][0]- strainsVec_last_converged[npoint][0],
-                //    strainsVec[npoint][1] - strainsVec_last_converged[npoint][1],
-                //    strainsVec[npoint][2] - strainsVec_last_converged[npoint][2],
-                //    strainsVec[npoint][3]- strainsVec_last_converged[npoint][3],
-                //    strainsVec[npoint][4]- strainsVec_last_converged[npoint][4],
-                //    strainsVec[npoint][5]- strainsVec_last_converged[npoint][5]
-                //};
-                //materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec_strain_minus_last_converged_value); 
-                // //To update with total strain simplY = materialsAtGaussPoints[npoint].UpdateMaterial(strainsVec[npoint]);
                 double[] DefGradVecEl = new double[9];
                 for (int i = 0; i < 9; i++)
                 {
                     DefGradVecEl[i] = DefGradVec[npoint][i] / lambdag;
                 }
                 materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVecEl); //MS
-                //materialsAtGaussPoints[npoint].UpdateMaterial(DefGradVec[npoint]); //MS
+                displacementGradientVec[npoint] = new double[] { DefGradVec[npoint][0] - 1, DefGradVec[npoint][1] - 1, DefGradVec[npoint][2] - 1 };
             };
-            //return new Tuple<double[], double[]>(strainsVec_strain_minus_last_converged_value, 
-            //    materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);
-
-            //return new Tuple<double[], double[]>(DefGradVec[materialsAtGaussPoints.Length - 1], materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);
-
-            //TODO return data with total strains data would be:
-            return new Tuple<double[], double[]>(strainsVec[materialsAtGaussPoints.Length - 1], materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);
-            //TODO: why return only the strain- stress of the gausspoint that is last on the array, Where is it needed?
+            return new Tuple<double[], double[]>(displacementGradientVec[materialsAtGaussPoints.Length - 1], materialsAtGaussPoints[materialsAtGaussPoints.Length - 1].Stresses);
         }
 
         public double[] CalculateForces(IElement element, double[] localTotalDisplacements, double[] localdDisplacements)

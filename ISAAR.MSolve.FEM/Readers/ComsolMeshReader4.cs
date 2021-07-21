@@ -33,6 +33,7 @@ namespace ISAAR.MSolve.FEM.Readers
         private double initialValue2;
         private double[] capacityCoeff;
         private double[] diffusionCoeff;
+        private int[] elementDomainID;
         private Dictionary<int,double[]> convectionCoeff = new Dictionary<int, double[]>();
         private Dictionary<int, double> loadFromUnknownCoeff = new Dictionary<int, double>();
         private readonly Action<Dictionary<int, double[]>, Dictionary<int, double>> CalculateCoefficients;
@@ -356,22 +357,35 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[1])],
                                 model.NodesDictionary[Int32.Parse(line[0])]
                             });
-                            convectionCoeff.Add(TetID, new double[] { 0d, 0d, 0d });
-                            loadFromUnknownCoeff.Add(TetID, 0d);
                         }
-                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
+                        elementDomainID = new int[NumberOfTetElements];
                         i = i + 3;
                         for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
-                            int elementDomainID = Int32.Parse(line[0]);
-                            bool res = Array.Exists(domainIDs, x => x == elementDomainID - 1);
+                            elementDomainID[TetID] = Int32.Parse(line[0]);
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID[TetID] - 1);
+                            if (res)
+                            {
+                                IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
+                                foreach (Node node in nodesTet)
+                                {
+                                    nodeDomains[elementDomainID[TetID] - 1].Add(node);
+                                }
+                                convectionCoeff.Add(TetID, new double[] { 0d, 0d, 0d });
+                                loadFromUnknownCoeff.Add(TetID, 0d);
+                            }
+                        }
+                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
+                        for (int TetID = 0; TetID < NumberOfTetElements; TetID++)
+                        {
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID[TetID] - 1);
                             if (res)
                             {
                                 IReadOnlyList<Node> nodesTet = TetraNodes[TetID];
                                 var CDMaterial = new ConvectionDiffusionMaterial
-                                    (capacityCoeff[elementDomainID-1], diffusionCoeff[elementDomainID-1], convectionCoeff[TetID], loadFromUnknownCoeff[TetID]);
+                                    (capacityCoeff[elementDomainID[TetID] - 1], diffusionCoeff[elementDomainID[TetID] - 1], convectionCoeff[TetID], loadFromUnknownCoeff[TetID]);
                                 var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                                 var Tet4 = elementFactory3D.CreateElement(CellType.Tet4, nodesTet);
                                 var element = new Element();
@@ -380,11 +394,11 @@ namespace ISAAR.MSolve.FEM.Readers
                                 foreach (Node node in nodesTet)
                                 {
                                     element.AddNode(node);
-                                    nodeDomains[elementDomainID - 1].Add(node);
+                                    nodeDomains[elementDomainID[TetID] - 1].Add(node);
                                 }
                                 model.SubdomainsDictionary[0].Elements.Add(element);
                                 model.ElementsDictionary.Add(TetID, element);
-                                elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[TetID]);
+                                elementDomains[elementDomainID[TetID] - 1].Add(model.ElementsDictionary[TetID]);
                             }
                         }
                         foreach (int domainID in domainIDs)
@@ -419,22 +433,30 @@ namespace ISAAR.MSolve.FEM.Readers
                                 model.NodesDictionary[Int32.Parse(line[3])],
                                 model.NodesDictionary[Int32.Parse(line[1])],
                             });
-                            convectionCoeff.Add(HexID, new double[] { 0d, 0d, 0d });
-                            loadFromUnknownCoeff.Add(HexID, 0d);
                         }
-                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
                         i = i + 3;
+                        elementDomainID = new int[NumberOfHexElements];
                         for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
                         {
                             i++;
                             line = text[i].Split(delimeters);
-                            int elementDomainID = Int32.Parse(line[0]);
-                            bool res = Array.Exists(domainIDs, x => x == elementDomainID - 1);
+                            elementDomainID[HexID] = Int32.Parse(line[0]);
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID[HexID] - 1);
+                            if (res)
+                            {
+                                convectionCoeff.Add(HexID, new double[] { 0d, 0d, 0d });
+                                loadFromUnknownCoeff.Add(HexID, 0d);
+                            }
+                        }
+                        CalculateCoefficients(convectionCoeff, loadFromUnknownCoeff);
+                        for (int HexID = 0; HexID < NumberOfHexElements; HexID++)
+                        {
+                            bool res = Array.Exists(domainIDs, x => x == elementDomainID[HexID] - 1);
                             if (res)
                             {
                                 IReadOnlyList<Node> nodesHex = HexaNodes[HexID];
                                 var CDMaterial = new ConvectionDiffusionMaterial
-                                    (capacityCoeff[elementDomainID], diffusionCoeff[elementDomainID], convectionCoeff[HexID], loadFromUnknownCoeff[HexID]);
+                                    (capacityCoeff[elementDomainID[HexID]-1], diffusionCoeff[elementDomainID[HexID] - 1], convectionCoeff[HexID], loadFromUnknownCoeff[HexID]);
                                 var elementFactory3D = new ConvectionDiffusionElement3DFactory(CDMaterial);
                                 var Hexa8 = elementFactory3D.CreateElement(CellType.Hexa8, nodesHex);
                                 var element = new Element();
@@ -443,11 +465,11 @@ namespace ISAAR.MSolve.FEM.Readers
                                 foreach (Node node in nodesHex)
                                 {
                                     element.AddNode(node);
-                                    nodeDomains[elementDomainID - 1].Add(node);
+                                    nodeDomains[elementDomainID[HexID] - 1].Add(node);
                                 }
                                 model.SubdomainsDictionary[0].Elements.Add(element);
                                 model.ElementsDictionary.Add(HexID, element);
-                                elementDomains[elementDomainID - 1].Add(model.ElementsDictionary[HexID]);
+                                elementDomains[elementDomainID[HexID] - 1].Add(model.ElementsDictionary[HexID]);
                             }
                         }
                         foreach (int domainID in domainIDs)

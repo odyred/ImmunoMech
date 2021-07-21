@@ -232,7 +232,15 @@ namespace ISAAR.MSolve.Problems
             throw new NotImplementedException();
         }
 
-        public IMatrix GetFirstSpaceDerivatives(ISubdomain subdomain, IVectorView vector)
+        public IVector GetFirstSpaceXDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            throw new NotImplementedException();
+        }
+        public IVector GetFirstSpaceYDerivatives(ISubdomain subdomain, IVectorView vector)
+        {
+            throw new NotImplementedException();
+        }
+        public IVector GetFirstSpaceZDerivatives(ISubdomain subdomain, IVectorView vector)
         {
             throw new NotImplementedException();
         }

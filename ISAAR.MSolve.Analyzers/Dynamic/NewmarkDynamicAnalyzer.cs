@@ -34,6 +34,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private Dictionary<int, IVector> v = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> v1 = new Dictionary<int, IVector>();
         private Dictionary<int, IVector> v2 = new Dictionary<int, IVector>();
+        private Dictionary<int, IVector> v10 = new Dictionary<int, IVector>();
+        private Dictionary<int, IVector> v20 = new Dictionary<int, IVector>();
         private readonly Action<Dictionary<int, IVector>, Dictionary<int, IVector>, Dictionary<int, IVector>, IStructuralModel[], ISolver[], IImplicitIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
         IStructuralModel[] modelsForReplacement = new IStructuralModel[1];
         ISolver[] solversForReplacement = new ISolver[1];
@@ -267,7 +269,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             if (ChildAnalyzer == null) throw new InvalidOperationException("Newmark analyzer must contain an embedded analyzer.");
             ChildAnalyzer.Initialize(isFirstAnalysis);
         }
-        public void SolveTimestep(int i)
+        public void SolveTimestep(int i, int staggeredStep=0)
         {
             Debug.WriteLine("Newmark step: {0}", i);
 
@@ -292,8 +294,12 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             ChildAnalyzer.Solve();
             DateTime end = DateTime.Now;
 
-            UpdateVelocityAndAcceleration(i);
+            UpdateVelocityAndAcceleration(i, staggeredStep);
             UpdateResultStorages(start, end);
+            if (CreateNewModel != null)
+            {
+                CreateNewModel(v2, v1, v, modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+            }
             // Print output results in *.txt file
             if (i == 0)
             {
@@ -435,6 +441,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             v.Clear();
             v1.Clear();
             v2.Clear();
+            v10.Clear();
+            v20.Clear();
             rhs.Clear();
 
             foreach (ILinearSystem linearSystem in linearSystems.Values)
@@ -448,6 +456,8 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 //v.Add(id, linearSystem.CreateZeroVector());
                 v1.Add(id, linearSystem.CreateZeroVector());
                 v2.Add(id, linearSystem.CreateZeroVector());
+                v10.Add(id, linearSystem.CreateZeroVector());
+                v20.Add(id, linearSystem.CreateZeroVector());
                 rhs.Add(id, linearSystem.CreateZeroVector());
 
                 // Account for initial conditions coming from a previous solution. 
@@ -484,7 +494,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             }
         }
 
-        private void UpdateVelocityAndAcceleration(int timeStep)
+        private void UpdateVelocityAndAcceleration(int timeStep, int stStep=0)
         {
             var externalVelocities = provider.GetVelocitiesOfTimeStep(timeStep);
             var externalAccelerations = provider.GetAccelerationsOfTimeStep(timeStep);
@@ -492,18 +502,23 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
                 int id = linearSystem.Subdomain.ID;
-                u[id].CopyFrom(v[id]); //TODO: this copy can be avoided by pointing to v[id] and then v[id] = null;
+                if (stStep==0)
+                {
+                    u[id].CopyFrom(v[id]); //TODO: this copy can be avoided by pointing to v[id] and then v[id] = null;
+                    v10[id].CopyFrom(v1[id]);
+                    v20[id].CopyFrom(v2[id]);
+                }
                 //v[id].CopyFrom(linearSystem.Solution);
                 v[id].CopyFrom(ChildAnalyzer.Responses[id]);
-                IVector vv = v2[id].Add(externalAccelerations[id]);
+                IVector vv = v20[id].Add(externalAccelerations[id]);
 
                 // v2 = a0 * (v - u) - a2 * v1 - a3 * vv
                 v2[id] = v[id].Subtract(u[id]);
-                v2[id].LinearCombinationIntoThis(a0, v1[id], -a2);
+                v2[id].LinearCombinationIntoThis(a0, v10[id], -a2);
                 v2[id].AxpyIntoThis(vv, -a3);
 
                 // v1 = v1 + externalVelocities + a6 * vv + a7 * v2
-                v1[id].AddIntoThis(externalVelocities[id]);
+                v1[id] = v10[id].Add(externalVelocities[id]);
                 v1[id].AxpyIntoThis(vv, a6);
                 v1[id].AxpyIntoThis(v2[id], a7);
 
