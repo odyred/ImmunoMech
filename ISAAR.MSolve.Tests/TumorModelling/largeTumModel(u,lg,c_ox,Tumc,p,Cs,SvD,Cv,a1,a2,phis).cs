@@ -556,7 +556,7 @@ namespace ISAAR.MSolve.Tests
 				double ri = Math.Sqrt(Math.Pow(sumX / element.Nodes.Count, 2)) +
 					Math.Sqrt(Math.Pow(sumY / element.Nodes.Count, 2)) +
 					Math.Sqrt(Math.Pow(sumZ / element.Nodes.Count, 2));
-				var dd = (-2e-8) * tumcElement[element.ID] / (4 * Math.PI * Math.Pow(ri, 2)) + 1;
+				var dd = (-2e-4) * tumcElement[element.ID] / (4 * Math.PI * Math.Pow(ri, 2)) + 1;
 				dd0[element.ID] = dd >= 0 ? dd : 0;
 			}
 			if (uXt == null)
@@ -869,8 +869,8 @@ namespace ISAAR.MSolve.Tests
 			{
 				if (i == 0 || i == 1 || i == 2)
 				{
-					//asymBuilder.IsMatrixPositiveDefinite = false;
-					solversToReplace[i] = asymBuilder.BuildSolver(modelsToReplace[i]);
+                    asymBuilder.IsMatrixPositiveDefinite = false;
+                    solversToReplace[i] = asymBuilder.BuildSolver(modelsToReplace[i]);
 				}
 				else
 					solversToReplace[i] = builder.BuildSolver(modelsToReplace[i]);
@@ -1757,8 +1757,8 @@ namespace ISAAR.MSolve.Tests
 				//builder.IsMatrixPositiveDefinite = false;
 				if (i == 0 || i == 1 || i == 2)
 				{
-					asymBuilder.IsMatrixPositiveDefinite = false;
-					solvers[i] = asymBuilder.BuildSolver(models[i]);
+                    asymBuilder.IsMatrixPositiveDefinite = false;
+                    solvers[i] = asymBuilder.BuildSolver(models[i]);
 				}
 				else
 					solvers[i] = builder.BuildSolver(models[i]);
@@ -1766,18 +1766,18 @@ namespace ISAAR.MSolve.Tests
 				childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
 			}
 
-            //var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
-            //	providers, childAnalyzers, timestep, time, structuralParentAnalyzer: structuralParentAnalyzer, initialTemperature: initialValues,
-            //	tolerance: MultiModelAnalyzerTolerance);
             var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
-                providers, childAnalyzers, timestep, time, initialTemperature: initialValues, tolerance: MultiModelAnalyzerTolerance);
+                providers, childAnalyzers, timestep, time, structuralParentAnalyzer: structuralParentAnalyzer, initialTemperature: initialValues,
+                tolerance: MultiModelAnalyzerTolerance);
+            //var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
+            //    providers, childAnalyzers, timestep, time, initialTemperature: initialValues, tolerance: MultiModelAnalyzerTolerance);
             parentAnalyzer.Initialize();
 
 			for (int i = 0; i < time / timestep; i++)
 			{
 				parentAnalyzer.SolveTimestep(i);
 				PreviousSpaceDerivatives = SpaceDerivatives.Clone() as double[][];
-                structuralParentAnalyzer.SolveTimestep(i);
+                //structuralParentAnalyzer.SolveTimestep(i);
                 Paraview(i);
 			}
 

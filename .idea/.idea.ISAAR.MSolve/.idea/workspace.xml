@@ -13,9 +13,13 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$USER_HOME$/Downloads/largeTumModel(u,lg,c_ox,Tumc,p,Cs,SvD,Cv,a1,a2,phis).cs" root0="SKIP_HIGHLIGHTING" />
+  </component>
   <component name="IdeDocumentHistory">
     <changedPaths>
       <option value="$PROJECT_DIR$/ISAAR.MSolve.Tests/ISAAR.MSolve.Tests.csproj" />
+      <option value="$PROJECT_DIR$/ISAAR.MSolve.Tests/TumorModelling/largeTumModel(u,lg,c_ox,Tumc,p,Cs,SvD,Cv,a1,a2,phis).cs" />
     </changedPaths>
   </component>
   <component name="ProjectId" id="1tGpVBv9UCPhLB60sBTNrhtTrPQ" />
@@ -29,7 +33,7 @@
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="vue.rearranger.settings.migration" value="true" />
   </component>
-  <component name="RunManager" selected=".NET Launch Settings Profile.ISAAR.MSolve.SamplesConsole">
+  <component name="RunManager">
     <configuration name="ISAAR.MSolve.SamplesConsole" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/ISAAR.MSolve.SamplesConsole/ISAAR.MSolve.SamplesConsole.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value=".NETCoreApp,Version=v2.1" />
@@ -57,6 +61,7 @@
       <workItem from="1622405309605" duration="548000" />
       <workItem from="1622408171362" duration="174000" />
       <workItem from="1622408448840" duration="1599000" />
+      <workItem from="1626961922066" duration="500000" />
     </task>
     <servers />
   </component>
