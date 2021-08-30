@@ -494,10 +494,10 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
             }
         }
 
-        private void UpdateVelocityAndAcceleration(int timeStep, int stStep=0)
+        private void UpdateVelocityAndAcceleration(int timeIncrement, int stStep=0)
         {
-            var externalVelocities = provider.GetVelocitiesOfTimeStep(timeStep);
-            var externalAccelerations = provider.GetAccelerationsOfTimeStep(timeStep);
+            var externalVelocities = provider.GetVelocitiesOfTimeStep(timeIncrement);
+            var externalAccelerations = provider.GetAccelerationsOfTimeStep(timeIncrement);
 
             foreach (ILinearSystem linearSystem in linearSystems.Values)
             {
@@ -522,9 +522,9 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                 v1[id].AxpyIntoThis(vv, a6);
                 v1[id].AxpyIntoThis(v2[id], a7);
 
-                if ((timeStep + 1) % 1 == 0)
+                if ((timeIncrement + 1) % 1 == 0)
                 {
-                    var path2 = Path.Combine(path0, $"displacement{timeStep}.txt");
+                    var path2 = Path.Combine(path0, $"displacement{timeIncrement}.txt");
                     var writer = new LinearAlgebra.Output.FullVectorWriter() { ArrayFormat = Array1DFormat.PlainVertical };
                     writer.WriteToFile(v[id], path2);
                 }
