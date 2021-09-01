@@ -115,9 +115,8 @@ namespace ISAAR.MSolve.Tests
 		private static double[] a2Element;
 		private static double[] phisNode;
 		private static double[] phisElement;
-		private static Dictionary<int, double> duof = new Dictionary<int, double>();
-		private static Dictionary<int, double> dvof = new Dictionary<int, double>();
-		private static Dictionary<int, double> dwof = new Dictionary<int, double>();
+		private static double[] NKcellNode;
+		private static double[] NKcellElement;
 		private static double[] dd0;
 		private static Dictionary<int, double[]> aNode = new Dictionary<int, double[]>();
 		private static Dictionary<int, double[]> aElement = new Dictionary<int, double[]>();
@@ -153,9 +152,6 @@ namespace ISAAR.MSolve.Tests
 		private static Dictionary<int, double> lgL;
 		private static Dictionary<int, double[]> PressureU;
 		private static Dictionary<int, double> PressureL;
-		private static Dictionary<int, double> SvDK;
-		private static Dictionary<int, double[]> SvDU;
-		private static Dictionary<int, double> SvDL;
 		private static Dictionary<int, double> CvegfK;
 		private static Dictionary<int, double[]> CvegfU;
 		private static Dictionary<int, double> CvegfL;
@@ -169,7 +165,7 @@ namespace ISAAR.MSolve.Tests
 		private static Dictionary<int, double[]> uXt;
 		private static Dictionary<int, IVector> Displacements;
 		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csdfModel,
-			endocModel, cvegfModel, a1Model, a2Model, phisModel, structModel;
+			endocModel, cvegfModel, a1Model, a2Model, phisModel, NKcellModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
 		private static string inputFile = "mesh446elem.mphtxt";
 		private static int NewtonRaphsonIncrements = 5;
@@ -271,10 +267,11 @@ namespace ISAAR.MSolve.Tests
 			a1Model = CreateAng1Model();
 			a2Model = CreateAng2Model();
 			phisModel = CreatePhisModel();
+			NKcellModel = CreateNKcellModel();
 			var models = new[] { endocModel.Item1, oxModel.Item1, ctModel.Item1, gModel.Item1,
-				prModel.Item1, csdfModel.Item1, csdfModel.Item1, a1Model.Item1, a2Model.Item1, phisModel.Item1 };
+				prModel.Item1, csdfModel.Item1, csdfModel.Item1, a1Model.Item1, a2Model.Item1, phisModel.Item1, NKcellModel.Item1 };
 			var modelReaders = new[] { endocModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2,
-				prModel.Item2, csdfModel.Item2, cvegfModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2 };
+				prModel.Item2, csdfModel.Item2, cvegfModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2, NKcellModel.Item2 };
 			IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
 
 			Assert.True(CompareResults(solutions[0]));
@@ -1604,6 +1601,49 @@ namespace ISAAR.MSolve.Tests
 					var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElement);
 				}
+			}
+			return new Tuple<Model, IModelReader>(model, modelReader);
+		}
+		private static Tuple<Model, IModelReader> CreateNKcellModel()
+		{
+			ComsolMeshReader3 modelReader;
+			Model model;
+			if (ctModel == null)
+			{
+				Console.WriteLine("Creating Cancer Transport Model");
+				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
+				int[] modelDomains = new int[] { 0 };
+				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
+				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
+			}
+			else
+			{
+				Console.WriteLine("Updating Cancer Transport Model...");
+				modelReader = (ComsolMeshReader3)ctModel.Item2;
+				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				model = modelReader.UpdateModel(structModel.Item1, Displacements);
+			}
+
+			if (tumcElement == null)
+			{
+				tumcElement = new double[oxModel.Item1.Elements.Count];
+				for (int i = 0; i < model.Elements.Count; i++)
+				{
+					tumcElement[i] = 0.96;
+				}
+			}
+
+			var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], CancerTransportL);
+			foreach (Element element in modelReader.elementDomains[0])
+			{
+				var Grox = (loxc[0] * coxElement[element.ID]) / (coxElement[element.ID] + Koxc[0]);
+				var Rtumc = (Grox * Sfn) * 24d * 3600d;
+				var nodes = (IReadOnlyList<Node>)element.Nodes;
+				var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, Rtumc, ThermalDof.Temperature);
+				var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
+				var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Tet4, nodes);
+				model.BodyLoads.Add(bodyLoadElement);
 			}
 			return new Tuple<Model, IModelReader>(model, modelReader);
 		}
