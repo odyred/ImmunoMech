@@ -12,12 +12,36 @@ namespace ISAAR.MSolve.Analyzers
 {
     public class StaticAnalyzer : INonLinearParentAnalyzer
     {
-        private readonly IReadOnlyDictionary<int, ILinearSystem> linearSystems;
-        private readonly IStructuralModel model;
-        private readonly IStaticProvider provider;
-        private readonly ISolver solver;
+        public  IReadOnlyDictionary<int, ILinearSystem> linearSystems;
+        private IStructuralModel model;
+        private IStaticProvider provider;
+        private ISolver solver;
+        private readonly Action<IStructuralModel[], ISolver[], IStaticProvider[], IChildAnalyzer[]> CreateNewModel;
+        private readonly Action<IChildAnalyzer[]> UpdateSolution;
+        IStructuralModel[] modelsForReplacement = new IStructuralModel[1];
+        ISolver[] solversForReplacement = new ISolver[1];
+        IStaticProvider[] providersForReplacement = new IStaticProvider[1];
+        IChildAnalyzer[] childAnalyzersForReplacement = new IChildAnalyzer[1];
 
-        public StaticAnalyzer(IStructuralModel model, ISolver solver, IStaticProvider provider, 
+        public StaticAnalyzer(Action<IStructuralModel[], ISolver[], IStaticProvider[], IChildAnalyzer[]> modelCreator,
+            Action<IChildAnalyzer[]> solutionUpdater, IStructuralModel model, ISolver solver, IStaticProvider provider,
+            IChildAnalyzer childAnalyzer)
+        {
+            this.CreateNewModel = modelCreator;
+            this.UpdateSolution = solutionUpdater;
+            this.model = model;
+            this.linearSystems = solver.LinearSystems;
+            this.solver = solver;
+            this.provider = provider;
+            this.ChildAnalyzer = childAnalyzer;
+            this.ChildAnalyzer.ParentAnalyzer = this;
+
+            modelsForReplacement[0] = model;
+            solversForReplacement[0] = solver;
+            providersForReplacement[0] = provider;
+            childAnalyzersForReplacement[0] = childAnalyzer;
+        }
+        public StaticAnalyzer(IStructuralModel model, ISolver solver, IStaticProvider provider,
             IChildAnalyzer childAnalyzer)
         {
             this.model = model;
@@ -30,7 +54,7 @@ namespace ISAAR.MSolve.Analyzers
 
         public Dictionary<int, IAnalyzerLog[]> Logs { get; } = new Dictionary<int, IAnalyzerLog[]>();
 
-        public IChildAnalyzer ChildAnalyzer { get; }
+        public IChildAnalyzer ChildAnalyzer { get; set; }
 
         public void BuildMatrices()
         {
@@ -88,8 +112,24 @@ namespace ISAAR.MSolve.Analyzers
 
         public void Solve()
         {
+            if (CreateNewModel != null)
+            {
+                CreateNewModel(modelsForReplacement, solversForReplacement, providersForReplacement, childAnalyzersForReplacement);
+                model = modelsForReplacement[0];
+                solver = solversForReplacement[0];
+                linearSystems = solver.LinearSystems;
+                provider = providersForReplacement[0];
+                ChildAnalyzer = childAnalyzersForReplacement[0];
+                ChildAnalyzer.ParentAnalyzer = this;
+
+                Initialize(true);
+            }
             if (ChildAnalyzer == null) throw new InvalidOperationException("Static analyzer must contain an embedded analyzer.");
             ChildAnalyzer.Solve();
+            if (UpdateSolution != null)
+            {
+                UpdateSolution(childAnalyzersForReplacement);
+            }
         }
     }
 }
