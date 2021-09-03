@@ -36,17 +36,20 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
         private readonly Dictionary<int, IVector>[] temperatureFromPreviousStaggeredStep;
         private readonly Dictionary<int, IVector>[] capacityTimesTemperature;
         private readonly Dictionary<int, IVector>[] stabilizingConductivityTimesTemperature;
-        private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> CreateNewModel;
+        private readonly Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[], IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> UpdateModel;
+        private readonly Action<ISolver[]> UpdateModelSolution;
         #region debug
         private int i, stagSt;
         #endregion
 
         public ConvectionDiffusionImplicitDynamicAnalyzerMultiModel2(Action<Dictionary<int, IVector>[], IStructuralModel[], ISolver[],
-            IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers,
+            IConvectionDiffusionIntegrationProvider[], IChildAnalyzer[]> modelCreator, Action<ISolver[]> solutionUpdater,
+            IStructuralModel[] models, ISolver[] solvers, IConvectionDiffusionIntegrationProvider[] providers,
             IChildAnalyzer[] childAnalyzers, double timeStep, double totalTime, int maxStaggeredSteps = 100, double tolerance = 1e-3, StaticAnalyzer structuralParentAnalyzer = null,
             IVector[] initialTemperature = null)
         {
-            this.CreateNewModel = modelCreator;
+            this.UpdateModel = modelCreator;
+            this.UpdateModelSolution = solutionUpdater;
             this.maxStaggeredSteps = maxStaggeredSteps;
             this.tolerance = tolerance;
             this.models = models;
@@ -318,7 +321,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                     childAnalyzers[i].Solve();
                 }
 
-                CreateNewModel(temperature, models, solvers, providers, childAnalyzers);
+                UpdateModelSolution(solvers);
 
                 temperatureNorm = 0;
                 if (structuralParentAnalyzer != null)
@@ -340,6 +343,7 @@ namespace ISAAR.MSolve.Analyzers.Dynamic
                         temperatureNorm += linearSystem.Solution.Norm2();
                     }
                 }
+                UpdateModel(temperature, models, solvers, providers, childAnalyzers);
                 error = temperatureNorm != 0 ? Math.Abs(temperatureNorm - previousTemperatureNorm) / temperatureNorm : 0;
                 Debug.WriteLine("Staggered step: {0} - error {1}", staggeredStep, error);
                 staggeredStep++;

@@ -48,8 +48,9 @@ namespace ISAAR.MSolve.Tests
 		private static readonly double[] Koxc = new double[] { 0.0083, 0.0083 }; //mol/m^3
 		private static readonly double[] Dcell = new double[] { 5.4e-3, 1.8e-4 }; //m^2/s
 		private static readonly double[] Dvegf = new double[] { 3.1e-11, 3.1e-11 }; //m^2/s
-		private static readonly double[] khy = new double[] { 6.5e-11, 6.5e-11 };  //m^3*d/kg};
+		private static readonly double[] khy = new double[] { 6.5e-11, 6.5e-11 };  //m^2/(Pa*d);
 		private static readonly double[] lp = new double[] { 2.7e-12, 2.7e-12 };  //m^2*s/kg;
+		private static readonly double lpSv = 3.75e-4;  //m*s/kg;
 		private static double pc0 = 3.32e-11; //mol/m^3
 		private static double[] pc = new double[] { 2 * 3.32e-11, 3.32e-11 }; //mol/m^3
 		private static double T0 = 1; //kg/m^3
@@ -89,6 +90,14 @@ namespace ISAAR.MSolve.Tests
 		public static double kec = 0;
 		public static double canti = 0;
 		private static double kantivegf = 0;
+		private static double snkcon = 1.3e4 / T0in / 24d / 3600d; // 1/s
+		private static double fdrnk0 = 0.0412 / 24d / 3600d; // 1/s
+		private static double grrnk0 = 0.025 / 24d / 3600d; //1/s
+		private static double hscnk = 2.02e7 / T0in / T0in;
+		private static double pirnk = 1e-7 * T0in / 24d / 3600d; //1/s
+		private static double lreg = 100 / 24d / 3600d; //1/s
+		private static double lm2Nk = 7 / 24d / 3600d; //1/s
+		private static double cnk = 3.23e-7 * T0in / 24d / 3600d; // 1/s
 		private static double[][] conv0 = new double[][] { new double[] { 0, 0, 0 }, new double[] { 0, 0, 0 } };
 		private static int solverSymmetric = 0, solverNonSymmetric = 0;
 		private static bool reordering = false;
@@ -115,39 +124,27 @@ namespace ISAAR.MSolve.Tests
 		private static double[] a2Element;
 		private static double[] phisNode;
 		private static double[] phisElement;
-		private static double[] NKcellNode;
-		private static double[] NKcellElement;
+		private static double[] NKcellsNode;
+		private static double[] NKcellsElement;
 		private static double[] dd0;
 		private static Dictionary<int, double[]> aNode = new Dictionary<int, double[]>();
 		private static Dictionary<int, double[]> aElement = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> vNode = new Dictionary<int, double[]>();
+		private static double[][] vNode;
 		private static Dictionary<int, double[]> vElement;/*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> uNode = new Dictionary<int, double[]>();
+		private static double[][] uNode;
+		private static double[][] prevUNode;
 		private static Dictionary<int, double[]> uElement = new Dictionary<int, double[]>();
 		private static Dictionary<int, double[]> dcoxNode = new Dictionary<int, double[]>();
 		private static double[][] dcoxdx; /*= new Dictionary<int, double[]>();*/
 		private static Dictionary<int, double[]> dpNode = new Dictionary<int, double[]>();
 		private static Dictionary<int, double[]> dpSolution = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> dpElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> ddpNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> ddpSolution = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> ddpElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> ddcoxNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> ddcoxElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> dCsNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> dCsElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> ddCsNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> ddCsElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> dCvNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> dCvElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> ddCvNode = new Dictionary<int, double[]>();
-		private static Dictionary<int, double[]> ddCvElement; /*= new Dictionary<int, double[]>();*/
-		private static Dictionary<int, double[]> dphisNode = new Dictionary<int, double[]>();
+		private static double[][] dpdx; /*= new Dictionary<int, double[]>();*/
 		private static double[][] dphisdx; /*= new Dictionary<int, double[]>();*/
 		private static Dictionary<int, double> OxygenTransportK;
 		private static Dictionary<int, double[]> OxygenTransportU;
 		private static Dictionary<int, double> OxygenTransportL;
-		private static double CancerTransportL = 24d * 3600d * (ptc + pti + lm1tum * 0.01);
+		private static Dictionary<int, double[]> CancerTransportU;
+		private static Dictionary<int, double> CancerTransportL;
 		private static Dictionary<int, double[]> lgU;
 		private static Dictionary<int, double> lgL;
 		private static Dictionary<int, double[]> PressureU;
@@ -157,15 +154,15 @@ namespace ISAAR.MSolve.Tests
 		private static Dictionary<int, double> CvegfL;
 		private static Dictionary<int, double[]> phisU;
 		private static Dictionary<int, double> phisL;
-		private static Dictionary<int, IVector> Accelerations;
-		private static Dictionary<int, IVector> Velocities;
+		private static Dictionary<int, double[]> NKcellsU;
+		private static Dictionary<int, double> NKcellsL;
 		private static double[][] PreviousStrains;
 		private static double[][] Strains;
 		private static double[][] Stresses;
 		private static Dictionary<int, double[]> uXt;
 		private static Dictionary<int, IVector> Displacements;
 		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csdfModel,
-			endocModel, cvegfModel, a1Model, a2Model, phisModel, NKcellModel, structModel;
+			endocModel, cvegfModel, a1Model, a2Model, phisModel, NKcellsModel, structModel;
 		private static int pressureModelFreeDOFs = 0;
 		private static string inputFile = "mesh446elem.mphtxt";
 		private static int NewtonRaphsonIncrements = 5;
@@ -175,20 +172,6 @@ namespace ISAAR.MSolve.Tests
 
 		static tumModel_u_lg_c_ox_Tumc_p_Csdf_endoc_Cvegf_a1_a2_phis_ΝΚ_()
 		{
-			//if (solverNonSymmetric == 0)
-			//{
-			//	asymBuilder = new DenseMatrixSolver.Builder();
-			//	asymBuilder.IsMatrixPositiveDefinite = false;
-			//}
-			//else
-			//{
-			//	asymBuilder = new CSparseLUSolver.Builder()
-			//	{
-			//		DofOrderer = new DofOrderer(new NodeMajorDofOrderingStrategy(), new NullReordering())
-			//	};
-			//}
-			//var asymBuilder = new DenseMatrixSolver.Builder();
-			//asymBuilder.IsMatrixPositiveDefinite = false;
 			if (solverSymmetric == 0)
 			{
 				builder = new SkylineSolver.Builder();
@@ -267,12 +250,12 @@ namespace ISAAR.MSolve.Tests
 			a1Model = CreateAng1Model();
 			a2Model = CreateAng2Model();
 			phisModel = CreatePhisModel();
-			NKcellModel = CreateNKcellModel();
+			NKcellsModel = CreateNKcellsModel();
 			var models = new[] { endocModel.Item1, oxModel.Item1, ctModel.Item1, gModel.Item1,
-				prModel.Item1, csdfModel.Item1, csdfModel.Item1, a1Model.Item1, a2Model.Item1, phisModel.Item1, NKcellModel.Item1 };
+				prModel.Item1, csdfModel.Item1, csdfModel.Item1, a1Model.Item1, a2Model.Item1, phisModel.Item1, NKcellsModel.Item1 };
 			var modelReaders = new[] { endocModel.Item2, oxModel.Item2, ctModel.Item2, gModel.Item2,
-				prModel.Item2, csdfModel.Item2, cvegfModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2, NKcellModel.Item2 };
-			IVectorView[] solutions = SolveModelsWithNewmark(models, modelReaders);
+				prModel.Item2, csdfModel.Item2, cvegfModel.Item2, a1Model.Item2, a2Model.Item2, phisModel.Item2, NKcellsModel.Item2 };
+			IVectorView[] solutions = SolveModelsWithStructuralAnalyzer(models, modelReaders);
 
 			Assert.True(CompareResults(solutions[0]));
 		}
@@ -377,6 +360,13 @@ namespace ISAAR.MSolve.Tests
 					outputFile.WriteLine($"{phisNode[i]} ");
 				for (int i = phisNode.Length; i < numberOfPoints; i++)
 					outputFile.WriteLine($"0.3 ");
+				outputFile.WriteLine("              </DataArray>");
+
+				outputFile.WriteLine("              <DataArray type=\"Float64\" Name=\"NKcells\" NumberOfComponents=\"1\" format=\"ascii\">");
+				for (int i = 0; i < NKcellsNode.Length; i++)
+					outputFile.WriteLine($"{NKcellsNode[i]} ");
+				for (int i = NKcellsNode.Length; i < numberOfPoints; i++)
+					outputFile.WriteLine($"0 ");
 				outputFile.WriteLine("              </DataArray>");
 
 				outputFile.WriteLine("          </PointData>");
@@ -500,13 +490,6 @@ namespace ISAAR.MSolve.Tests
 				{
 					spaceTimeDerivatives[i][j] = (current[i][j] - previous[i][j]) / timestep;
 				}
-				//var temp = current[i];
-				//double[] temp1 = new double[] { temp[0], temp[1], temp[2] };
-				//var previousTemp = previous[i];
-				//double[] temp2 = new double[] { previousTemp[0], previousTemp[1], previousTemp[2] };
-				//temp1.Zip(temp2, (x, y) => (x - y) / timestep);
-				//spaceTimeDerivatives.Add(i, temp1);
-
 			}
 			return spaceTimeDerivatives;
 		}
@@ -521,7 +504,7 @@ namespace ISAAR.MSolve.Tests
 			}
 			foreach (Element element in modelReader.elementDomains[1])
 			{
-				l[element.ID] = lp[1] * Svin[1] * 24d * 3600d;
+				l[element.ID] = (lp[1] * Svin[1] + lpSv) * 24d * 3600d;
 				u[element.ID] = conv0[1];
 			}
 			PressureL = l;
@@ -611,29 +594,18 @@ namespace ISAAR.MSolve.Tests
 					}
 				}
 			}
-			if (dpElement == null)
+			if (dpdx == null)
 			{
-				dpElement = new Dictionary<int, double[]>();
+				dpdx = new double[elementIDsPerDomain[0].Count + elementIDsPerDomain[1].Count][];
 				foreach (var domain in elementIDsPerDomain)
 				{
 					foreach (var id in domain)
 					{
-						dpElement[id] = new double[3];
+						dpdx[id] = new double[3];
 					}
 				}
 			}
 
-			if (ddpElement == null)
-			{
-				ddpElement = new Dictionary<int, double[]>();
-				foreach (var domain in elementIDsPerDomain)
-				{
-					foreach (var id in domain)
-					{
-						ddpElement[id] = new double[3];
-					}
-				}
-			}
 			if (vElement == null)
 			{
 				vElement = new Dictionary<int, double[]>();
@@ -649,9 +621,9 @@ namespace ISAAR.MSolve.Tests
 			{
 				//l[e.ID] = 24 * 3600 * Dox[0] / Lwv * Svin * dd0[e.ID] * SvDElement[e.ID];
 				k[id] = Dox[0] * 24d * 3600d;
-				u[id][0] = (-khy[0] * dpElement[id][0] / (1 - phisElement[id])) + vElement[id][0];
-				u[id][1] = (-khy[0] * dpElement[id][1] / (1 - phisElement[id])) + vElement[id][1];
-				u[id][2] = (-khy[0] * dpElement[id][2] / (1 - phisElement[id])) + vElement[id][2];
+				u[id][0] = (-khy[0] * dpdx[id][0] / (1 - phisElement[id])) + vElement[id][0];
+				u[id][1] = (-khy[0] * dpdx[id][1] / (1 - phisElement[id])) + vElement[id][1];
+				u[id][2] = (-khy[0] * dpdx[id][2] / (1 - phisElement[id])) + vElement[id][2];
 				l[id] = 24d * 3600d * (Dox[0] / Lwv * Svin[0] * dd0[id] * endocElement[id]
 				+ ((Aox[0]) / (kox[0] + coxElement[id])) * tumcElement[id]);
 			}
@@ -659,9 +631,9 @@ namespace ISAAR.MSolve.Tests
 			{
 				//l[e.ID] = 24 * 3600 * Dox[1] / Lwv * Svin * SvDElement[e.ID];
 				k[id] = Dox[1] * 24d * 3600d;
-				u[id][0] = (-khy[1] * dpElement[id][0] / 0.7) + vElement[id][0];
-				u[id][1] = (-khy[1] * dpElement[id][1] / 0.7) + vElement[id][1];
-				u[id][2] = (-khy[1] * dpElement[id][2] / 0.7) + vElement[id][2];
+				u[id][0] = (-khy[1] * dpdx[id][0] / 0.7) + vElement[id][0];
+				u[id][1] = (-khy[1] * dpdx[id][1] / 0.7) + vElement[id][1];
+				u[id][2] = (-khy[1] * dpdx[id][2] / 0.7) + vElement[id][2];
 				l[id] = 24d * 3600d * (Dox[1] / Lwv * Svin[1]);
 			}
 			OxygenTransportK = k;
@@ -699,7 +671,8 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < l.Count; i++)
 			{
 				var Grox = (loxc[0] * coxElement[i]) / (coxElement[i] + Koxc[0]);
-				var Rtumc = Grox * Sfn - (ptc + pti + lm1tum * 0.01) * tumcElement[i];
+				var cnknew = (1d + 20d * coxElement[i] / 0.2) * cnk;
+				var Rtumc = Grox * Sfn - (cnknew * NKcellsElement[i] + ptc + pti + lm1tum * 0.01) * tumcElement[i];
 				l[i] = -24d * 3600d * Rtumc / 3d;
 			}
 			lgU = u;
@@ -731,201 +704,49 @@ namespace ISAAR.MSolve.Tests
 			phisU = u;
 			phisL = l;
 		}
+		private static void ctCoefficientsCalculation(Dictionary<int, double[]> u, Dictionary<int, double> l)
+		{
+			if (NKcellsElement == null)
+			{
+				NKcellsElement = new double[oxModel.Item2.elementDomains[0].Count];
+				for (int i = 0; i < NKcellsElement.Length; i++)
+				{
+					NKcellsElement[i] = 0d;
+				}
+			}
+
+			for (int i = 0; i < l.Count; i++)
+			{
+				var cnknew = (1d + 20d * coxElement[i] / 0.2) * cnk;
+				l[i] = (cnknew * NKcellsElement[i] + ptc + pti + lm1tum * 0.01) *24d * 3600d;
+			}
+			CancerTransportU = u;
+			CancerTransportL = l;
+		}
+		private static void NKcellsCoefficientsCalculation(Dictionary<int, double[]> u, Dictionary<int, double> l)
+		{
+			if (NKcellsElement == null)
+			{
+				NKcellsElement = new double[NKcellsModel.Item1.Elements.Count];
+				for (int i = 0; i < NKcellsElement.Length; i++)
+				{
+					NKcellsElement[i] = 0d;
+				}
+			}
+
+
+			for (int i = 0; i < l.Count; i++)
+			{
+				var fdrnk = fdrnk0 + (1 - coxElement[i]/0.2) * 1.025 * fdrnk0;
+				l[i] = -(grrnk0 * (Math.Pow(tumcElement[i], 2) - fdrnk) / (hscnk + Math.Pow(tumcElement[i], 2)) 
+					- pirnk * tumcElement[i] - lreg * 0.01 + lm2Nk * 0.01) * 24d * 3600d;
+			}
+			NKcellsU = u;
+			NKcellsL = l;
+		}
 		private static void UpdateModels(Dictionary<int, IVector>[] prevStepSolutions, IStructuralModel[] modelsToReplace, ISolver[] solversToReplace,
 			IConvectionDiffusionIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
 		{
-			endocNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
-			coxNode = solversToReplace[1].LinearSystems[0].Solution.CopyToArray();
-			tumcNode = solversToReplace[2].LinearSystems[0].Solution.CopyToArray();
-			lgNode = solversToReplace[3].LinearSystems[0].Solution.CopyToArray();
-			pSolution = solversToReplace[4].LinearSystems[0].Solution.CopyToArray();
-			if (pNode == null) pNode = new double[modelsToReplace[4].Nodes.Count];
-			int freeDofNo = 0;
-			for (int i = 0; i < modelsToReplace[4].Nodes.Count; i++)
-			{
-				if (modelsToReplace[4].GlobalDofOrdering.GlobalFreeDofs.Contains(modelsToReplace[4].Nodes[i], ThermalDof.Temperature))
-				{
-					pNode[i] = pSolution[freeDofNo];
-					freeDofNo++;
-				}
-			}
-			CsdfNode = solversToReplace[5].LinearSystems[0].Solution.CopyToArray();
-			CvegfNode = solversToReplace[6].LinearSystems[0].Solution.CopyToArray();
-			a1Node = solversToReplace[7].LinearSystems[0].Solution.CopyToArray();
-			a2Node = solversToReplace[8].LinearSystems[0].Solution.CopyToArray();
-			phisNode = solversToReplace[9].LinearSystems[0].Solution.CopyToArray();
-
-			//endoc
-			if (endocElement == null) endocElement = new double[modelsToReplace[0].Elements.Count];
-			foreach (var e in modelsToReplace[0].Elements)
-			{
-				endocElement[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					endocElement[e.ID] += endocNode[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
-
-			//c_ox
-			dcoxdx = GetCDStrains(oxModel.Item1, Vector.CreateFromArray(coxNode));
-			foreach (var e in modelsToReplace[1].Elements)
-			{
-				coxElement[e.ID] = 0d;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					coxElement[e.ID] += coxNode[i] / (e.Nodes.Count);
-				}
-			}
-
-			//Tumc
-			if (tumcElement == null) tumcElement = new double[modelsToReplace[2].Elements.Count];
-			foreach (var e in modelsToReplace[2].Elements)
-			{
-				tumcElement[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					tumcElement[e.ID] += tumcNode[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
-
-			//lGrowth
-			if (lgElement == null) lgElement = new double[modelsToReplace[0].Elements.Count];
-			foreach (var e in modelsToReplace[3].Elements)
-			{
-				lgElement[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					lgElement[e.ID] += lgNode[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
-
-			//pressure
-			var pSubdomain = solversToReplace[4].LinearSystems[0].Subdomain;
-			var pFirstDerivatives = providersToReplace[4].GetFirstSpaceXDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
-			var pSecondDerivatives = providersToReplace[4].GetSecondSpaceDerivatives(pSubdomain, Vector.CreateFromArray(pSolution));
-			for (int i = 0; i < pFirstDerivatives.Length; i++)
-			{
-				dpSolution[i] = pFirstDerivatives.CopyToArray();
-				ddpSolution[i] = pSecondDerivatives.GetRow(i).CopyToArray();
-			}
-			freeDofNo = 0;
-			for (int i = 0; i < modelsToReplace[4].Nodes.Count; i++)
-			{
-				if (modelsToReplace[4].GlobalDofOrdering.GlobalFreeDofs.Contains(modelsToReplace[4].Nodes[i], ThermalDof.Temperature))
-				{
-					dpNode[i] = dpSolution[freeDofNo];
-					ddpNode[i] = ddpSolution[freeDofNo];
-					freeDofNo++;
-				}
-			}
-			if (pElement == null) pElement = new double[modelsToReplace[4].Elements.Count];
-			if (dpElement == null) dpElement = new Dictionary<int, double[]>();
-			if (ddpElement == null) ddpElement = new Dictionary<int, double[]>();
-			foreach (var e in modelsToReplace[4].Elements)
-			{
-				pElement[e.ID] = 0;
-				dpElement[e.ID] = new double[] { 0, 0, 0 };
-				ddpElement[e.ID] = new double[] { 0, 0, 0 };
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					pElement[e.ID] += pNode[i] / (e.Nodes.Count);
-					for (int j = 0; j < 3; j++)
-					{
-						dpElement[e.ID][j] += dpNode[i][j] / (e.Nodes.Count);
-						ddpElement[e.ID][j] += ddpNode[i][j] / (e.Nodes.Count);
-					}
-				}
-			}
-
-			//Csdf
-			var CsSubdomain = solversToReplace[5].LinearSystems[0].Subdomain;
-			var CsFirstDerivatives = providersToReplace[5].GetFirstSpaceXDerivatives(CsSubdomain, Vector.CreateFromArray(CsdfNode));
-			var CsSecondDerivatives = providersToReplace[5].GetSecondSpaceDerivatives(CsSubdomain, Vector.CreateFromArray(CsdfNode));
-			for (int i = 0; i < CsSecondDerivatives.NumRows; i++)
-			{
-				dCsNode[i] = CsFirstDerivatives.CopyToArray();
-				ddCsNode[i] = CsSecondDerivatives.GetRow(i).CopyToArray();
-			}
-			if (CsdfElement == null) CsdfElement = new double[modelsToReplace[5].Elements.Count];
-			if (dCsElement == null) dCsElement = new Dictionary<int, double[]>();
-			if (ddCsElement == null) ddCsElement = new Dictionary<int, double[]>();
-			foreach (var e in modelsToReplace[5].Elements)
-			{
-				CsdfElement[e.ID] = 0;
-				dCsElement[e.ID] = new double[] { 0, 0, 0 };
-				ddCsElement[e.ID] = new double[] { 0, 0, 0 };
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					CsdfElement[e.ID] += CsdfNode[e.Nodes[i].ID] / (e.Nodes.Count);
-					for (int j = 0; j < 3; j++)
-					{
-						dCsElement[e.ID][j] += dCsNode[i][j] / (e.Nodes.Count);
-						ddCsElement[e.ID][j] += ddCsNode[i][j] / (e.Nodes.Count);
-					}
-				}
-			}
-
-			//Cvegf
-			var CvSubdomain = solversToReplace[6].LinearSystems[0].Subdomain;
-			var CvFirstDerivatives = providersToReplace[6].GetFirstSpaceXDerivatives(CvSubdomain, Vector.CreateFromArray(CvegfNode));
-			var CvSecondDerivatives = providersToReplace[6].GetSecondSpaceDerivatives(CsSubdomain, Vector.CreateFromArray(CvegfNode));
-			for (int i = 0; i < CsSecondDerivatives.NumRows; i++)
-			{
-				dCvNode[i] = CvFirstDerivatives.CopyToArray();
-				ddCvNode[i] = CvSecondDerivatives.GetRow(i).CopyToArray();
-			}
-			if (CvegfElement == null) CvegfElement = new double[modelsToReplace[6].Elements.Count];
-			if (dCvElement == null) dCvElement = new Dictionary<int, double[]>();
-			if (ddCvElement == null) ddCvElement = new Dictionary<int, double[]>();
-			foreach (var e in modelsToReplace[6].Elements)
-			{
-				CvegfElement[e.ID] = 0;
-				dCvElement[e.ID] = new double[] { 0, 0, 0 };
-				ddCvElement[e.ID] = new double[] { 0, 0, 0 };
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					CvegfElement[e.ID] += CvegfNode[e.Nodes[i].ID] / (e.Nodes.Count);
-					for (int j = 0; j < 3; j++)
-					{
-						dCvElement[e.ID][j] += dCvNode[i][j] / (e.Nodes.Count);
-						ddCvElement[e.ID][j] += ddCvNode[i][j] / (e.Nodes.Count);
-					}
-				}
-			}
-
-			//Ang1
-			if (a1Element == null) a1Element = new double[modelsToReplace[7].Elements.Count];
-			foreach (var e in modelsToReplace[7].Elements)
-			{
-				a1Element[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					a1Element[e.ID] += a1Node[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
-
-			//Ang2
-			if (a2Element == null) a2Element = new double[modelsToReplace[8].Elements.Count];
-			foreach (var e in modelsToReplace[8].Elements)
-			{
-				a2Element[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					a2Element[e.ID] += a2Node[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
-
-			//phis
-			//dphisdx = GetCDStrains(phisModel.Item1, Vector.CreateFromArray(phisNode));
-			if (phisElement == null) phisElement = new double[modelsToReplace[9].Elements.Count];
-			foreach (var e in modelsToReplace[9].Elements)
-			{
-				phisElement[e.ID] = 0;
-				for (int i = 0; i < e.Nodes.Count; i++)
-				{
-					phisElement[e.ID] += phisNode[e.Nodes[i].ID] / (e.Nodes.Count);
-				}
-			}
 
 			//
 			modelsToReplace[0] = CreateEndocModel().Item1;
@@ -938,6 +759,7 @@ namespace ISAAR.MSolve.Tests
 			modelsToReplace[7] = CreateAng1Model().Item1;
 			modelsToReplace[8] = CreateAng2Model().Item1;
 			modelsToReplace[9] = CreatePhisModel().Item1;
+			modelsToReplace[10] = CreateNKcellsModel().Item1;
 
 			for (int i = 0; i < modelsToReplace.Length; i++)
 			{
@@ -954,6 +776,154 @@ namespace ISAAR.MSolve.Tests
 			}
 
 		}
+		private static void UpdateSolutions(ISolver[] solversToReplace)
+		{
+			endocNode = solversToReplace[0].LinearSystems[0].Solution.CopyToArray();
+			coxNode = solversToReplace[1].LinearSystems[0].Solution.CopyToArray();
+			tumcNode = solversToReplace[2].LinearSystems[0].Solution.CopyToArray();
+			lgNode = solversToReplace[3].LinearSystems[0].Solution.CopyToArray();
+			pSolution = solversToReplace[4].LinearSystems[0].Solution.CopyToArray();
+			if (pNode == null) pNode = new double[prModel.Item1.Nodes.Count];
+			int freeDofNo = 0;
+			for (int i = 0; i < prModel.Item1.Nodes.Count; i++)
+			{
+				if (prModel.Item1.GlobalDofOrdering.GlobalFreeDofs.Contains(prModel.Item1.Nodes[i], ThermalDof.Temperature))
+				{
+					pNode[i] = pSolution[freeDofNo];
+					freeDofNo++;
+				}
+			}
+			CsdfNode = solversToReplace[5].LinearSystems[0].Solution.CopyToArray();
+			CvegfNode = solversToReplace[6].LinearSystems[0].Solution.CopyToArray();
+			a1Node = solversToReplace[7].LinearSystems[0].Solution.CopyToArray();
+			a2Node = solversToReplace[8].LinearSystems[0].Solution.CopyToArray();
+			phisNode = solversToReplace[9].LinearSystems[0].Solution.CopyToArray();
+			NKcellsNode = solversToReplace[10].LinearSystems[0].Solution.CopyToArray();
+			//endoc
+			if (endocElement == null) endocElement = new double[endocModel.Item1.Elements.Count];
+			foreach (var e in endocModel.Item1.Elements)
+			{
+				endocElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					endocElement[e.ID] += endocNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//c_ox
+			dcoxdx = GetCDStrains(oxModel.Item1, Vector.CreateFromArray(coxNode));
+			foreach (var e in oxModel.Item1.Elements)
+			{
+				coxElement[e.ID] = 0d;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					coxElement[e.ID] += coxNode[i] / (e.Nodes.Count);
+				}
+			}
+
+			//Tumc
+			if (tumcElement == null) tumcElement = new double[ctModel.Item1.Elements.Count];
+			foreach (var e in ctModel.Item1.Elements)
+			{
+				tumcElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					tumcElement[e.ID] += tumcNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//lGrowth
+			if (lgElement == null) lgElement = new double[gModel.Item1.Elements.Count];
+			foreach (var e in gModel.Item1.Elements)
+			{
+				lgElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					lgElement[e.ID] += lgNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//pressure
+			dpdx = GetCDStrains(prModel.Item1, Vector.CreateFromArray(pNode));
+			if (pElement == null) pElement = new double[prModel.Item1.Elements.Count];
+			//if (dpdx == null) dpdx = new Dictionary<int, double[]>();
+			foreach (var e in prModel.Item1.Elements)
+			{
+				pElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					pElement[e.ID] += pNode[i] / (e.Nodes.Count);
+				}
+			}
+
+			//Csdf
+			if (CsdfElement == null) CsdfElement = new double[csdfModel.Item1.Elements.Count];
+			foreach (var e in csdfModel.Item1.Elements)
+			{
+				CsdfElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					CsdfElement[e.ID] += CsdfNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//Cvegf
+			if (CvegfElement == null) CvegfElement = new double[cvegfModel.Item1.Elements.Count];
+			foreach (var e in cvegfModel.Item1.Elements)
+			{
+				CvegfElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					CvegfElement[e.ID] += CvegfNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//Ang1
+			if (a1Element == null) a1Element = new double[a1Model.Item1.Elements.Count];
+			foreach (var e in a1Model.Item1.Elements)
+			{
+				a1Element[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					a1Element[e.ID] += a1Node[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//Ang2
+			if (a2Element == null) a2Element = new double[a2Model.Item1.Elements.Count];
+			foreach (var e in a2Model.Item1.Elements)
+			{
+				a2Element[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					a2Element[e.ID] += a2Node[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//phis
+			//dphisdx = GetCDStrains(phisModel.Item1, Vector.CreateFromArray(phisNode));
+			if (phisElement == null) phisElement = new double[phisModel.Item1.Elements.Count];
+			foreach (var e in phisModel.Item1.Elements)
+			{
+				phisElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					phisElement[e.ID] += phisNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+			//NKcell
+			if (NKcellsElement == null) NKcellsElement = new double[NKcellsModel.Item1.Elements.Count];
+			foreach (var e in NKcellsModel.Item1.Elements)
+			{
+				NKcellsElement[e.ID] = 0;
+				for (int i = 0; i < e.Nodes.Count; i++)
+				{
+					NKcellsElement[e.ID] += NKcellsNode[e.Nodes[i].ID] / (e.Nodes.Count);
+				}
+			}
+
+		}
 		private static void ReplaceLambdaGInModel(IStructuralModel model, double[] lg)
 		{
 			foreach (var e in model.Elements)
@@ -964,60 +934,87 @@ namespace ISAAR.MSolve.Tests
 				field.SetValue(et, lg[e.ID]);
 			}
 		}
-		private static void UpdateNewmarkModel(Dictionary<int, IVector> accelerations, Dictionary<int, IVector> velocities, Dictionary<int, IVector> displacements, IStructuralModel[] modelsToReplace,
-			ISolver[] solversToReplace, IImplicitIntegrationProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
+		private static void UpdateStructuralModel(IStructuralModel[] modelsToReplace,
+			ISolver[] solversToReplace, IStaticProvider[] providersToReplace, IChildAnalyzer[] childAnalyzersToReplace)
 		{
-			Accelerations = accelerations;
-			Velocities = velocities;
-			Displacements = displacements;
 			if (lgElement == null)
 			{
-				lgElement = new double[modelsToReplace[1].Elements.Count];
+				lgElement = new double[modelsToReplace[0].Elements.Count];
 				foreach (Element e in structModel.Item2.elementDomains[1])
 				{
 					lgElement[e.ID] = 1d;
 				}
 			}
-			//if (accNode == null) accNode = new double[modelsToReplace[3].Nodes.Count];
+			ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
+			UpdateStructuralLoads();
+			modelsToReplace[0] = structModel.Item1; 
+			solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
+			providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
+			var increments = 2;
+			var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
+			childAnalyzerBuilder.ResidualTolerance = 1E-5;
+			childAnalyzerBuilder.MaxIterationsPerIncrement = 50;
+			childAnalyzerBuilder.NumIterationsForMatrixRebuild = 5;
+			childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
+		}
+		private static void UpdateStructuralModelSolution(IChildAnalyzer[] childAnalyzersToReplace)
+		{
+			if (prevUNode == null)
+			{
+				prevUNode = new double[structModel.Item1.Nodes.Count][];
+				for (int i = 0; i < structModel.Item1.Nodes.Count; i++)
+				{
+					prevUNode[i] = new double[3];
+				}
+			}
+			if (uNode == null)
+			{
+				uNode = new double[structModel.Item1.Nodes.Count][];
+				vNode = new double[structModel.Item1.Nodes.Count][];
+				for (int i = 0; i < structModel.Item1.Nodes.Count; i++)
+				{
+					uNode[i] = new double[3];
+					vNode[i] = new double[3];
+				}
+			}
+			if (Displacements == null)
+			{
+				Displacements = new Dictionary<int, IVector>();
+				Displacements.Add(0, Vector.CreateZero(structModel.Item1.GlobalDofOrdering.NumGlobalFreeDofs));
+			}
+			Displacements = childAnalyzersToReplace[0].Responses;
+
 			int freeDofNo = 0;
 			for (int i = 0; i < structModel.Item1.Nodes.Count; i++)
 			{
-				aNode[i] = new double[3];
-				vNode[i] = new double[3];
-				uNode[i] = new double[3];
 				if (structModel.Item1.GlobalDofOrdering.GlobalFreeDofs.Contains(structModel.Item1.Nodes[i], StructuralDof.TranslationX))
 				{
-					aNode[i][0] = Accelerations[0][freeDofNo];
-					vNode[i][0] = Velocities[0][freeDofNo];
 					uNode[i][0] = Displacements[0][freeDofNo];
+					vNode[i][0] = (uNode[i][0] - prevUNode[i][0]) / timestep;
 					freeDofNo++;
 				}
 				if (structModel.Item1.GlobalDofOrdering.GlobalFreeDofs.Contains(structModel.Item1.Nodes[i], StructuralDof.TranslationY))
 				{
-					aNode[i][1] = Accelerations[0][freeDofNo];
-					vNode[i][1] = Velocities[0][freeDofNo];
 					uNode[i][1] = Displacements[0][freeDofNo];
+					vNode[i][1] = (uNode[i][1] - prevUNode[i][1]) / timestep;
 					freeDofNo++;
 				}
 				if (structModel.Item1.GlobalDofOrdering.GlobalFreeDofs.Contains(structModel.Item1.Nodes[i], StructuralDof.TranslationZ))
 				{
-					aNode[i][2] = Accelerations[0][freeDofNo];
-					vNode[i][2] = Velocities[0][freeDofNo];
 					uNode[i][2] = Displacements[0][freeDofNo];
+					vNode[i][2] = (uNode[i][1] - prevUNode[i][1]) / timestep;
 					freeDofNo++;
 				}
 			}
 
 			foreach (Element e in structModel.Item1.Elements)
 			{
-				aElement[e.ID] = new double[3];
 				vElement[e.ID] = new double[3];
 				uElement[e.ID] = new double[3];
 				foreach (Node n in e.Nodes)
 				{
 					for (int i = 0; i < 3; i++)
 					{
-						aElement[e.ID][i] += aNode[n.ID][i] / e.Nodes.Count;
 						vElement[e.ID][i] += vNode[n.ID][i] / e.Nodes.Count;
 						uElement[e.ID][i] += uNode[n.ID][i] / e.Nodes.Count;
 					}
@@ -1027,23 +1024,6 @@ namespace ISAAR.MSolve.Tests
 			Strains = GetStrainsStresses(structModel.Item1.Elements.Count).Item1;
 			Stresses = GetStrainsStresses(structModel.Item1.Elements.Count).Item2;
 			uXt = StructuralSpaceTimeDerivatives(Strains, PreviousStrains);
-
-			//foreach (Element e in structModel.Item2.elementDomains[1])
-			//{
-			//	lgElement[e.ID] = 1d;
-			//}
-			ReplaceLambdaGInModel(modelsToReplace[0], lgElement);
-			UpdateStructuralLoads();
-			solversToReplace[0] = structuralBuilder.BuildSolver(modelsToReplace[0]);
-			providersToReplace[0] = new ProblemStructural(modelsToReplace[0], solversToReplace[0]);
-			//solversToReplace[0].HandleMatrixWillBeSet();
-			//childAnalyzersToReplace[0] = new LinearAnalyzer(modelsToReplace[0], solversToReplace[0], providersToReplace[0]);
-			var increments = 2;
-			var childAnalyzerBuilder = new LoadControlAnalyzer.Builder(modelsToReplace[0], solversToReplace[0], (INonLinearProvider)providersToReplace[0], increments);
-			childAnalyzerBuilder.ResidualTolerance = 1E-5;
-			childAnalyzerBuilder.MaxIterationsPerIncrement = 50;
-			childAnalyzerBuilder.NumIterationsForMatrixRebuild = 5;
-			childAnalyzersToReplace[0] = childAnalyzerBuilder.Build();
 		}
 		private static Tuple<Model, IModelReader> CreateEndocModel()
 		{
@@ -1055,14 +1035,14 @@ namespace ISAAR.MSolve.Tests
 				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { 0 });
+				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 1 }, conv0, new double[] { 0 });
 				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
 			}
 			else
 			{
 				Console.WriteLine("Updating endoc Model...");
 				modelReader = (ComsolMeshReader3)endocModel.Item2;
-				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, conv0, new double[] { 0 });
+				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 1 }, conv0, new double[] { 0 });
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
 
@@ -1083,7 +1063,7 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					double fendoc = 0.021429 + kec * canti * endocElement[element.ID] * 24d * 3600d;
-					var endocMaterial = new ConvectionDiffusionMaterial(1, 0, conv0[0], 0);
+					var endocMaterial = new ConvectionDiffusionMaterial(1, 1, conv0[0], 0);
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(endocMaterial, fendoc, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1221,7 +1201,7 @@ namespace ISAAR.MSolve.Tests
 		}
 		private static Tuple<Model, IModelReader> CreateCancerTransportModel(double k)
 		{
-			ComsolMeshReader3 modelReader;
+			ComsolMeshReader4 modelReader;
 			Model model;
 			if (ctModel == null)
 			{
@@ -1229,14 +1209,15 @@ namespace ISAAR.MSolve.Tests
 				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { 0 }, ctCoefficientsCalculation);
 				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
 			}
 			else
 			{
 				Console.WriteLine("Updating Cancer Transport Model...");
-				modelReader = (ComsolMeshReader3)ctModel.Item2;
-				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				modelReader = (ComsolMeshReader4)ctModel.Item2;
+				ctCoefficientsCalculation(CancerTransportU, CancerTransportL);
+				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, CancerTransportU, CancerTransportL);
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
 
@@ -1249,9 +1230,9 @@ namespace ISAAR.MSolve.Tests
 				}
 			}
 
-			var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], CancerTransportL);
 			foreach (Element element in modelReader.elementDomains[0])
 			{
+				var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], CancerTransportL[element.ID]);
 				var Grox = (loxc[0] * coxElement[element.ID]) / (coxElement[element.ID] + Koxc[0]);
 				var Rtumc = (Grox * Sfn) * 24d * 3600d;
 				var nodes = (IReadOnlyList<Node>)element.Nodes;
@@ -1356,11 +1337,15 @@ namespace ISAAR.MSolve.Tests
 					var prMaterial = new ConvectionDiffusionMaterial(0, k[domainID], conv0[0], PressureL[element.ID]);
 					var Grox = (loxc[domainID] * coxElement[element.ID]) / (coxElement[element.ID] + Koxc[domainID]);
 					double Rtumc;
+					double fp;//= Rtumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();
+					var cnknew = (1d + 20d * coxElement[element.ID] / 0.2) * cnk;
 					if (domainID == 0)
-						Rtumc = (Grox * Sfn - (ptc + pti + lm1tum * 0.01) * tumcElement[element.ID]) * 24d * 3600d;
+					{
+						Rtumc = (Grox * Sfn - (cnknew * NKcellsElement[element.ID] + ptc + pti + lm1tum * 0.01) * tumcElement[element.ID]) * 24d * 3600d;
+						fp = Rtumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();
+					}
 					else
-						Rtumc = 0;
-					var fp = Rtumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();
+						fp = (lp[1] * Svin[1] * pv + lpSv * Math.PI) * 24d * 3600d - uXt[element.ID].Sum();
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
 					var domainLoad = new ConvectionDiffusionDomainLoad(prMaterial, fp, ThermalDof.Temperature);
 					var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
@@ -1591,7 +1576,8 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					var Grox = (loxc[domainID] * coxElement[element.ID]) / (coxElement[element.ID] + Koxc[domainID]);
-					var Rtumc = Grox * Sfn - (ptc + pti + lm1tum * 0.01) * tumcElement[element.ID];
+					var cnknew = (1d + 20d * coxElement[element.ID] / 0.2) * cnk;
+					var Rtumc = Grox * Sfn - (cnknew * NKcellsElement[element.ID] + ptc + pti + lm1tum * 0.01) * tumcElement[element.ID];
 					var materialODE = new ConvectionDiffusionMaterial(1, 0, phisU[element.ID], phisL[element.ID]);
 					var fphis = 24d * 3600d * (Rtumc - (vElement[element.ID][0] * dphisdx[element.ID][0] +
 						vElement[element.ID][1] * dphisdx[element.ID][1] + vElement[element.ID][2] * dphisdx[element.ID][2]));
@@ -1604,43 +1590,44 @@ namespace ISAAR.MSolve.Tests
 			}
 			return new Tuple<Model, IModelReader>(model, modelReader);
 		}
-		private static Tuple<Model, IModelReader> CreateNKcellModel()
+		private static Tuple<Model, IModelReader> CreateNKcellsModel()
 		{
-			ComsolMeshReader3 modelReader;
+			ComsolMeshReader4 modelReader;
 			Model model;
-			if (ctModel == null)
+
+			if (NKcellsModel == null)
 			{
-				Console.WriteLine("Creating Cancer Transport Model");
+				Console.WriteLine("Creating NKcells Model");
 				string filename = Path.Combine(Directory.GetCurrentDirectory(), "InputFiles", "TumorGrowthModel", inputFile);
 				int[] modelDomains = new int[] { 0 };
 				int[] modelBoundaries = new int[] { 0, 1, 2, 5 };
-				modelReader = new ComsolMeshReader3(filename, new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				modelReader = new ComsolMeshReader4(filename, new double[] { 1 }, new double[] { 0 }, NKcellsCoefficientsCalculation);
 				model = modelReader.CreateModelFromFile(modelDomains, modelBoundaries);
 			}
 			else
 			{
-				Console.WriteLine("Updating Cancer Transport Model...");
-				modelReader = (ComsolMeshReader3)ctModel.Item2;
-				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, conv0, new double[] { CancerTransportL });
+				Console.WriteLine("Updating NKcells Model...");
+				modelReader = (ComsolMeshReader4)NKcellsModel.Item2;
+				NKcellsCoefficientsCalculation(NKcellsU, NKcellsL);
+				modelReader = modelReader.UpdateModelReader(new double[] { 1 }, new double[] { 0 }, NKcellsU, NKcellsL);
 				model = modelReader.UpdateModel(structModel.Item1, Displacements);
 			}
 
-			if (tumcElement == null)
+			if (NKcellsElement == null)
 			{
-				tumcElement = new double[oxModel.Item1.Elements.Count];
+				NKcellsElement = new double[model.Elements.Count];
 				for (int i = 0; i < model.Elements.Count; i++)
 				{
-					tumcElement[i] = 0.96;
+					NKcellsElement[i] = 0d;
 				}
 			}
 
-			var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], CancerTransportL);
 			foreach (Element element in modelReader.elementDomains[0])
 			{
-				var Grox = (loxc[0] * coxElement[element.ID]) / (coxElement[element.ID] + Koxc[0]);
-				var Rtumc = (Grox * Sfn) * 24d * 3600d;
+				var materialODE = new ConvectionDiffusionMaterial(1, 0, conv0[0], NKcellsL[element.ID]);
+				var Rnk = snkcon * 24d * 3600d;
 				var nodes = (IReadOnlyList<Node>)element.Nodes;
-				var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, Rtumc, ThermalDof.Temperature);
+				var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, Rnk, ThermalDof.Temperature);
 				var bodyLoadElementFactory = new BodyLoadElementFactory(domainLoad, model);
 				var bodyLoadElement = bodyLoadElementFactory.CreateElement(CellType.Tet4, nodes);
 				model.BodyLoads.Add(bodyLoadElement);
@@ -1714,12 +1701,12 @@ namespace ISAAR.MSolve.Tests
 					});
 				}
 			}
-			if (dpElement == null)
+			if (dpdx == null)
 			{
-				dpElement = new Dictionary<int, double[]>();
+				dpdx = new double[model.Elements.Count][];
 				for (int i = 0; i < model.Elements.Count; i++)
 				{
-					dpElement[i] = new double[3];
+					dpdx[i] = new double[3];
 				}
 			}
 			int[] domainIDs = new int[] { 0, 1 };
@@ -1728,15 +1715,15 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in modelReader.elementDomains[domainID])
 				{
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
-					var bodyLoadX = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationX);
+					var bodyLoadX = new GravityLoad(1d, -dpdx[element.ID][0], StructuralDof.TranslationX);
 					var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, model);
 					var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementX);
-					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][1], StructuralDof.TranslationY);
+					var bodyLoadY = new GravityLoad(1d, -dpdx[element.ID][1], StructuralDof.TranslationY);
 					var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, model);
 					var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementY);
-					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][2], StructuralDof.TranslationZ);
+					var bodyLoadZ = new GravityLoad(1d, -dpdx[element.ID][2], StructuralDof.TranslationZ);
 					var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, model);
 					var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
 					model.BodyLoads.Add(bodyLoadElementZ);
@@ -1753,27 +1740,27 @@ namespace ISAAR.MSolve.Tests
 				foreach (Element element in structModel.Item2.elementDomains[domainID])
 				{
 					var nodes = (IReadOnlyList<Node>)element.Nodes;
-					var bodyLoadX = new GravityLoad(1d, -dpElement[element.ID][0], StructuralDof.TranslationX);
+					var bodyLoadX = new GravityLoad(1d, -dpdx[element.ID][0], StructuralDof.TranslationX);
 					var bodyLoadElementFactoryX = new BodyLoadElementFactory(bodyLoadX, structModel.Item1);
 					var bodyLoadElementX = bodyLoadElementFactoryX.CreateElement(CellType.Tet4, nodes);
 					structModel.Item1.BodyLoads.Add(bodyLoadElementX);
-					var bodyLoadY = new GravityLoad(1d, -dpElement[element.ID][1], StructuralDof.TranslationY);
+					var bodyLoadY = new GravityLoad(1d, -dpdx[element.ID][1], StructuralDof.TranslationY);
 					var bodyLoadElementFactoryY = new BodyLoadElementFactory(bodyLoadY, structModel.Item1);
 					var bodyLoadElementY = bodyLoadElementFactoryY.CreateElement(CellType.Tet4, nodes);
 					structModel.Item1.BodyLoads.Add(bodyLoadElementY);
-					var bodyLoadZ = new GravityLoad(1d, -dpElement[element.ID][2], StructuralDof.TranslationZ);
+					var bodyLoadZ = new GravityLoad(1d, -dpdx[element.ID][2], StructuralDof.TranslationZ);
 					var bodyLoadElementFactoryZ = new BodyLoadElementFactory(bodyLoadZ, structModel.Item1);
 					var bodyLoadElementZ = bodyLoadElementFactoryZ.CreateElement(CellType.Tet4, nodes);
 					structModel.Item1.BodyLoads.Add(bodyLoadElementZ);
 				}
 			}
 		}
-		private static IVectorView[] SolveModelsWithNewmark(Model[] models, IModelReader[] modelReaders)
+		private static IVectorView[] SolveModelsWithStructuralAnalyzer(Model[] models, IModelReader[] modelReaders)
 		{
 			double[] E = new double[] { 7e4, 2.1e4 };
 			double[] poissonV = new double[] { .45, .2 };
 			double[] muLame = new double[] { E[0] / 2d / (1 + poissonV[0]), E[1] / 2d / (1 + poissonV[1]) };
-			IDynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(.001, 0, 0, true), new DynamicMaterial(.001, 0, 0, true) };
+			IDynamicMaterial[] dynamicMaterials = new DynamicMaterial[] { new DynamicMaterial(0, 0, 0, true), new DynamicMaterial(0, 0, 0, true) };
 			structModel = CreateStructuralModel(muLame, poissonV, dynamicMaterials, 0, new double[] { 0, 0, 0 }, lgElement);//.Item1; // new Model();
 			var structuralModel = structModel.Item1;
 			var structuralSolver = structuralBuilder.BuildSolver(structuralModel);
@@ -1786,8 +1773,8 @@ namespace ISAAR.MSolve.Tests
 			structuralChildAnalyzerBuilder.NumIterationsForMatrixRebuild = NewtonRaphsonIterForMatrixRebuild;
 			//childAnalyzerBuilder.SubdomainUpdaters = new[] { new NonLinearSubdomainUpdater(model.SubdomainsDictionary[subdomainID]) }; // This is the default
 			LoadControlAnalyzer structuralChildAnalyzer = structuralChildAnalyzerBuilder.Build();
-			var structuralParentAnalyzer = new NewmarkDynamicAnalyzer(UpdateNewmarkModel, structuralModel, structuralSolver,
-				structuralProvider, structuralChildAnalyzer, timestep, time, 0.5, 0.6);
+			var structuralParentAnalyzer = new StaticAnalyzer(UpdateStructuralModel, UpdateStructuralModelSolution, structuralModel, structuralSolver,
+				structuralProvider, structuralChildAnalyzer);
 			structuralParentAnalyzer.Initialize();
 
 			Vector[] initialValues = new Vector[models.Length];
@@ -1841,6 +1828,10 @@ namespace ISAAR.MSolve.Tests
 			{
 				value0[9][node.ID] = 0.3;
 			}
+			foreach (Node node in models[10].Nodes)
+			{
+				value0[10][node.ID] = 0d;
+			}
 
 			IConvectionDiffusionIntegrationProvider[] providers = new IConvectionDiffusionIntegrationProvider[models.Length];
 			IChildAnalyzer[] childAnalyzers = new IChildAnalyzer[models.Length];
@@ -1862,7 +1853,7 @@ namespace ISAAR.MSolve.Tests
 				childAnalyzers[i] = new LinearAnalyzer(models[i], solvers[i], providers[i]);
 			}
 
-			var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
+			var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel2(UpdateModels, UpdateSolutions, models, solvers,
 				providers, childAnalyzers, timestep, time, structuralParentAnalyzer: structuralParentAnalyzer, initialTemperature: initialValues);
 			//var parentAnalyzer = new ConvectionDiffusionImplicitDynamicAnalyzerMultiModel(UpdateModels, models, solvers,
 			//	providers, childAnalyzers, timestep, time, initialTemperature: initialValues);
@@ -1871,6 +1862,7 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < time / timestep; i++)
 			{
 				parentAnalyzer.SolveTimestep(i);
+				prevUNode = uNode.Clone() as double[][];
 				PreviousStrains = Strains.Clone() as double[][];
 				//structuralParentAnalyzer.SolveTimestep(i);
 				Paraview(i);
