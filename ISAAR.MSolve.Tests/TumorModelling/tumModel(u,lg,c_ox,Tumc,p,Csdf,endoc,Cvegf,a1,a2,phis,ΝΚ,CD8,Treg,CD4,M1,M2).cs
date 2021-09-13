@@ -195,7 +195,7 @@ namespace ISAAR.MSolve.Tests
 		private static Dictionary<int, double[]> uXt;
 		private static Dictionary<int, IVector> Displacements;
 		private static Tuple<Model, IModelReader> oxModel, gModel, ctModel, prModel, csdfModel,
-			endocModel, cvegfModel, a1Model, a2Model, phisModel, NKcellsModel, CD8Model, 
+			endocModel, cvegfModel, a1Model, a2Model, phisModel, NKcellsModel, CD8Model,
 			TregModel, CD4Model, structModel, m1Model, m2Model;
 		private static int pressureModelFreeDOFs = 0;
 		private static string inputFile = "mesh446elem.mphtxt";
@@ -818,7 +818,7 @@ namespace ISAAR.MSolve.Tests
 				var rm2vegf = 0.0174 * currentTime - 0.011;
 				var grm1ex = 0.024 * currentTime - 0.005;
 				var grm2 = grm1ex + (1 - coxElement[i] / 0.2) * 1.05 * grm1ex;
-				l[i] = mm2  * 24d * 3600d - grm2 - rm2vegf * CvegfElement[i];
+				l[i] = mm2 * 24d * 3600d - grm2 - rm2vegf * CvegfElement[i];
 			}
 			m2U = u;
 			m2L = l;
@@ -881,7 +881,7 @@ namespace ISAAR.MSolve.Tests
 			for (int i = 0; i < l.Count; i++)
 			{
 				var dt8new = dt8 + 8 * coxElement[i] / 0.2 * dt8;
-				var lm2CD8 = (-0.14286 * m2Element[i] + 1.3214) / 24d /3600d;
+				var lm2CD8 = (-0.14286 * m2Element[i] + 1.3214) / 24d / 3600d;
 				var Dfck = (dt8new * Math.Pow(T8imcellsElement[i] / tumcElement[i], limt8) * tumcElement[i]
 					/ (st8 + (Math.Pow(T8imcellsElement[i] / tumcElement[i], limt8))));
 				l[i] = (mdrt8 - jrrt80 * (Dfck * Dfck) / (ksct8 + (Dfck * Dfck)) + qirt8 * tumcElement[i]
@@ -1573,9 +1573,6 @@ namespace ISAAR.MSolve.Tests
 			foreach (Element element in modelReader.elementDomains[0])
 			{
 				var materialODE = new ConvectionDiffusionMaterial(1, 0, CD8U[element.ID], CD8L[element.ID]);
-				var dt8new = dt8 + 8 * coxElement[element.ID] / 0.2 * dt8;
-				var Dfck = (dt8new * Math.Pow(T8imcellsElement[element.ID] / tumcElement[element.ID], limt8) * tumcElement[element.ID]
-					/ (st8 + (Math.Pow(T8imcellsElement[element.ID] / tumcElement[element.ID], limt8))));
 				var Rt8im = (scd8 + rst8 * NKcellsElement[element.ID] * tumcElement[element.ID]) * 24d * 3600d;
 				var nodes = (IReadOnlyList<Node>)element.Nodes;
 				var domainLoad = new ConvectionDiffusionDomainLoad(materialODE, Rt8im, ThermalDof.Temperature);
@@ -1759,7 +1756,7 @@ namespace ISAAR.MSolve.Tests
 					var cnknew = (1d + 20d * coxElement[element.ID] / 0.2) * cnk;
 					if (domainID == 0)
 					{
-						Rtumc = (Grox * Sfn - (cnknew * NKcellsElement[element.ID] + ptc + pti + lm1tum * m1Element[element.ID]) 
+						Rtumc = (Grox * Sfn - (cnknew * NKcellsElement[element.ID] + ptc + pti + lm1tum * m1Element[element.ID])
 							* tumcElement[element.ID]) * 24d * 3600d;
 						fp = Rtumc + pv * PressureL[element.ID] - uXt[element.ID].Sum();
 					}
